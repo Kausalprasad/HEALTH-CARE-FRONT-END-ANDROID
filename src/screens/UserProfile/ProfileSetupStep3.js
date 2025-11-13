@@ -119,6 +119,9 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
       const data = await response.json();
 
       if (data.success) {
+        // Clear skip flag if profile is completed
+        await AsyncStorage.removeItem('profileSkipped');
+        
         if (isEdit) {
           Alert.alert('Success', 'Medical information updated!', [
             {
@@ -236,6 +239,9 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
             console.log('Skip API Response:', JSON.stringify(data, null, 2));
 
             if (data.success) {
+              // Mark profile as skipped/completed in AsyncStorage
+              await AsyncStorage.setItem('profileSkipped', 'true');
+              
               Alert.alert('Success', 'Profile setup completed!', [
                 {
                   text: 'OK',
@@ -249,10 +255,14 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
               ]);
             } else {
               console.log('Skip API Failed:', data.message);
+              // Even if API fails, mark as skipped locally
+              await AsyncStorage.setItem('profileSkipped', 'true');
               Alert.alert('Error', data.message || 'Unable to skip step');
             }
           } catch (err) {
             console.error('Skip error:', err);
+            // Even if there's an error, mark as skipped locally
+            await AsyncStorage.setItem('profileSkipped', 'true');
             Alert.alert('Error', 'Server error while skipping');
           }
         }

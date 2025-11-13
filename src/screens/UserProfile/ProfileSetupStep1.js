@@ -32,6 +32,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState(null); // Store photo to upload after profile creation
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showBloodGroupDropdown, setShowBloodGroupDropdown] = useState(false);
 
@@ -96,7 +97,14 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        await uploadPhoto(result.assets[0]);
+        if (isEdit) {
+          // In edit mode, upload immediately
+          await uploadPhoto(result.assets[0]);
+        } else {
+          // In create mode, store locally and upload after profile creation
+          setPendingPhoto(result.assets[0]);
+          setProfilePhoto(result.assets[0].uri);
+        }
       }
     } catch (error) {
       console.error('Camera error:', error);
@@ -115,7 +123,14 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        await uploadPhoto(result.assets[0]);
+        if (isEdit) {
+          // In edit mode, upload immediately
+          await uploadPhoto(result.assets[0]);
+        } else {
+          // In create mode, store locally and upload after profile creation
+          setPendingPhoto(result.assets[0]);
+          setProfilePhoto(result.assets[0].uri);
+        }
       }
     } catch (error) {
       console.error('Gallery error:', error);
@@ -269,6 +284,19 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       const data = await response.json();
 
       if (data.success) {
+        // If photo was selected but profile was just created, upload photo now
+        if (!isEdit && pendingPhoto) {
+          // Photo was selected but not uploaded yet
+          // Now that profile exists, upload the photo
+          try {
+            await uploadPhoto(pendingPhoto);
+            setPendingPhoto(null); // Clear pending photo
+          } catch (photoError) {
+            console.error('Photo upload after profile creation failed:', photoError);
+            // Continue even if photo upload fails
+          }
+        }
+        
         if (isEdit) {
           Alert.alert('Success', 'Basic information updated!', [
             {

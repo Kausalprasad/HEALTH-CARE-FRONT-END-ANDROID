@@ -16,6 +16,7 @@ import { auth } from "../../api/firebaseConfig";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
+  sendEmailVerification,
   signOut,
 } from "firebase/auth";
 import { AuthContext } from "../../context/AuthContext";
@@ -66,12 +67,15 @@ export default function RegisterScreen({ navigation }) {
       // Set Display Name
       await updateProfile(userCredential.user, { displayName: name });
 
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
+
       // Sign out (so user logs in manually again)
       await signOut(auth);
 
       Alert.alert(
-        "Account Created",
-        "Your account has been created successfully. Please login to continue."
+        "Verify Your Email",
+        "We have sent a verification link to your email. Please verify your email before logging in."
       );
 
       navigation.replace("Login");

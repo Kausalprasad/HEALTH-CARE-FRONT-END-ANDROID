@@ -201,7 +201,14 @@ const ProfileView = ({ navigation }) => {
       <View style={styles.fixedHeader}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            // Try to go back, if can't go back, navigate to Dashboard
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('DashboardScreen');
+            }
+          }}
         >
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>

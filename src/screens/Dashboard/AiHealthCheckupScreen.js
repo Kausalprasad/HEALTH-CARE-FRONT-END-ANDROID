@@ -76,6 +76,22 @@ const HealthCheckupApp = ({ navigation }) => {
       bgColor: '#EAEAF8',
       onPress: () => navigation.navigate('DentalCheckScreen') 
     },
+ {
+  title: 'Breast Cancer Analysis',
+  subtitle: 'AI-powered breast cancer detection',
+  icon: require('../../../assets/AiHealthCheckUp/Cancer.png'),
+  bgColor: '#FBE9E7',
+  onPress: () => navigation.navigate('BreastAnalysisScreen'),
+},
+{
+  title: 'PCOSS Test',
+  subtitle: 'AI-powered PCOSS detection',
+  icon: require('../../../assets/AiHealthCheckUp/Cycle.png'),
+  bgColor: '#FBE9E7',
+  onPress: () => navigation.navigate('PCOSS'),
+}
+
+
    
    
     // { 

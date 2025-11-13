@@ -58,6 +58,10 @@ import CameraStreamScreen from "../screens/Model/CameraStreamScreen";
 import FitnessFighterScreen from "../screens/HealthGames/Games/FitnessFighterScreen";
 import AddPrescriptionScreen from "../screens/Prescription/AddPrescriptionScreen";
 import PrescriptionRemindersScreen from "../screens/Prescription/PrescriptionRemindersScreen";
+import BreastAnalysisScreen from "../screens/Model/BreastAnalysisScreen";
+import PCOSScreening from "../screens/Model/PCOSScreening";
+import Earing from "../screens/HealthGames/Games/Earing";
+import HeartGame from "../screens/HealthGames/Games/HeartGame";
 
 
 
@@ -162,6 +166,10 @@ export default function AppNavigator() {
   <Stack.Screen name="FitnessFighterScreen" component={FitnessFighterScreen}/>
   <Stack.Screen name="AddPrescriptionScreen" component={AddPrescriptionScreen}/>
 <Stack.Screen name="PrescriptionRemindersScreen" component={PrescriptionRemindersScreen}/>
+<Stack.Screen name="BreastAnalysisScreen" component={BreastAnalysisScreen}/>
+<Stack.Screen name="PCOSScreening" component={PCOSScreening}/>
+<Stack.Screen name="Earing" component={Earing}/>
+<Stack.Screen name="HeartGame" component={HeartGame}/>
   
 
 

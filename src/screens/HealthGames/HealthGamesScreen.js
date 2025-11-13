@@ -51,7 +51,7 @@ const HealthGamesScreen = ({ navigation }) => {
       duration: "15-20 min",
       points: "2678",
       difficulty: "Easy",
-      screen: "SleepSanctuary",
+      screen: "Earing",
     },
     {
       id: 5,
@@ -61,7 +61,7 @@ const HealthGamesScreen = ({ navigation }) => {
       duration: "10-15 min",
       points: "2450",
       difficulty: "Medium",
-      screen: "HeartHero",
+      screen: "HeartGame",
     },
     {
       id: 6,

@@ -29,6 +29,14 @@ const ProfileSetupScreen = ({ navigation }) => {
         return;
       }
 
+      // Check if user has skipped profile setup
+      const profileSkipped = await AsyncStorage.getItem('profileSkipped');
+      if (profileSkipped === 'true') {
+        // User has skipped - redirect directly to ProfileViewScreen
+        navigation.replace('ProfileViewScreen');
+        return;
+      }
+
       // Call the profile status API
       const response = await fetch(`${BASE_URL}/api/profile/status`, {
         method: 'GET',
@@ -52,6 +60,13 @@ const ProfileSetupScreen = ({ navigation }) => {
           navigation.replace('ProfileViewScreen');
           return;
         } else if (data.profileExists && !data.isComplete) {
+          // Check skip flag again - user might have skipped Step 3
+          const profileSkipped = await AsyncStorage.getItem('profileSkipped');
+          if (profileSkipped === 'true') {
+            // User has skipped - redirect directly to ProfileViewScreen
+            navigation.replace('ProfileViewScreen');
+            return;
+          }
           // Profile exists but incomplete - show continue option
           setProfileStatus({
             exists: true,
@@ -59,6 +74,13 @@ const ProfileSetupScreen = ({ navigation }) => {
             nextStep: data.nextStep
           });
         } else {
+          // Check skip flag - user might have skipped from initial screen
+          const profileSkipped = await AsyncStorage.getItem('profileSkipped');
+          if (profileSkipped === 'true') {
+            // User has skipped - redirect directly to ProfileViewScreen
+            navigation.replace('ProfileViewScreen');
+            return;
+          }
           // No profile exists - show create profile
           setProfileStatus({
             exists: false,
@@ -69,6 +91,12 @@ const ProfileSetupScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Profile status check error:', error);
+      // Check skip flag even if API fails
+      const profileSkipped = await AsyncStorage.getItem('profileSkipped');
+      if (profileSkipped === 'true') {
+        navigation.replace('ProfileViewScreen');
+        return;
+      }
       // If API fails, assume no profile exists
       setProfileStatus({
         exists: false,
@@ -94,9 +122,41 @@ const ProfileSetupScreen = ({ navigation }) => {
     navigation.navigate('ProfileViewScreen');
   };
 
-  const handleSkipForNow = () => {
-    navigation.navigate('DashboardScreen');
-    console.log('Skip for now pressed');
+  const handleSkipForNow = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        navigation.navigate('DashboardScreen');
+        return;
+      }
+
+      // Call skip API to mark profile as skipped/completed
+      const response = await fetch(`${BASE_URL}/api/profile/skip-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store skip flag in AsyncStorage as backup
+        await AsyncStorage.setItem('profileSkipped', 'true');
+        // Navigate to dashboard
+        navigation.navigate('DashboardScreen');
+      } else {
+        // If API fails, still mark as skipped locally
+        await AsyncStorage.setItem('profileSkipped', 'true');
+        navigation.navigate('DashboardScreen');
+      }
+    } catch (error) {
+      console.error('Skip error:', error);
+      // If API fails, still mark as skipped locally
+      await AsyncStorage.setItem('profileSkipped', 'true');
+      navigation.navigate('DashboardScreen');
+    }
   };
 
   // Show loading while checking status

@@ -15,7 +15,14 @@ import { AntDesign } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
+  sendEmailVerification,
+  signOut,
+  reload,
+} from "firebase/auth";
 import { auth } from "../../api/firebaseConfig";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -103,7 +110,22 @@ export default function LoginScreen({ navigation }) {
             storedEmail,
             storedPassword
           );
-          setUser(userCredential.user);
+          
+          // Check if email is verified
+          let user = userCredential.user;
+          await reload(user);
+          user = auth.currentUser;
+          
+          if (!user.emailVerified) {
+            await signOut(auth);
+            Alert.alert(
+              "⚠️ Email Verification Required",
+              "Your email is not verified yet. Please check your inbox and click the verification link we sent you. After clicking the link, you can use biometric login."
+            );
+            return;
+          }
+          
+          setUser(user);
         } else {
           Alert.alert("Error", "No saved credentials found. Please login manually.");
         }
@@ -129,8 +151,52 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Check if email is verified
+      let user = userCredential.user;
       
+      // Reload user to get latest emailVerified status
+      await reload(user);
+      user = auth.currentUser;
+      
+      if (!user.emailVerified) {
+        // Sign out and show alert
+        await signOut(auth);
+        Alert.alert(
+          "⚠️ Email Verification Required",
+          "Your email is not verified yet. Please check your inbox and click the verification link we sent you. After clicking the link, you can login successfully.",
+          [
+            {
+              text: "OK",
+              style: "default",
+            },
+            {
+              text: "Resend Verification Email",
+              onPress: async () => {
+                try {
+                  // Create temporary sign in to resend verification
+                  const tempCredential = await signInWithEmailAndPassword(auth, email, password);
+                  await sendEmailVerification(tempCredential.user);
+                  await signOut(auth);
+                  Alert.alert(
+                    "✅ Verification Email Sent",
+                    "We've sent a new verification email to your inbox. Please check your email and click the verification link to continue."
+                  );
+                } catch (error) {
+                  Alert.alert("❌ Error", "Failed to resend verification email. Please try again.");
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
       console.log("Login Success!");
       console.log("isBiometricSupported:", isBiometricSupported);
       console.log("biometricEnabled:", biometricEnabled);
