@@ -75,7 +75,15 @@ export default function HealthVaultLogin({ navigation }) {
 
     setIsLoading(true);
     try {
+      // Check if db is available
+      if (!db) {
+        Alert.alert("Error", "Database connection unavailable. Please try again later.");
+        return;
+      }
+
+      console.log("🔍 Attempting to read vault data for user:", auth.currentUser.uid);
       const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+      console.log("✅ Vault data read successfully");
 
       if (!snap.exists() || !snap.data().vault) {
         Alert.alert(
@@ -113,8 +121,25 @@ export default function HealthVaultLogin({ navigation }) {
         );
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to access vault. Please try again.");
+      console.error("❌ Vault login error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      
+      let errorMessage = "Failed to access vault. Please try again.";
+      
+      // Check for Firebase permissions error
+      if (error.code === 'permission-denied' || 
+          error.message?.includes("Missing or insufficient permissions") ||
+          error.message?.includes("PERMISSION_DENIED")) {
+        errorMessage = "Permission denied: Firestore Security Rules are blocking access to your vault data.\n\nPlease check Firebase Console → Firestore → Rules and ensure authenticated users can read their own user document.\n\nRequired rule:\nallow read: if request.auth != null && request.auth.uid == resource.id;";
+        console.error("🔒 Firestore Security Rules issue detected");
+      } else if (error.code === 'unavailable' || error.message?.includes("network")) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      } else if (error.code === 'unauthenticated') {
+        errorMessage = "Please login to your account first!";
+      }
+      
+      Alert.alert("Vault Access Error", errorMessage);
     } finally {
       setIsLoading(false);
     }

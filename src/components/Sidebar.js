@@ -78,8 +78,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
     { icon: 'calendar-outline', title: 'Book Appointment', route: 'Doctors' },
     { icon: 'flask-outline', title: 'Book Lab Tests', route: 'UserProfileScreen' },
     { icon: 'medical-outline', title: 'Order Medicines', route: 'OrderMedicines' },
-    { icon: 'leaf-outline', title: 'Ayurveda', route: 'Ayurveda' },
-    { icon: 'ribbon-outline', title: 'Cancer Care', route: 'CancerCare' },
+    { icon: 'settings-outline', title: 'Settings', route: 'AboutScreen' },
     { icon: 'newspaper-outline', title: 'Blogs', route: 'Blogs' },
   ];
 

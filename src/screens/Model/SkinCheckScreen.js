@@ -13,6 +13,7 @@ import {
   Dimensions,
   Modal,
   Animated,
+  Linking,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
@@ -89,6 +90,20 @@ const SkinCheckScreen = ({ navigation }) => {
       setLoadingProgress(0)
     }, 500)
   }
+
+  const openLiveCheck = async () => {
+    const url = "https://skin.healnova.ai/camera";
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Unable to open the live check link");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong while opening the link");
+    }
+  };
 
   const getPermissions = async (type = 'camera') => {
     try {
@@ -529,21 +544,30 @@ const SkinCheckScreen = ({ navigation }) => {
               Take a clear photo of the skin area or choose from gallery
             </Text>
             
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() => setShowImageOptions(true)}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.uploadButtonGradient,
-                  { backgroundColor: "#7475B4" },
-                ]}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.uploadButtonHalf}
+                onPress={() => setShowImageOptions(true)}
+                activeOpacity={0.8}
               >
-                <Ionicons name="add" size={24} color="#fff" />
-                <Text style={styles.uploadButtonText}>Select Photo</Text>
-              </View>
-            </TouchableOpacity>
+                <View style={[styles.uploadButtonGradient, { backgroundColor: "#7475B4" }]}>
+                  <Ionicons name="add" size={24} color="#fff" />
+                  <Text style={styles.uploadButtonText}>Add Image</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.liveButtonHalf}
+                onPress={openLiveCheck}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.liveButtonGradient, { backgroundColor: "#7475B4" }]}>
+                  <Ionicons name="videocam" size={24} color="#fff" />
+                  <Text style={styles.liveButtonText}>Live</Text>
+                  <View style={styles.liveDotSmall} />
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.imageSection}>
@@ -822,6 +846,44 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 25,
     lineHeight: 20,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 12,
+  },
+  uploadButtonHalf: {
+    flex: 1,
+    borderRadius: 15,
+    overflow: "hidden",
+  },
+  liveButtonHalf: {
+    flex: 1,
+    borderRadius: 15,
+    overflow: "hidden",
+  },
+  liveButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    position: "relative",
+  },
+  liveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  liveDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F44336",
+    position: "absolute",
+    top: 10,
+    right: 10,
   },
   uploadButton: {
     borderRadius: 15,

@@ -45,7 +45,23 @@
     "plugins": [
       "expo-web-browser",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "targetSdkVersion": 34,
+            "compileSdkVersion": 35
+          }
+        }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "minSdkVersion": 26
+        }
+      ]
     ],
     "extra": {
       "eas": {

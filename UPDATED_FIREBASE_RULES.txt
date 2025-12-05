@@ -1,0 +1,53 @@
+// Updated Firebase Firestore Security Rules
+// Copy this COMPLETE code and paste in Firebase Console → Firestore Database → Rules
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== EMAIL OTP RULES (Your existing rules) =====
+    match /emailOtps/{emailId} {
+      // Create a new OTP doc (only specific keys allowed)
+      allow create: if request.auth == null
+        && request.resource.data.keys().hasOnly(['email','otpHash','expiresAt','attempts'])
+        && request.resource.data.email == emailId
+        && request.resource.data.otpHash is string
+        && request.resource.data.expiresAt is int
+        && request.resource.data.expiresAt > request.time.toMillis()
+        && request.resource.data.attempts == 0;
+
+      // Allow get so the OTP verification can fetch the doc
+      allow get: if request.auth == null && request.resource.data.email == emailId;
+
+      // Allow update only to bump attempts or refresh hash/expiry
+      allow update: if request.auth == null
+        && request.resource.data.keys().hasOnly(['email','otpHash','expiresAt','attempts'])
+        && request.resource.data.email == emailId
+        && request.resource.data.attempts >= 0
+        && request.resource.data.attempts <= 5;
+
+      // Allow delete for cleanup (after success/expiry)
+      allow delete: if request.auth == null && request.resource.data.email == emailId;
+    }
+
+    // ===== USERS COLLECTION RULES (NEW - For Vault Login) =====
+    match /users/{userId} {
+      // Allow users to read and write their own user document
+      // This is needed for vault login to work
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ===== FILES COLLECTION RULES (Optional - For Vault Files) =====
+    match /files/{fileId} {
+      // Allow users to read/write their own files
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // ===== DEFAULT: Deny all other access =====
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

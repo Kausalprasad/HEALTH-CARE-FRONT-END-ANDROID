@@ -10,6 +10,8 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import BottomNavigation from "../../components/BottomNavigation"
+
 
 const HealthGamesScreen = ({ navigation }) => {
   const games = [
@@ -115,6 +117,7 @@ const HealthGamesScreen = ({ navigation }) => {
           </View>
         </View>
       </View>
+     
     </TouchableOpacity>
   );
 
@@ -146,6 +149,7 @@ const HealthGamesScreen = ({ navigation }) => {
           ))}
         </View>
       </ScrollView>
+        <BottomNavigation navigation={navigation} activeScreen="Vault" />
     </SafeAreaView>
   );
 };

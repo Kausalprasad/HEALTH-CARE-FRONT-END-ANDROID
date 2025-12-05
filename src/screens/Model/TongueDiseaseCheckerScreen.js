@@ -223,10 +223,16 @@ const TongueDiseaseCheckerScreen = ({ navigation }) => {
           base64: false,
         })
         
-        console.log('Photo taken:', photo.uri)
+        console.log('Photo taken:', photo.uri, 'Photo dimensions:', photo.width, photo.height)
         
         try {
-          const croppedPhoto = await cropImageToGuideBox(photo.uri)
+          // Photo object se dimensions pass karo for better accuracy
+          // Agar dimensions nahi mili to null pass karo, function internally Image.getSize use karega
+          const croppedPhoto = await cropImageToGuideBox(
+            photo.uri, 
+            photo.width || null, 
+            photo.height || null
+          )
           setImageUri(croppedPhoto)
           setShowCamera(false)
           setResult(null)
@@ -251,33 +257,114 @@ const TongueDiseaseCheckerScreen = ({ navigation }) => {
     }
   }
 
-  const cropImageToGuideBox = async (imageUri) => {
+  const cropImageToGuideBox = async (imageUri, photoWidth = null, photoHeight = null) => {
     try {
-      // Image ka original size le lo
-      const getImageSize = () =>
-        new Promise((resolve, reject) => {
-          Image.getSize(
-            imageUri,
-            (width, height) => resolve({ width, height }),
-            (error) => reject(error)
-          );
-        });
+      let imgWidth, imgHeight;
+      
+      // Agar photo dimensions directly mil gayi hain to use karo, warna Image.getSize se le lo
+      if (photoWidth && photoHeight) {
+        imgWidth = photoWidth;
+        imgHeight = photoHeight;
+        console.log('Using photo dimensions:', imgWidth, imgHeight, 'Platform:', Platform.OS);
+      } else {
+        // Image ka original size le lo
+        const getImageSize = () =>
+          new Promise((resolve, reject) => {
+            Image.getSize(
+              imageUri,
+              (width, height) => resolve({ width, height }),
+              (error) => reject(error)
+            );
+          });
 
-      const { width: imgWidth, height: imgHeight } = await getImageSize();
-      console.log('Original image size:', imgWidth, imgHeight);
+        const size = await getImageSize();
+        imgWidth = size.width;
+        imgHeight = size.height;
+        console.log('Image size from getSize:', imgWidth, imgHeight, 'Platform:', Platform.OS);
+      }
 
       // Guide box ka size (screen center me 280x280)
       const guideBoxSize = 280;
-      const guideBoxRatio = guideBoxSize / width;
-
-      // Image me guide box ka actual size calculate karo
-      const cropSize = Math.min(imgWidth, imgHeight) * guideBoxRatio;
+      const screenWidth = width; // Dimensions.get("window") se aaya hai
+      const screenHeight = height;
+      
+      console.log('Screen dimensions:', screenWidth, screenHeight);
+      console.log('Image dimensions:', imgWidth, imgHeight);
+      
+      // Android me camera preview aur actual image ka aspect ratio different ho sakta hai
+      // Isliye proper scale factor calculate karo
+      let cropSize;
+      
+      if (Platform.OS === 'android') {
+        // Android me: camera preview aur actual image ka aspect ratio different ho sakta hai
+        // Guide box screen pe 280x280 hai (center me)
+        // Main approach: Guide box screen dimensions ke basis pe calculate karo,
+        // phir actual image dimensions ke basis pe scale karo
+        
+        // Screen aspect ratio
+        const screenAspectRatio = screenWidth / screenHeight;
+        // Image aspect ratio
+        const imageAspectRatio = imgWidth / imgHeight;
+        
+        console.log('Aspect ratios:', {
+          screenAspectRatio,
+          imageAspectRatio,
+          screenWidth,
+          screenHeight,
+          imgWidth,
+          imgHeight
+        });
+        
+        // Guide box screen width ka kitna percentage hai
+        const guideBoxRatio = guideBoxSize / screenWidth;
+        
+        // Android me: image dimensions ke basis pe crop size calculate karo
+        // Agar image aspect ratio screen se different hai, to adjust karo
+        if (Math.abs(imageAspectRatio - screenAspectRatio) > 0.1) {
+          // Aspect ratio different hai - use the smaller dimension to ensure square crop
+          const scaleFactor = Math.min(imgWidth / screenWidth, imgHeight / screenHeight);
+          cropSize = guideBoxSize * scaleFactor;
+        } else {
+          // Aspect ratio similar hai - simple calculation use karo
+          cropSize = Math.min(imgWidth, imgHeight) * guideBoxRatio;
+        }
+        
+        // Ensure crop size doesn't exceed image dimensions
+        const minDimension = Math.min(imgWidth, imgHeight);
+        cropSize = Math.min(cropSize, minDimension);
+        
+        console.log('Android crop calculation:', {
+          guideBoxRatio,
+          scaleFactor: Math.min(imgWidth / screenWidth, imgHeight / screenHeight),
+          finalCropSize: cropSize
+        });
+      } else {
+        // iOS ke liye: original calculation (jo pehle se kaam kar raha hai)
+        const guideBoxRatio = guideBoxSize / screenWidth;
+        cropSize = Math.min(imgWidth, imgHeight) * guideBoxRatio;
+      }
 
       // Center se crop karne ke liye origin calculate karo
-      const originX = (imgWidth - cropSize) / 2;
-      const originY = (imgHeight - cropSize) / 2;
+      const originX = Math.max(0, (imgWidth - cropSize) / 2);
+      const originY = Math.max(0, (imgHeight - cropSize) / 2);
 
-      console.log('Crop parameters:', { originX, originY, cropSize });
+      // Crop dimensions ko ensure karo ki wo image ke andar hi rahe
+      const finalCropWidth = Math.min(cropSize, imgWidth - originX);
+      const finalCropHeight = Math.min(cropSize, imgHeight - originY);
+      
+      // Square crop ensure karo - minimum dimension use karo
+      const finalCropSize = Math.min(finalCropWidth, finalCropHeight);
+
+      console.log('Crop parameters:', { 
+        originX: Math.floor(originX), 
+        originY: Math.floor(originY), 
+        cropSize: Math.floor(finalCropSize), 
+        imgWidth, 
+        imgHeight,
+        platform: Platform.OS,
+        screenWidth,
+        screenHeight
+      });
 
       // Image crop aur resize karo
       const croppedImage = await manipulateAsync(
@@ -285,10 +372,10 @@ const TongueDiseaseCheckerScreen = ({ navigation }) => {
         [
           {
             crop: {
-              originX: Math.max(0, originX),
-              originY: Math.max(0, originY),
-              width: cropSize,
-              height: cropSize,
+              originX: Math.max(0, Math.floor(originX)),
+              originY: Math.max(0, Math.floor(originY)),
+              width: Math.floor(finalCropSize),
+              height: Math.floor(finalCropSize),
             },
           },
           {

@@ -171,20 +171,20 @@ const recommendations = {
 // Enhanced blog posts covering all emotions
 const blogPosts = [
   // Happy/Positive emotions
-  { id: 1, title: 'The Science of Sustainable Happiness', author: 'Dr. Sarah Johnson', readTime: '7 min read', image: '🧠', color: '#FFD93D', emotions: ['happy', 'confident'] },
-  { id: 2, title: 'Building Unshakeable Confidence', author: 'Coach Michael Torres', readTime: '6 min read', image: '💪', color: '#2ECC71', emotions: ['confident', 'happy'] },
+  { id: 1, title: 'The Science of Sustainable Happiness', author: 'Dr. Sarah Johnson', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Happiness', emotions: ['happy', 'confident'] },
+  { id: 2, title: 'Building Unshakeable Confidence', author: 'Coach Michael Torres', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Confidence', emotions: ['confident', 'happy'] },
   
   // Negative emotions
-  { id: 3, title: 'Managing Difficult Emotions', author: 'Dr. Lisa Chen', readTime: '5 min read', image: '💙', color: '#4A90E2', emotions: ['sad', 'worried'] },
-  { id: 4, title: 'Overcoming Worry and Anxiety', author: 'Dr. James Wilson', readTime: '8 min read', image: '🌿', color: '#9B59B6', emotions: ['worried', 'stressed'] },
-  { id: 5, title: 'Stress Relief Techniques That Work', author: 'Prof. Maria Garcia', readTime: '6 min read', image: '🧘', color: '#E74C3C', emotions: ['stressed', 'overwhelmed'] },
-  { id: 6, title: 'Healthy Ways to Handle Anger', author: 'Dr. Robert Kim', readTime: '7 min read', image: '⚡', color: '#FF5722', emotions: ['angry', 'stressed'] },
+  { id: 3, title: 'Managing Difficult Emotions', author: 'Dr. Lisa Chen', readTime: '5 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Emotional Health', emotions: ['sad', 'worried'] },
+  { id: 4, title: 'Overcoming Worry and Anxiety', author: 'Dr. James Wilson', readTime: '8 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Anxiety', emotions: ['worried', 'stressed'] },
+  { id: 5, title: 'Stress Relief Techniques That Work', author: 'Prof. Maria Garcia', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Stress Management', emotions: ['stressed', 'overwhelmed'] },
+  { id: 6, title: 'Healthy Ways to Handle Anger', author: 'Dr. Robert Kim', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Anger Management', emotions: ['angry', 'stressed'] },
   
   // Energy and clarity
-  { id: 7, title: 'Boosting Energy Naturally', author: 'Nutritionist Emma Davis', readTime: '5 min read', image: '⚡', color: '#FF9800', emotions: ['low_energy', 'overwhelmed'] },
-  { id: 8, title: 'Finding Clarity in Confusion', author: 'Life Coach Alex Murphy', readTime: '6 min read', image: '🎯', color: '#795548', emotions: ['confused', 'overwhelmed'] },
-  { id: 9, title: 'The Power of Being Present', author: 'Mindfulness Expert Zen Master', readTime: '8 min read', image: '🍃', color: '#00BCD4', emotions: ['calm', 'stressed'] },
-  { id: 10, title: 'When Life Feels Too Much', author: 'Dr. Patricia Lee', readTime: '7 min read', image: '🤯', color: '#FF9800', emotions: ['overwhelmed', 'confused'] },
+  { id: 7, title: 'Boosting Energy Naturally', author: 'Nutritionist Emma Davis', readTime: '5 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Energy', emotions: ['low_energy', 'overwhelmed'] },
+  { id: 8, title: 'Finding Clarity in Confusion', author: 'Life Coach Alex Murphy', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Clarity', emotions: ['confused', 'overwhelmed'] },
+  { id: 9, title: 'The Power of Being Present', author: 'Mindfulness Expert Zen Master', readTime: '8 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Mindfulness', emotions: ['calm', 'stressed'] },
+  { id: 10, title: 'When Life Feels Too Much', author: 'Dr. Patricia Lee', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Coping Strategies', emotions: ['overwhelmed', 'confused'] },
 ];
 
 export default function MoodCheckupScreen() {
@@ -476,18 +476,31 @@ export default function MoodCheckupScreen() {
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>Recommended Reads</Text>
-            {displayBlogPosts.map((post) => (
-              <TouchableOpacity key={post.id} style={styles.blogCard}>
-                <View style={[styles.blogImageContainer, { backgroundColor: post.color }]}>
-                  <Text style={styles.blogEmoji}>{post.image}</Text>
-                </View>
-                <View style={styles.blogContent}>
-                  <Text style={styles.blogTitle}>{post.title}</Text>
-                  <Text style={styles.blogMeta}>by {post.author} • {post.readTime}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            <View style={styles.readsSection}>
+              <View style={styles.readsHeader}>
+                <Text style={styles.readsTitle}>Recommended Reads</Text>
+                <Ionicons name="chevron-forward" size={24} color="#333" />
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.readsScroll}>
+                {displayBlogPosts.map((post) => (
+                  <TouchableOpacity key={post.id} style={styles.readCard}>
+                    <Image 
+                      source={post.image} 
+                      style={styles.readImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.readInfo}>
+                      <View style={styles.readTag}>
+                        <Text style={styles.readTagText}>{post.tag}</Text>
+                      </View>
+                      <Text style={styles.readTime}>{post.readTime}</Text>
+                      <Text style={styles.readTitle}>{post.title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
             <TouchableOpacity 
               style={[styles.recommendButton, { backgroundColor: '#34D399', marginTop: 20 }]} 
@@ -662,31 +675,71 @@ const styles = StyleSheet.create({
   },
   recommendationIcon: { marginRight: 12 },
   recommendationText: { fontSize: 16, color: '#333', flex: 1, fontWeight: '500' },
-  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#333', marginBottom: 16 },
-  blogCard: { 
-    flexDirection: 'row', 
-    backgroundColor: '#F8F9FA', 
-    padding: 16, 
-    borderRadius: 12, 
-    marginBottom: 12, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.05, 
-    shadowRadius: 4, 
-    elevation: 2 
+  readsSection: {
+    paddingHorizontal: 0,
+    marginBottom: 30,
+    alignItems: "center",
   },
-  blogImageContainer: { 
-    width: 60, 
-    height: 60, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginRight: 12 
+  readsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    width: "100%",
   },
-  blogEmoji: { fontSize: 24 },
-  blogContent: { flex: 1, justifyContent: 'center' },
-  blogTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 4 },
-  blogMeta: { fontSize: 14, color: '#666' },
+  readsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  readsScroll: {
+    paddingLeft: 0,
+  },
+  readCard: {
+    width: Math.min(280, width * 0.7),
+    marginRight: 15,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+  },
+  readImage: {
+    width: "100%",
+    height: 140,
+    backgroundColor: "#39A6A3",
+  },
+  readInfo: {
+    padding: 15,
+  },
+  readTag: {
+    backgroundColor: "#E8F5F3",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  readTagText: {
+    fontSize: 12,
+    color: "#39A6A3",
+    fontWeight: "500",
+  },
+  readTime: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+    textAlign: "right",
+    position: "absolute",
+    top: 15,
+    right: 15,
+  },
+  readTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+    lineHeight: 18,
+  },
   bottomSpacing: { height: 30 },
   
   // Fixed Calendar styles

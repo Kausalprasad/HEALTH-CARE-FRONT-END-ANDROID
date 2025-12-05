@@ -1,11 +1,13 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LandingScreen from "../screens/Landing/LandingScreen";
 import LoginScreen from "../screens/Auth/LoginScreen";
 import SignupScreen from "../screens/Auth/SignupScreen";
 import DashboardScreen from "../screens/Dashboard/DashboardScreen";
 import ForgotPasswordScreen from "../screens/ForgotPasswordScreen/ForgotPasswordScreen";
+import DisclaimerScreen from "../screens/Auth/DisclaimerScreen";
 import { AuthContext } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import SymptomCheckerScreen from "../screens/Model/SymptomCheckerScreen";
 import NailAnalysisScreen from "../screens/Model/NailAnalysisScreen";
 import HealthGamesScreen from "../screens/HealthGames/HealthGamesScreen";
@@ -35,7 +37,7 @@ import ProfileSetupStep2 from "../screens/UserProfile/ProfileSetupStep2";
 import ProfileSetupStep3 from "../screens/UserProfile/ProfileSetupStep3";
 import ProfileSetupStep1 from "../screens/UserProfile/ProfileSetupStep1";
 import ProfileViewScreen from "../screens/UserProfile/ProfileViewScreen";
-// import VitalsScreen from "../screens/Vitals/VitalsScreen";
+import VitalsScreen from "../screens/Vitals/VitalsScreen";
 import MoodCheckupApp from "../screens/MoodCheckup/MoodCheckupScreen";
 import PreventiveHealthScreen from "../screens/PreventiveHealth/PreventiveHealthScreen";
 import InsuranceScreen from "../screens/Insurance/InsuranceScreen";
@@ -62,6 +64,9 @@ import BreastAnalysisScreen from "../screens/Model/BreastAnalysisScreen";
 import PCOSScreening from "../screens/Model/PCOSScreening";
 import Earing from "../screens/HealthGames/Games/Earing";
 import HeartGame from "../screens/HealthGames/Games/HeartGame";
+import AboutScreen from "../screens/Settings/AboutScreen";
+import MedicalDisclaimerScreen from "../screens/Settings/MedicalDisclaimerScreen";
+import PrivacyPolicyScreen from "../screens/Settings/PrivacyPolicyScreen";
 
 
 
@@ -84,17 +89,71 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(null);
+  const [isChecking, setIsChecking] = useState(true);
+
+  const checkIntervalRef = useRef(null);
+
+  // Check if disclaimer has been accepted
+  useEffect(() => {
+    const checkDisclaimer = async () => {
+      if (user) {
+        try {
+          const accepted = await AsyncStorage.getItem("disclaimerAccepted");
+          setDisclaimerAccepted(accepted === "true");
+        } catch (error) {
+          console.error("Error checking disclaimer:", error);
+          setDisclaimerAccepted(false);
+        }
+      } else {
+        setDisclaimerAccepted(null);
+      }
+      setIsChecking(false);
+    };
+
+    checkDisclaimer();
+
+    // Set up interval to check disclaimer status periodically
+    // This will detect when user accepts disclaimer
+    if (user) {
+      checkIntervalRef.current = setInterval(() => {
+        checkDisclaimer();
+      }, 500); // Check every 500ms for faster response
+    }
+
+    return () => {
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+      }
+    };
+  }, [user]);
+
+  // Show loading state while checking
+  if (isChecking && user) {
+    return null; // Or a loading screen
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
   {user ? (
-    <>
-      <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
-      <Stack.Screen name="VaultMenu" component={VaultMenu} />
-      <Stack.Screen name="CreateVaultId" component={CreateVaultId} />
-      <Stack.Screen name="LoginVaultId" component={LoginVaultId} />
-      <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
-    </>
+    // If user is logged in, check disclaimer acceptance
+    disclaimerAccepted === false ? (
+      // Show disclaimer screen if not accepted
+      <Stack.Screen 
+        name="DisclaimerScreen" 
+        component={DisclaimerScreen}
+        options={{ gestureEnabled: false }} // Prevent back navigation
+      />
+    ) : (
+      // Show app screens if disclaimer is accepted
+      <>
+        <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+        <Stack.Screen name="VaultMenu" component={VaultMenu} />
+        <Stack.Screen name="CreateVaultId" component={CreateVaultId} />
+        <Stack.Screen name="LoginVaultId" component={LoginVaultId} />
+        <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
+      </>
+    )
   ) : (
     <>
       <Stack.Screen name="Landing" component={LandingScreen} />
@@ -138,7 +197,7 @@ export default function AppNavigator() {
   <Stack.Screen name="ProfileSetupStep3" component={ProfileSetupStep3}/>
   <Stack.Screen name="ProfileSetupStep1" component={ProfileSetupStep1}/>
   <Stack.Screen name="ProfileViewScreen" component={ProfileViewScreen}/>
-  {/* <Stack.Screen name="VitalsScreen" component={VitalsScreen}/> */}
+  <Stack.Screen name="VitalsScreen" component={VitalsScreen}/>
   {/*
   
 
@@ -170,6 +229,9 @@ export default function AppNavigator() {
 <Stack.Screen name="PCOSScreening" component={PCOSScreening}/>
 <Stack.Screen name="Earing" component={Earing}/>
 <Stack.Screen name="HeartGame" component={HeartGame}/>
+<Stack.Screen name="AboutScreen" component={AboutScreen}/>
+<Stack.Screen name="MedicalDisclaimerScreen" component={MedicalDisclaimerScreen}/>
+<Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen}/>
   
 
 

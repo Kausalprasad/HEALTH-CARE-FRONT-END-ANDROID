@@ -1,0 +1,104 @@
+# HealNova - Simple Architecture for Eraser.io
+
+## High Level System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HealNova Mobile App                      │
+│              (React Native + Expo Framework)                │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│  Frontend    │   │   Services   │   │   Storage   │
+│   Modules    │   │    Layer     │   │    Layer    │
+└──────────────┘   └──────────────┘   └──────────────┘
+        │                   │                   │
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend Services                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │ Firebase │  │ Health   │  │ HealNova │  │   AI     │  │
+│  │  Auth    │  │ Connect  │  │   API    │  │ Service  │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Main Modules
+
+### 1. Authentication Module
+- Login/Signup
+- User Profile
+- Password Recovery
+
+### 2. Health Analysis Module
+- AI Health Checkup
+- Symptom Checker
+- Tongue/Nail/Skin/Eye Analysis
+- X-Ray Analysis
+- Injury Assessment
+
+### 3. Health Monitoring Module
+- Vitals Dashboard
+- Health Connect Integration
+- Steps, Heart Rate, Sleep, BP, Oxygen
+
+### 4. Appointment Management
+- Doctor List
+- Booking System
+- Appointment Tracking
+
+### 5. Wellness & Games
+- Health Games
+- Breathing Exercises
+- Nutrition Quest
+
+### 6. Mental Health
+- Mood Tracking
+- Mental Health Assessment
+- AI Chatbot
+
+### 7. Diet & Nutrition
+- Diet Planning
+- Calorie Calculator
+- Nutrition Tracking
+
+### 8. Pregnancy Care
+- Pregnancy Tracking
+- Baby Health
+- Mother-Baby Care
+
+### 9. Prescription Management
+- Prescription Storage
+- Medication Reminders
+- MediScan AI
+
+### 10. Health Vault
+- Secure Document Storage
+- Encrypted Storage
+- Vault ID System
+
+### 11. Additional Features
+- Insurance Management
+- Risk Assessment
+- Voice Commands
+- Caregiver Dashboard
+
+## Data Flow
+
+User → Mobile App → Backend Services → Database/Storage
+                ↓
+         External APIs (Health Connect, AI Services)
+
+## Technology Stack
+
+Frontend: React Native 0.81.4, Expo SDK 54
+Backend: Firebase (Auth, Firestore, Storage)
+APIs: Health Connect API, HealNova Backend API, AI Services
+Storage: Firestore, Cloud Storage, Local Storage
+
+

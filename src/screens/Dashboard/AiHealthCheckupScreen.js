@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 const HealthCheckupApp = ({ navigation }) => {
   const healthItems = [
     { 
-      title: 'Skin Health', 
+      title: 'Skin Cancer Detection', 
       subtitle: 'Get skin health analysis', 
       icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
       bgColor: '#EAEAF8',
@@ -48,13 +48,13 @@ const HealthCheckupApp = ({ navigation }) => {
       bgColor: '#EAEAF8',
       onPress: () => navigation.navigate('HairCheckScreen') 
     },
-    { 
-      title: 'Melanoma Detector', 
-      subtitle: 'Live melanoma risk detection', 
-      icon: require('../../../assets/AiHealthCheckUp/Melanoma.png'),
-      bgColor: '#EAEAF8',
-      onPress: () => navigation.navigate('CameraStreamScreen') 
-    },
+    // { 
+    //   title: 'Melanoma Detector', 
+    //   subtitle: 'Live melanoma risk detection', 
+    //   icon: require('../../../assets/AiHealthCheckUp/Melanoma.png'),
+    //   bgColor: '#EAEAF8',
+    //   onPress: () => navigation.navigate('CameraStreamScreen') 
+    // },
     { 
       title: 'Posture Analysis', 
       subtitle: 'Live melanoma risk detection', 
@@ -88,7 +88,7 @@ const HealthCheckupApp = ({ navigation }) => {
   subtitle: 'AI-powered PCOSS detection',
   icon: require('../../../assets/AiHealthCheckUp/Cycle.png'),
   bgColor: '#FBE9E7',
-  onPress: () => navigation.navigate('PCOSS'),
+  onPress: () => navigation.navigate('PCOSScreening'),
 }
 
 

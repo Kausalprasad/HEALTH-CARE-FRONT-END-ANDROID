@@ -12,6 +12,7 @@ import {
   Alert,
   Dimensions,
   Modal,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -26,6 +27,20 @@ export default function InjuryScreen({ navigation }) {
 
   const API_URL =
     "https://3ibubkku4e6qgmi5ibk6nwa7zq0tqlmd.lambda-url.ap-south-1.on.aws/analyze";
+
+  const openLiveCheck = async () => {
+    const url = "https://pose.healnova.ai/";
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Unable to open the live check link");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong while opening the link");
+    }
+  };
 
   const pickImage = async (fromCamera) => {
     const permission = fromCamera
@@ -172,16 +187,30 @@ export default function InjuryScreen({ navigation }) {
               Add a full-body photo (front or side view) to get AI-powered posture analysis.
             </Text>
 
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() => setShowImageOptions(true)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.uploadButtonGradient, { backgroundColor: "#7475B4" }]}>
-                <Ionicons name="add" size={24} color="#fff" />
-                <Text style={styles.uploadButtonText}>Add Image</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.uploadButtonHalf}
+                onPress={() => setShowImageOptions(true)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.uploadButtonGradient, { backgroundColor: "#7475B4" }]}>
+                  <Ionicons name="add" size={24} color="#fff" />
+                  <Text style={styles.uploadButtonText}>Add Image</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.liveButtonHalf}
+                onPress={openLiveCheck}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.liveButtonGradient, { backgroundColor: "#7475B4" }]}>
+                  <Ionicons name="videocam" size={24} color="#fff" />
+                  <Text style={styles.liveButtonText}>Live</Text>
+                  <View style={styles.liveDotSmall} />
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.imageSection}>
@@ -539,7 +568,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 20,
     marginTop: 20,
-    marginBottom: 25,
+    marginBottom: 15,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -558,6 +587,79 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
+  },
+  liveCheckCard: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 18,
+    marginBottom: 25,
+    borderWidth: 2,
+    borderColor: "#7475B4",
+    shadowColor: "#7475B4",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  liveCheckContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  liveCheckLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  liveCheckIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#7475B4",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  liveCheckText: {
+    flex: 1,
+  },
+  liveCheckTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4,
+  },
+  liveCheckSubtitle: {
+    fontSize: 13,
+    color: "#666",
+  },
+  liveCheckBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFEBEE",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F44336",
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#F44336",
+    letterSpacing: 0.5,
+  },
+  liveCheckArrow: {
+    alignItems: "center",
   },
   uploadSection: {
     backgroundColor: "#fff",
@@ -593,6 +695,45 @@ const styles = StyleSheet.create({
   uploadButton: {
     borderRadius: 15,
     overflow: "hidden",
+    width: "100%",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 12,
+  },
+  uploadButtonHalf: {
+    flex: 1,
+    borderRadius: 15,
+    overflow: "hidden",
+  },
+  liveButtonHalf: {
+    flex: 1,
+    borderRadius: 15,
+    overflow: "hidden",
+  },
+  liveButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    position: "relative",
+  },
+  liveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  liveDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F44336",
+    position: "absolute",
+    top: 10,
+    right: 10,
   },
   uploadButtonGradient: {
     flexDirection: "row",
