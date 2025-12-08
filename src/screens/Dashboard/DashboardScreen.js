@@ -2407,7 +2407,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#FFFFFF", // White text for first item
       subtitleColor: "#E5E7EB", // Light gray subtitle for first item
       iconBg: "#FBBF24",
-      icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
+      icon: require('../../../assets/AiHealthCheckUp/skinCancerDectection.png'),
       route: 'SkinCheck'
     },
     { 
@@ -2418,7 +2418,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#FF9800",
-      icon: require('../../../assets/AiHealthCheckUp/eye3.png'),
+      icon: require('../../../assets/AiHealthCheckUp/eye.png'),
       route: 'EyeScreen'
     },
     { 
@@ -2429,7 +2429,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#9C27B0",
-      icon: require('../../../assets/AiHealthCheckUp/nail.png'),
+      icon: require('../../../assets/AiHealthCheckUp/nail1.png'),
       route: 'NailAnalysis'
     },
     { 
@@ -2440,7 +2440,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#2196F3",
-      icon: require('../../../assets/AiHealthCheckUp/t.png'),
+      icon: require('../../../assets/AiHealthCheckUp/tough1.png'),
       route: 'TongueDiseaseChecker'
     },
     { 
@@ -2451,7 +2451,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#4CAF50",
-      icon: require('../../../assets/AiHealthCheckUp/scalp.png'),
+      icon: require('../../../assets/AiHealthCheckUp/Hair.png'),
       route: 'HairCheckScreen'
     },
     { 
@@ -2462,7 +2462,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#00BCD4",
-      icon: require('../../../assets/AiHealthCheckUp/p.png'),
+      icon: require('../../../assets/AiHealthCheckUp/PostureAnalysis.png'),
       route: 'InjuryScreen'
     },
     { 
@@ -2473,7 +2473,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#607D8B",
-      icon: require('../../../assets/AiHealthCheckUp/Biology.png'),
+      icon: require('../../../assets/AiHealthCheckUp/Genomic.png'),
       route: 'RiskAssessmentScreen'
     },
     { 
@@ -2484,7 +2484,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#009688",
-      icon: require('../../../assets/AiHealthCheckUp/Dental.png'),
+      icon: require('../../../assets/AiHealthCheckUp/theet.png'),
       route: 'DentalCheckScreen'
     },
     { 
@@ -2495,7 +2495,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#E91E63",
-      icon: require('../../../assets/AiHealthCheckUp/Cancer.png'),
+      icon: require('../../../assets/AiHealthCheckUp/BresastCancer.png'),
       route: 'BreastAnalysisScreen'
     },
     { 
@@ -2506,7 +2506,7 @@ function DashboardScreenContent({ navigation }) {
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
       iconBg: "#FF5722",
-      icon: require('../../../assets/AiHealthCheckUp/Cycle.png'),
+      icon: require('../../../assets/AiHealthCheckUp/PcossTest.png'),
       route: 'PCOSScreening'
     }
   ];
@@ -2854,10 +2854,17 @@ function DashboardScreenContent({ navigation }) {
                     }
                   }}
                 >
-                  <View style={[styles.healthCheckIconContainer, { backgroundColor: check.iconBg }]}>
+                  <View style={[
+                    styles.healthCheckIconContainer, 
+                    { backgroundColor: 'transparent' }
+                  ]}>
                     <Image 
                       source={check.icon} 
-                      style={styles.healthCheckIconImage}
+                      style={
+                        check.id === 2 
+                          ? { width: 32, height: 20 }
+                          : { width: 26.958070755004883, height: 34.49981689453125 }
+                      }
                       resizeMode="contain"
                     />
                   </View>

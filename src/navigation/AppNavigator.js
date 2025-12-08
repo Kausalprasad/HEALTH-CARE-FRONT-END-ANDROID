@@ -80,9 +80,13 @@ import PrivacyPolicyScreen from "../screens/Settings/PrivacyPolicyScreen";
 
 // Vault Screens
 import VaultMenu from "../screens/Vault/VaultMenu";
-import CreateVaultId from "../screens/Vault/CreateVaultId";
-import LoginVaultId from "../screens/Vault/LoginVaultId";
+import VaultWelcomeScreen from "../screens/Vault/VaultWelcomeScreen";
+import VaultEnterPinScreen from "../screens/Vault/VaultEnterPinScreen";
+import VaultCreateScreen from "../screens/Vault/VaultCreateScreen";
+import VaultCreatedScreen from "../screens/Vault/VaultCreatedScreen";
 import VaultDashboard from "../screens/Vault/VaultDashboard";
+import ResetPinScreen from "../screens/Vault/ResetPinScreen";
+import ConfirmResetPinScreen from "../screens/Vault/ConfirmResetPinScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -149,9 +153,13 @@ export default function AppNavigator() {
       <>
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="VaultMenu" component={VaultMenu} />
-        <Stack.Screen name="CreateVaultId" component={CreateVaultId} />
-        <Stack.Screen name="LoginVaultId" component={LoginVaultId} />
+        <Stack.Screen name="VaultWelcome" component={VaultWelcomeScreen} />
+        <Stack.Screen name="VaultEnterPin" component={VaultEnterPinScreen} />
+        <Stack.Screen name="VaultCreate" component={VaultCreateScreen} />
+        <Stack.Screen name="VaultCreated" component={VaultCreatedScreen} />
         <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
+        <Stack.Screen name="ResetPin" component={ResetPinScreen} />
+        <Stack.Screen name="ConfirmResetPin" component={ConfirmResetPinScreen} />
       </>
     )
   ) : (
@@ -160,6 +168,12 @@ export default function AppNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPin" component={ResetPinScreen} />
+      <Stack.Screen name="ConfirmResetPin" component={ConfirmResetPinScreen} />
+      <Stack.Screen name="VaultEnterPin" component={VaultEnterPinScreen} />
+      <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
+      <Stack.Screen name="VaultCreate" component={VaultCreateScreen} />
+      <Stack.Screen name="VaultCreated" component={VaultCreatedScreen} />
     </>
   )}
 

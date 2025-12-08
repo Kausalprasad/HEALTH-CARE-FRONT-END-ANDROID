@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -54,15 +55,13 @@ export default function VaultMenu({ navigation }) {
             </TouchableOpacity>
             
             <View style={styles.logoContainer}>
-              <View style={styles.vaultIcon}>
-                <Ionicons name="shield" size={40} color="#fff" />
-                <View style={styles.lockOverlay}>
-                  <Ionicons name="lock-closed" size={20} color="#2E8B57" />
-                </View>
-              </View>
+              <Image 
+                source={require('../../../assets/Dashoabdicons/HealthVault.png')}
+                style={styles.vaultLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.vaultTitle}>Health Vault</Text>
             </View>
-            
-            <Text style={styles.vaultTitle}>Health Vault</Text>
             <Text style={styles.vaultSubtitle}>
               Secure access to your personal health records
             </Text>
@@ -102,10 +101,10 @@ export default function VaultMenu({ navigation }) {
             <View style={styles.actionsContainer}>
               <Text style={styles.actionsTitle}>Access Your Vault</Text>
               
-              {/* Create Vault ID Button */}
+              {/* Access Vault Button */}
               <TouchableOpacity
                 style={styles.primaryButton}
-                onPress={() => navigation.navigate("CreateVaultId")}
+                onPress={() => navigation.navigate("VaultWelcome")}
                 activeOpacity={0.8}
               >
                 <LinearGradient
@@ -114,33 +113,15 @@ export default function VaultMenu({ navigation }) {
                 >
                   <View style={styles.buttonContent}>
                     <View style={styles.buttonIconContainer}>
-                      <Ionicons name="add-circle" size={24} color="#fff" />
+                      <Ionicons name="shield" size={24} color="#fff" />
                     </View>
                     <View style={styles.buttonTextContainer}>
-                      <Text style={styles.buttonTitle}>Create Vault ID</Text>
-                      <Text style={styles.buttonSubtitle}>Set up your secure vault access</Text>
+                      <Text style={styles.buttonTitle}>Access Vault</Text>
+                      <Text style={styles.buttonSubtitle}>Open your secure health vault</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
                   </View>
                 </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Login Vault ID Button */}
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => navigation.navigate("LoginVaultId")}
-                activeOpacity={0.8}
-              >
-                <View style={styles.secondaryButtonContent}>
-                  <View style={styles.secondaryButtonIconContainer}>
-                    <Ionicons name="log-in" size={24} color="#2E8B57" />
-                  </View>
-                  <View style={styles.buttonTextContainer}>
-                    <Text style={styles.secondaryButtonTitle}>Login to Vault</Text>
-                    <Text style={styles.secondaryButtonSubtitle}>Access your existing vault</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#2E8B57" />
-                </View>
               </TouchableOpacity>
             </View>
 
@@ -204,33 +185,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 20,
     marginBottom: 20,
   },
-  vaultIcon: {
-    position: 'relative',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lockOverlay: {
-    position: 'absolute',
-    bottom: -5,
-    right: -5,
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+  vaultLogo: {
+    width: 25.76,
+    height: 23.18,
+    marginRight: 8,
   },
   vaultTitle: {
     fontSize: 32,

@@ -259,7 +259,7 @@ export default function DashboardScreen() {
   }
 
   const handleGoToFamilyVault = () => {
-    navigation.navigate("LoginVaultId")
+    navigation.navigate("VaultWelcome")
   }
 
   const handleChatbotPress = () => {

@@ -256,7 +256,11 @@ export default function VaultScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => {
+          // Navigate back to VaultEnterPin instead of just goBack
+          // This ensures user needs to enter PIN again for security
+          navigation.replace('VaultEnterPin');
+        }} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Vault</Text>

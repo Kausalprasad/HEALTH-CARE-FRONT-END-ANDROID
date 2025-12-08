@@ -57,7 +57,7 @@ export default function BottomNavigation({ navigation, activeScreen = 'Home' }) 
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('LoginVaultId')}
+          onPress={() => navigation.navigate('VaultWelcome')}
         >
           <Image 
             source={VaultIcon}
