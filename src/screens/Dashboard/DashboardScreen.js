@@ -2346,6 +2346,7 @@ function DashboardScreenContent({ navigation }) {
   const [selectedHealthCheckId, setSelectedHealthCheckId] = useState(1); // Default first item selected
   const [eyeHealthModalVisible, setEyeHealthModalVisible] = useState(false);
   const [guidelinesModalVisible, setGuidelinesModalVisible] = useState(false);
+  const [doctorImageError, setDoctorImageError] = useState(false);
   const { user } = useContext(AuthContext);
   
   // Dynamic vitals - can be fetched from API or Health Connect
@@ -2583,7 +2584,17 @@ function DashboardScreenContent({ navigation }) {
   useEffect(() => {
     fetchProfile();
     fetchAppointment();
-  }, []);
+    // Refresh profile when screen comes into focus (e.g., after photo update)
+    const unsubscribe = navigation?.addListener?.('focus', () => {
+      fetchProfile();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  // Reset image error when appointment changes
+  useEffect(() => {
+    setDoctorImageError(false);
+  }, [appointment?.doctor?.profilePicture]);
 
   // Refresh data when screen is focused
   useEffect(() => {
@@ -2655,8 +2666,8 @@ function DashboardScreenContent({ navigation }) {
           <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.greetingLeft}>
             {/* user photo */}
             {(() => {
-              const profilePhotoUrl = profile?.basicInfo?.profilePhoto?.url 
-                ? `${BASE_URL}${profile.basicInfo.profilePhoto.url}` 
+              const profilePhotoUrl = profile?.personalInfo?.profilePhoto?.url 
+                ? `${BASE_URL}${profile.personalInfo.profilePhoto.url}` 
                 : null;
               return profilePhotoUrl ? (
                 <Image
@@ -2664,10 +2675,9 @@ function DashboardScreenContent({ navigation }) {
                   style={styles.greetingAvatar}
                 />
               ) : (
-                <Image
-                  source={require("../../../assets/doctor.png")}
-                  style={styles.greetingAvatar}
-                />
+                <View style={styles.greetingAvatarPlaceholder}>
+                  <Ionicons name="person" size={32} color="#999" />
+                </View>
               );
             })()}
             <View style={styles.greetingContainer}>
@@ -2686,17 +2696,21 @@ function DashboardScreenContent({ navigation }) {
         <View style={styles.appointmentCard}>
           {/* Top Section */}
           <View style={styles.appointmentTopSection}>
-            {appointment?.doctor?.profilePicture ? (
-              <Image
-                source={{ uri: appointment.doctor.profilePicture }}
-                style={styles.doctorAvatarImage}
-              />
-            ) : (
-              <Image
-                source={require("../../../assets/doctor.png")}
-                style={styles.doctorAvatarImage}
-              />
-            )}
+            <Image
+              source={
+                appointment?.doctor?.profilePicture && !doctorImageError
+                  ? { uri: appointment.doctor.profilePicture }
+                  : require("../../../assets/doctor.png")
+              }
+              style={styles.doctorAvatarImage}
+              onError={() => {
+                setDoctorImageError(true);
+              }}
+              onLoadStart={() => {
+                setDoctorImageError(false);
+              }}
+              resizeMode="cover"
+            />
             <View style={styles.appointmentDetails}>
               <Text style={styles.appointmentLabel}>Appointment:</Text>
               <Text style={styles.appointmentDateTime}>
@@ -3232,6 +3246,17 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     marginRight: 14,
+  },
+  greetingAvatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   greetingContainer: {
     justifyContent: "center",

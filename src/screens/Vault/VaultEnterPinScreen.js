@@ -1,5 +1,5 @@
 // src/screens/Vault/VaultEnterPinScreen.js
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,17 @@ export default function VaultEnterPinScreen({ navigation }) {
     Inter_400Regular,
     Inter_300Light,
   });
+
+  // Use memoized styles to handle font loading gracefully
+  const brandNameStyle = useMemo(() => [
+    styles.brandName,
+    fontsLoaded && { fontFamily: 'Inter_400Regular' }
+  ], [fontsLoaded]);
+
+  const titleStyle = useMemo(() => [
+    styles.title,
+    fontsLoaded && { fontFamily: 'Inter_300Light' }
+  ], [fontsLoaded]);
   const [pin, setPin] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [showForgotPin, setShowForgotPin] = useState(false);
@@ -179,11 +190,11 @@ export default function VaultEnterPinScreen({ navigation }) {
               style={styles.vaultLogo}
               resizeMode="contain"
             />
-            <Text style={styles.brandName}>Health Vault</Text>
+            <Text style={brandNameStyle}>Health Vault</Text>
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Enter PIN</Text>
+          <Text style={titleStyle}>Enter PIN</Text>
 
           {/* PIN Input Fields */}
           <View style={styles.pinContainer}>
@@ -280,14 +291,12 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'Inter_400Regular',
     color: '#333333',
     letterSpacing: 0.3,
   },
   title: {
     fontSize: 50,
     fontWeight: '300',
-    fontFamily: 'Inter_300Light',
     color: '#333333',
     marginBottom: 40,
   },

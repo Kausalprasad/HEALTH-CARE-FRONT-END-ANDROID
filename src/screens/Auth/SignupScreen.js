@@ -9,8 +9,9 @@ import {
   Platform,
   StatusBar,
   Alert,
+  Image,
 } from "react-native";
-import { Ionicons, AntDesign, FontAwesome } from "@expo/vector-icons";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { auth } from "../../api/firebaseConfig";
 import {
@@ -104,304 +105,246 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={["#FFE5B4", "#FFD4A3", "#E8F4F8", "#D4E8F0", "#C8D4F0"]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
-      {/* Heading */}
-      <Text style={styles.title}>Register</Text>
-      <Text style={styles.subtitle}>
-        Create your account and start{"\n"}your health journey
-      </Text>
-
-      {/* Purple Curved Background */}
-      <LinearGradient colors={["#F2F0FF", "#E7E4FF"]} style={styles.curvedBox}>
-        {/* Name */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="person-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="#aaa"
-            value={name}
-            onChangeText={setName}
+        {/* Header with Logo */}
+        <View style={styles.headerContainer}>
+          <Image
+            source={require("../../../assets/Dashoabdicons/Healnova.ai.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
           />
         </View>
 
-        {/* Email */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+        {/* White Card */}
+        <View style={styles.whiteCard}>
+          <Text style={styles.title}>Sign up</Text>
 
-        {/* Password */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-outline" : "eye-off-outline"}
-              size={20}
-              color="#6C63FF"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Confirm Password */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showConfirmPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <Ionicons
-              name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-              size={20}
-              color="#6C63FF"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Password Strength */}
-        <View style={styles.passwordStrength}>
-          <View style={styles.strengthIndicator}>
-            <View
-              style={[
-                styles.strengthBar,
-                password.length >= 6 && styles.strengthBarActive,
-              ]}
-            />
-            <View
-              style={[
-                styles.strengthBar,
-                password.length >= 8 &&
-                  /[A-Z]/.test(password) &&
-                  styles.strengthBarActive,
-              ]}
-            />
-            <View
-              style={[
-                styles.strengthBar,
-                password.length >= 8 &&
-                  /[A-Z]/.test(password) &&
-                  /[0-9]/.test(password) &&
-                  styles.strengthBarActive,
-              ]}
+          {/* Name Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              placeholderTextColor="#999"
+              value={name}
+              onChangeText={setName}
             />
           </View>
-          <Text style={styles.strengthText}>
-            {password.length === 0
-              ? "Password strength"
-              : password.length < 6
-              ? "Weak"
-              : password.length >= 8 &&
-                /[A-Z]/.test(password) &&
-                /[0-9]/.test(password)
-              ? "Strong"
-              : "Medium"}
-          </Text>
-        </View>
 
-        {/* Register Button */}
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleRegister}
-          disabled={isLoading}
-        >
-          <Text style={styles.loginText}>
-            {isLoading ? "Creating..." : "Register"}
-          </Text>
-        </TouchableOpacity>
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter email"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
 
-        {/* Already have account */}
-        <Text style={styles.registerText}>
-          Already have an account?{" "}
-          <Text
-            style={styles.registerLink}
-            onPress={() => navigation.navigate("Login")}
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter password"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={20}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm password"
+              placeholderTextColor="#999"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                size={20}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign Up Button */}
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={handleRegister}
+            disabled={isLoading}
           >
-            Login
-          </Text>
-        </Text>
+            <Text style={styles.signUpButtonText}>
+              {isLoading ? "Creating..." : "Sign Up"}
+            </Text>
+          </TouchableOpacity>
 
-        {/* OR Divider */}
-        <View style={styles.orContainer}>
-          <View style={styles.line} />
-          <Text style={styles.orText}>or</Text>
-          <View style={styles.line} />
+          {/* OR Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          {/* Google Sign Up Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={() => Alert.alert("Google Sign-Up", "Coming soon!")}
+          >
+            <AntDesign name="google" size={20} color="#4285F4" />
+            <Text style={styles.googleButtonText}>Sign in with google</Text>
+          </TouchableOpacity>
+
+          {/* Sign In Link */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>
+              Already have an account?{" "}
+              <Text
+                style={styles.signInLink}
+                onPress={() => navigation.navigate("Login")}
+              >
+                Sign in
+              </Text>
+            </Text>
+          </View>
         </View>
-
-        {/* Social Buttons */}
-        <TouchableOpacity
-          style={styles.socialButton}
-          onPress={() => Alert.alert("Google Sign-Up", "Coming soon!")}
-        >
-          <AntDesign name="google" size={20} color="black" />
-          <Text style={styles.socialText}>Continue with Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.socialButton}
-          onPress={() => Alert.alert("Apple Sign-Up", "Coming soon!")}
-        >
-          <FontAwesome name="apple" size={22} color="black" />
-          <Text style={styles.socialText}>Continue with Apple</Text>
-        </TouchableOpacity>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  headerContainer: {
+    alignItems: "center",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 40,
+    paddingBottom: 20,
+  },
+  headerLogo: {
+    width: 150,
+    height: 60,
+  },
+  whiteCard: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 60,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 30,
+    marginTop: 20,
+    marginHorizontal: 20,
   },
   title: {
-    fontSize: 32,
-    fontFamily: "Poppins_400Regular",
-    fontWeight: "600",
-    color: "#6C63FF",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#222",
+    marginBottom: 32,
     textAlign: "center",
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: "Poppins_400Regular",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 26,
-  },
-  curvedBox: {
-    flex: 1,
-    backgroundColor: "#EDEBFF",
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 40,
-    padding: 40,
-    alignItems: "center",
-    marginTop: 30,
-  },
-  inputContainer: {
+  googleButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 14,
-    height: 60,
-    width: "100%",
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    fontFamily: "Poppins_400Regular",
-    color: "#333",
-  },
-  loginButton: {
-    backgroundColor: "#6C63FF",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(30, 30, 30, 1)",
+    borderRadius: 30,
     paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    width: "100%",
-    marginTop: 10,
+    marginBottom: 24,
   },
-  loginText: {
-    color: "#fff",
-    fontSize: 15,
-    fontFamily: "Poppins_400Regular",
+  googleButtonText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#000",
     fontWeight: "500",
-  },
-  registerText: {
-    marginTop: 20,
-    fontSize: 15,
-    fontFamily: "Poppins_400Regular",
-    color: "#333",
-  },
-  registerLink: {
-    color: "#6C63FF",
-    fontWeight: "600",
-    fontSize: 15,
-    fontFamily: "Poppins_400Regular",
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
-    width: "100%",
+    marginBottom: 24,
   },
-  line: {
+  orLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#E0E0E0",
   },
   orText: {
-    marginHorizontal: 10,
+    marginHorizontal: 12,
     fontSize: 14,
-    color: "#333",
+    color: "#999",
   },
-  socialButton: {
+  inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "rgba(204, 204, 204, 1)",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: "100%",
-    justifyContent: "center",
-    marginBottom: 10,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    height: 56,
   },
-  socialText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#333",
-  },
-  // Password Strength
-  passwordStrength: {
-    width: "100%",
-    marginBottom: 10,
-  },
-  strengthIndicator: {
-    flexDirection: "row",
-    marginBottom: 5,
-  },
-  strengthBar: {
+  input: {
     flex: 1,
-    height: 4,
-    backgroundColor: "#ccc",
-    marginRight: 4,
-    borderRadius: 2,
+    fontSize: 16,
+    color: "#222",
   },
-  strengthBarActive: {
-    backgroundColor: "#6C63FF",
+  eyeIcon: {
+    padding: 4,
   },
-  strengthText: {
-    fontSize: 12,
-    fontFamily: "Poppins_400Regular",
+  signUpButton: {
+    backgroundColor: "#1FA8E7",
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  signUpButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  signInContainer: {
+    marginTop: "auto",
+    alignItems: "center",
+  },
+  signInText: {
+    fontSize: 14,
     color: "#666",
-    textAlign: "right",
+  },
+  signInLink: {
+    color: "#1FA8E7",
+    fontWeight: "600",
   },
 });

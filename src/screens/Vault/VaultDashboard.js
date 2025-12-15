@@ -1,5 +1,5 @@
-// VaultScreen.js - Main Vault List Screen with Working Functions
-import { useState, useEffect } from "react"
+// VaultDashboard.js - New UI with Gradient, Storage Card, 2x2 Category Grid
+import { useState, useEffect, useCallback } from "react";
 import {
   Alert,
   View,
@@ -11,546 +11,589 @@ import {
   StatusBar,
   TextInput,
   ActivityIndicator,
-  Modal,
-  Linking,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { getAuth } from "firebase/auth"
-import * as WebBrowser from "expo-web-browser"
-import { BASE_URL } from "../../config/config"
+  Dimensions,
+  Image,
+  Platform,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { getAuth } from "firebase/auth";
+import { BASE_URL } from "../../config/config";
+import * as WebBrowser from "expo-web-browser";
+import { Linking } from "react-native";
 
-export default function VaultScreen({ navigation }) {
-  const [files, setFiles] = useState([])
-  const [selectedFilter, setSelectedFilter] = useState("All")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [showOptionsModal, setShowOptionsModal] = useState(false)
-  const [selectedFile, setSelectedFile] = useState(null)
+const { width } = Dimensions.get("window");
 
-  const auth = getAuth()
-  const userEmail = auth.currentUser?.email
+export default function VaultDashboard({ navigation }) {
+  const [files, setFiles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCategoryView, setShowCategoryView] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [filteredFiles, setFilteredFiles] = useState([]);
 
-  const filters = ["All", "Reports", "Prescriptions", "Bills", "Other"]
+  const auth = getAuth();
+  const userEmail = auth.currentUser?.email;
+
+  const categories = [
+    { 
+      id: "All", 
+      name: "All Files", 
+      icon: "document-text",
+      iconColor: "#9C27B0",
+      description: "Check all files together"
+    },
+    { 
+      id: "Reports", 
+      name: "Reports", 
+      icon: "clipboard",
+      iconColor: "#00BCD4",
+      description: "All Medical Reports"
+    },
+    { 
+      id: "Prescriptions", 
+      name: "Prescriptions", 
+      icon: "medical",
+      iconColor: "#4CAF50",
+      description: "Track every prescription"
+    },
+    { 
+      id: "Bills", 
+      name: "Medic Bills", 
+      icon: "receipt",
+      iconColor: "#FF9800",
+      description: "All bills, neatly stored."
+    },
+  ];
 
   // Get auth token
   const getAuthToken = async () => {
     try {
-      const user = auth.currentUser
+      const user = auth.currentUser;
       if (user) {
-        const token = await user.getIdToken()
-        return token
+        const token = await user.getIdToken();
+        return token;
       }
-      throw new Error('No authenticated user')
+      throw new Error("No authenticated user");
     } catch (error) {
-      console.error('Failed to get auth token:', error)
-      throw error
+      console.error("Failed to get auth token:", error);
+      throw error;
     }
-  }
+  };
 
   // Fetch files from backend
-  const fetchUserFiles = async () => {
-    setIsLoading(true)
+  const fetchUserFiles = useCallback(async () => {
+    setIsLoading(true);
     try {
       if (!userEmail) {
-        console.warn("User email not available")
-        setFiles([])
-        return
+        console.warn("User email not available");
+        setFiles([]);
+        setIsLoading(false);
+        return;
       }
 
-      const token = await getAuthToken()
-      const res = await fetch(`${BASE_URL}/api/files?email=${encodeURIComponent(userEmail)}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      const token = await getAuthToken();
+      const res = await fetch(
+        `${BASE_URL}/api/files?email=${encodeURIComponent(userEmail)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!res.ok) {
-        const errorText = await res.text()
-        console.error("API Error:", errorText)
-        throw new Error(`Failed to fetch files: ${res.status}`)
+        const errorText = await res.text();
+        console.error("API Error:", errorText);
+        throw new Error(`Failed to fetch files: ${res.status}`);
       }
 
-      const contentType = res.headers.get("content-type")
+      const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text()
-        console.error("Non-JSON response:", text.substring(0, 200))
-        throw new Error("Server returned HTML instead of JSON. Check BASE_URL and API endpoint.")
+        const text = await res.text();
+        console.error("Non-JSON response:", text.substring(0, 200));
+        throw new Error(
+          "Server returned HTML instead of JSON. Check BASE_URL and API endpoint."
+        );
       }
 
-      const data = await res.json()
-      const fetchedFiles = data.map((f) => ({
-        id: f._id,
-        name: f.fileName,
-        date: new Date(f.uploadedAt).toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-        type: f.category || "Other",
-        encrypted: f.isEncrypted || true,
-        filePath: `${BASE_URL}/${f.filePath.replace(/\\/g, "/")}`,
-        fileType: f.fileType,
-        aiOutput: f.aiOutput, // AI analysis data if available
-      }))
-      setFiles(fetchedFiles)
+      const data = await res.json();
+      const fetchedFiles = data.map((f) => {
+        const uploadDate = new Date(f.uploadedAt);
+        return {
+          id: f._id,
+          name: f.fileName,
+          date: uploadDate,
+          dateString: uploadDate.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          dateHeader: uploadDate.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            weekday: "short",
+          }),
+          type: f.category || "Other",
+          encrypted: f.isEncrypted || true,
+          filePath: `${BASE_URL}/${f.filePath.replace(/\\/g, "/")}`,
+          fileType: f.fileType,
+          aiOutput: f.aiOutput,
+          fileSize: f.fileSize || 0, // in bytes
+        };
+      });
+      setFiles(fetchedFiles);
     } catch (err) {
-      console.error("Error fetching files:", err)
-      Alert.alert("Error", `Failed to load files: ${err.message}`)
+      console.error("Error fetching files:", err);
+      Alert.alert("Error", `Failed to load files: ${err.message}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  }, [userEmail]);
 
   useEffect(() => {
-    fetchUserFiles()
-  }, [userEmail])
+    fetchUserFiles();
+  }, [fetchUserFiles]);
 
-  // Refresh files when screen comes back into focus
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      fetchUserFiles()
-    })
-    return unsubscribe
-  }, [navigation])
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchUserFiles();
+    });
+    return unsubscribe;
+  }, [navigation, fetchUserFiles]);
 
-  const filteredFiles = files.filter((file) => {
-    const matchesFilter = selectedFilter === "All" || file.type === selectedFilter
-    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesFilter && matchesSearch
-  })
+  // Calculate storage
+  const calculateStorage = () => {
+    const totalStorage = 15; // GB
+    const usedStorage = 1.8; // GB - can be calculated from files
+    return { used: usedStorage, total: totalStorage };
+  };
 
-  const handleFilePress = (file) => {
-    setSelectedFile(file)
-    setShowOptionsModal(true)
-  }
+  const storage = calculateStorage();
 
-  const handleViewPDF = async () => {
-    setShowOptionsModal(false)
-    if (!selectedFile) return
+  // Handle category press
+  const handleCategoryPress = (category) => {
+    setSelectedCategory(category);
+    setShowCategoryView(false);
+    const filtered = files.filter(
+      (file) => category === "All" || file.type === category
+    );
+    setFilteredFiles(filtered);
+  };
 
+  // Handle back to categories
+  const handleBackToCategories = () => {
+    setShowCategoryView(true);
+    setSelectedCategory(null);
+    setFilteredFiles([]);
+  };
+
+  // Handle back button press
+  const handleBackPress = () => {
+    if (!showCategoryView) {
+      // If showing files, go back to categories
+      handleBackToCategories();
+    } else {
+      // If showing categories, navigate back
+      navigation.goBack();
+    }
+  };
+
+  // Handle Add button - navigate to AddDocumentScreen
+  const handleAdd = () => {
+    navigation.navigate("AddDocumentScreen");
+  };
+
+  // Handle file press - open file or show AI report
+  const handleFilePress = async (file) => {
     try {
-      console.log("Opening PDF:", selectedFile.filePath)
-      const result = await WebBrowser.openBrowserAsync(selectedFile.filePath, {
-        toolbarColor: '#6B5FD9',
-        controlsColor: '#fff',
-        showTitle: true,
-      })
-      
-      if (result.type === 'cancel') {
-        const supported = await Linking.canOpenURL(selectedFile.filePath)
-        if (supported) {
-          await Linking.openURL(selectedFile.filePath)
+      // Try to open the file in browser
+      const supported = await Linking.canOpenURL(file.filePath);
+      if (supported) {
+        await WebBrowser.openBrowserAsync(file.filePath, {
+          toolbarColor: "#1FA8E7",
+          controlsColor: "#fff",
+          showTitle: true,
+        });
+      } else {
+        // If file can't be opened, check for AI output
+        if (file.aiOutput) {
+          navigation.navigate("VaultAIReport", { file });
         } else {
-          Alert.alert("Error", "Cannot open this file type")
+          Alert.alert("Info", "File cannot be opened. AI analysis not available.");
         }
       }
-    } catch (err) {
-      console.error("Error opening PDF:", err)
-      Alert.alert("Error", `Failed to open document: ${err.message}`)
+    } catch (error) {
+      console.error("Error opening file:", error);
+      // Fallback to AI report if available
+      if (file.aiOutput) {
+        navigation.navigate("VaultAIReport", { file });
+      } else {
+        Alert.alert("Error", "Failed to open file");
+      }
     }
-  }
+  };
 
-  const handleAnalyze = async () => {
-    setShowOptionsModal(false)
-    if (!selectedFile) return
-
-    // If AI output already exists, show it
-    if (selectedFile.aiOutput) {
-      Alert.alert(
-        "AI Analysis Available",
-        "This document has already been analyzed. View the AI report?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "View Report",
-            onPress: () => {
-              // Navigate to AI report or show analysis
-              Alert.alert("AI Analysis", JSON.stringify(selectedFile.aiOutput, null, 2))
-            }
-          }
-        ]
-      )
-      return
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return "0 KB";
+    const kb = bytes / 1024;
+    if (kb < 1024) {
+      return `${Math.round(kb)} KB`;
     }
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
 
-    // Otherwise, trigger new analysis
-    Alert.alert(
-      "Analyze Document",
-      "Do you want to analyze this document with AI? This may take a few moments.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Analyze",
-          onPress: async () => {
-            try {
-              setIsLoading(true)
-              
-              console.log("Starting AI analysis for:", selectedFile.name)
+  // Group files by date
+  const groupFilesByDate = (filesList) => {
+    const grouped = {};
+    filesList.forEach((file) => {
+      const dateKey = file.dateHeader;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(file);
+    });
+    return grouped;
+  };
 
-              // Use the same endpoint as upload (api/ai/upload)
-              const formData = new FormData()
-              
-              // For re-analysis, we need to download and re-upload
-              // Or backend should have a separate analyze endpoint
-              // For now, show message
-              Alert.alert(
-                "Info",
-                "AI analysis is performed during upload. Please re-upload the document for fresh analysis.",
-              )
-              
-            } catch (err) {
-              console.error("Analysis error:", err)
-              Alert.alert(
-                "Error", 
-                `Failed to analyze document: ${err.message}`
-              )
-            } finally {
-              setIsLoading(false)
-            }
-          }
-        }
-      ]
-    )
-  }
-
-  const handleDelete = () => {
-    setShowOptionsModal(false)
-    if (!selectedFile) return
-
-    Alert.alert(
-      "Delete Document", 
-      `Are you sure you want to delete "${selectedFile.name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const res = await fetch(`${BASE_URL}/api/pdfs/${selectedFile.id}`, {
-                method: "DELETE",
-              })
-              
-              if (!res.ok) {
-                const errorText = await res.text()
-                throw new Error(`Delete failed: ${errorText}`)
-              }
-              
-              Alert.alert("Success", "Document deleted successfully")
-              fetchUserFiles()
-            } catch (err) {
-              console.error("Delete error:", err)
-              Alert.alert("Error", `Failed to delete document: ${err.message}`)
-            }
-          },
-        },
-      ]
-    )
-  }
+  // Get icon based on file type
+  const getFileIcon = (type) => {
+    switch (type) {
+      case "Bills":
+        return "receipt";
+      case "Reports":
+        return "document-text";
+      case "Prescriptions":
+        return "medical";
+      default:
+        return "document";
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={["rgba(31, 168, 231, 0)", "rgba(31, 168, 231, 0.85)"]}
+      locations={[0.2425, 1.0]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => {
-          // Navigate back to VaultEnterPin instead of just goBack
-          // This ensures user needs to enter PIN again for security
-          navigation.replace('VaultEnterPin');
-        }} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vault</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search"
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        <TouchableOpacity style={styles.filterIconButton}>
-          <Ionicons name="options-outline" size={20} color="#000" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Filter Pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {filters.map((filter) => (
+        {/* Header */}
+        <View style={styles.headerContainer}>
           <TouchableOpacity
-            key={filter}
-            style={[styles.filterPill, selectedFilter === filter && styles.filterPillActive]}
-            onPress={() => setSelectedFilter(filter)}
+            onPress={handleBackPress}
+            style={styles.backButton}
           >
-            <Text style={[styles.filterText, selectedFilter === filter && styles.filterTextActive]}>
-              {filter}
-            </Text>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Files List */}
-      <ScrollView style={styles.filesList} contentContainerStyle={styles.filesListContent}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#6B5FD9" style={{ marginTop: 50 }} />
-        ) : filteredFiles.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="folder-open-outline" size={64} color="#ddd" />
-            <Text style={styles.emptyText}>No documents found</Text>
-            <Text style={styles.emptySubtext}>Upload your first document to get started</Text>
+          <View style={styles.headerCenter}>
+            <Image
+              source={require("../../../assets/Dashoabdicons/HealthVault.png")}
+              style={styles.headerIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.headerTitle}>Health Vault</Text>
           </View>
-        ) : (
-          filteredFiles.map((file) => (
-            <TouchableOpacity 
-              key={file.id} 
-              style={styles.fileCard}
-              onPress={() => handleFilePress(file)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.fileInfo}>
-                <View style={styles.fileNameContainer}>
-                  <Text style={styles.fileName}>{file.name}</Text>
-                  {file.aiOutput && (
-                    <View style={styles.aiAnalyzedBadge}>
-                      <Ionicons name="sparkles" size={12} color="#6B5FD9" />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.fileMetaContainer}>
-                  <Text style={styles.fileMeta}>{file.date}</Text>
-                  <Text style={styles.dot}> • </Text>
-                  <Text style={styles.fileEncrypted}>encrypted</Text>
-                </View>
-              </View>
-              <TouchableOpacity 
-                onPress={() => handleFilePress(file)} 
-                style={styles.moreButton}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="ellipsis-vertical" size={20} color="#666" />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+          <View style={{ width: 24 }} />
+        </View>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('AddDocumentScreen')}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search"
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
 
-      {/* Options Modal */}
-      <Modal
-        visible={showOptionsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowOptionsModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowOptionsModal(false)}
-        >
-          <TouchableOpacity 
-            activeOpacity={1}
-            style={styles.optionsModal}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.optionsHeader}>
-              <Text style={styles.optionsTitle} numberOfLines={1}>
-                {selectedFile?.name}
+        {showCategoryView ? (
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Storage Card */}
+            <View style={styles.storageCard}>
+              <Text style={styles.storageText}>
+                {storage.used}GB Used <Text style={styles.storageTotal}>/{storage.total}GB</Text>
               </Text>
-              <TouchableOpacity onPress={() => setShowOptionsModal(false)}>
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
+              <Text style={styles.storageSubtext}>
+                Your vault storage space at a glance.
+              </Text>
             </View>
 
-            <TouchableOpacity style={styles.optionItem} onPress={handleViewPDF}>
-              <Ionicons name="eye-outline" size={24} color="#6B5FD9" />
-              <Text style={styles.optionText}>View Document</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionItem} onPress={handleAnalyze}>
-              <Ionicons name="sparkles-outline" size={24} color="#FF9500" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>
-                  {selectedFile?.aiOutput ? "View AI Analysis" : "Analyze with AI"}
-                </Text>
-                {selectedFile?.aiOutput && (
-                  <Text style={styles.optionSubtext}>Already analyzed</Text>
-                )}
+            {/* Categories Grid */}
+            <View style={styles.categoriesGrid}>
+              {categories.map((category, index) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryCard,
+                    index === 0 && styles.allFilesCard,
+                    index % 2 === 1 && styles.rightColumnCard,
+                  ]}
+                  onPress={() => handleCategoryPress(category.id)}
+                >
+                  {category.id !== "All" && (
+                    <TouchableOpacity
+                      style={styles.shareButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleCategoryPress(category.id);
+                      }}
+                    >
+                      <Ionicons name="share-outline" size={16} color="#666" />
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.categoryIconContainer}>
+                    <Ionicons name={category.icon} size={32} color={category.iconColor} />
+                  </View>
+                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryDescription}>{category.description}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        ) : (
+          <ScrollView style={styles.filesList}>
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#fff" style={{ marginTop: 50 }} />
+            ) : filteredFiles.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="folder-open-outline" size={64} color="#fff" />
+                <Text style={styles.emptyText}>No files found</Text>
               </View>
-            </TouchableOpacity>
+            ) : (() => {
+              const searchFiltered = filteredFiles.filter((file) =>
+                file.name.toLowerCase().includes(searchQuery.toLowerCase())
+              );
+              const groupedFiles = groupFilesByDate(searchFiltered);
+              const sortedDates = Object.keys(groupedFiles).sort((a, b) => {
+                return new Date(groupedFiles[b][0].date) - new Date(groupedFiles[a][0].date);
+              });
 
-            <TouchableOpacity style={styles.optionItem} onPress={handleDelete}>
-              <Ionicons name="trash-outline" size={24} color="#FF3B30" />
-              <Text style={[styles.optionText, { color: '#FF3B30' }]}>Delete</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+              return sortedDates.map((dateKey) => (
+                <View key={dateKey} style={styles.dateGroup}>
+                  <Text style={styles.dateHeader}>{dateKey}</Text>
+                  {groupedFiles[dateKey].map((file) => (
+                    <TouchableOpacity
+                      key={file.id}
+                      style={styles.fileCard}
+                      onPress={() => handleFilePress(file)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.fileIconContainer}>
+                        <Ionicons
+                          name={getFileIcon(file.type)}
+                          size={32}
+                          color="#FFC107"
+                        />
+                      </View>
+                      <View style={styles.fileInfo}>
+                        <Text style={styles.fileName} numberOfLines={1}>
+                          {file.name}
+                        </Text>
+                        <Text style={styles.fileSize}>
+                          {formatFileSize(file.fileSize)}
+                        </Text>
+                      </View>
+                      {file.aiOutput && (
+                        <Ionicons name="sparkles" size={20} color="#FFD700" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ));
+            })()}
+          </ScrollView>
+        )}
+
+        {/* Floating Add Button */}
+        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
+          <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
-      </Modal>
-
-      {/* Loading Overlay */}
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#6B5FD9" />
-            <Text style={styles.loadingText}>Processing...</Text>
-          </View>
-        </View>
-      )}
-    </SafeAreaView>
-  )
+      </SafeAreaView>
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
-  header: {
-     marginTop: StatusBar.currentHeight || 0,
+  safeArea: {
+    flex: 1,
+  },
+  headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 20) : 20,
+    paddingBottom: 16,
+    marginTop: 20,
   },
   backButton: {
     padding: 4,
   },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerIcon: {
+    width: 32,
+    height: 32,
+    marginRight: 8,
+  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#000",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    height: 44,
     backgroundColor: "#F5F5F5",
-    borderRadius: 12,
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    marginHorizontal: 24,
+    marginTop: 16,
+    marginBottom: 20,
+    height: 50,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: "#000",
   },
-  filterIconButton: {
-    padding: 4,
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
-  filtersContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    maxHeight: 50,
+  storageCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 30,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#E9E9E9",
   },
-  filtersContent: {
-    paddingRight: 16,
+  storageText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#000",
+    marginBottom: 8,
   },
-  filterPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 20,
-    height: 36,
-    justifyContent: "center",
+  storageTotal: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#999",
   },
-  filterPillActive: {
-    backgroundColor: "#6B5FD9",
-  },
-  filterText: {
+  storageSubtext: {
     fontSize: 14,
     color: "#666",
-    fontWeight: "500",
   },
-  filterTextActive: {
-    color: "#fff",
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 100,
+  },
+  categoryCard: {
+    width: (width - 48) / 2,
+    aspectRatio: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 30,
+    padding: 20,
+    marginBottom: 16,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+    borderWidth: 1,
+    borderColor: "#E9E9E9",
+    position: "relative",
+  },
+  allFilesCard: {
+    marginLeft: 0,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  rightColumnCard: {
+    marginRight: 0,
+  },
+  shareButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    padding: 4,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 4,
+  },
+  categoryIconContainer: {
+    marginBottom: 12,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000",
+    marginBottom: 8,
+  },
+  categoryDescription: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
   },
   filesList: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
   },
-  filesListContent: {
-    paddingBottom: 100,
+  dateGroup: {
+    marginBottom: 24,
+  },
+  dateHeader: {
+    fontSize: 14,
+    color: "#999",
+    marginBottom: 12,
+    fontWeight: "500",
   },
   fileCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: 1,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
+    backgroundColor: "#E8F4F8",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  fileIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#FFC107",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
   fileInfo: {
     flex: 1,
-  },
-  fileNameContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
   },
   fileName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+    marginBottom: 4,
   },
-  aiAnalyzedBadge: {
-    marginLeft: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#F0EBFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fileMetaContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  fileMeta: {
-    fontSize: 13,
-    color: "#999",
-  },
-  dot: {
-    fontSize: 13,
-    color: "#999",
-  },
-  fileEncrypted: {
-    fontSize: 13,
-    color: "#4A90E2",
-  },
-  moreButton: {
-    padding: 4,
+  fileSize: {
+    fontSize: 14,
+    color: "#666",
   },
   emptyState: {
     alignItems: "center",
@@ -559,98 +602,24 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: "#999",
+    color: "#fff",
     marginTop: 16,
-    fontWeight: "500",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#bbb",
-    marginTop: 8,
   },
   addButton: {
     position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#6B5FD9",
+    bottom: 27,
+    left: 27,
+    right: 27,
+    width: width - 54,
+    height: 69,
+    borderRadius: 214.22,
+    backgroundColor: "#1FA8E7",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#6B5FD9",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+  addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
   },
-  optionsModal: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 34,
-  },
-  optionsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  optionsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-    flex: 1,
-    marginRight: 12,
-  },
-  optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  optionTextContainer: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  optionText: {
-    fontSize: 16,
-    color: "#000",
-    marginLeft: 16,
-  },
-  optionSubtext: {
-    fontSize: 12,
-    color: "#999",
-    marginTop: 2,
-    marginLeft: 16,
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingBox: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#333",
-  },
-})
+});

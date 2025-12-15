@@ -1,475 +1,3 @@
-// import React from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   StyleSheet,
-//   SafeAreaView,
-//   ScrollView,
-//   Dimensions,
-//   StatusBar,
-// } from "react-native";
-// import { LinearGradient } from "expo-linear-gradient";
-// import { Ionicons } from "@expo/vector-icons";
-
-// const { width, height } = Dimensions.get("window");
-
-// export default function LandingScreen({ navigation }) {
-//   const features = [
-//     {
-//       icon: "medical",
-//       title: "Expert Care",
-//       description: "Connect with certified healthcare professionals"
-//     },
-//     {
-//       icon: "time",
-//       title: "24/7 Support",
-//       description: "Round-the-clock medical assistance"
-//     },
-//     {
-//       icon: "shield-checkmark",
-//       title: "Secure & Private",
-//       description: "Your health data is protected and encrypted"
-//     },
-//     {
-//       icon: "location",
-//       title: "Find Nearby",
-//       description: "Locate hospitals and clinics near you"
-//     }
-//   ];
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <StatusBar barStyle="light-content" backgroundColor="#2E8B57" />
-//       <LinearGradient
-//         colors={['#2E8B57', '#20B2AA', '#48CAE4']}
-//         style={styles.gradient}
-//       >
-//         <ScrollView 
-//           contentContainerStyle={styles.scrollContainer}
-//           showsVerticalScrollIndicator={false}
-//         >
-//           {/* Header Section */}
-//           <View style={styles.header}>
-//             <View style={styles.logoContainer}>
-//               <Ionicons name="medical" size={60} color="#fff" />
-//               <View style={styles.heartbeat}>
-//                 <Ionicons name="pulse" size={30} color="#FF6B6B" />
-//               </View>
-//             </View>
-//             <Text style={styles.appName}>HealNOVA.AI</Text>
-//             <Text style={styles.tagline}>Your Health, Our Priority</Text>
-//           </View>
-
-//           {/* Hero Section */}
-//           <View style={styles.heroSection}>
-//             <Text style={styles.heroTitle}>
-//               Quality Healthcare{'\n'}At Your Fingertips
-//             </Text>
-//             <Text style={styles.heroDescription}>
-//               Access medical consultations, book appointments, and manage your health records all in one secure platform.
-//             </Text>
-//           </View>
-
-//           {/* Stats Section */}
-//           <View style={styles.statsContainer}>
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>50K+</Text>
-//               <Text style={styles.statLabel}>Patients</Text>
-//             </View>
-//             <View style={styles.statDivider} />
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>1000+</Text>
-//               <Text style={styles.statLabel}>Doctors</Text>
-//             </View>
-//             <View style={styles.statDivider} />
-//             <View style={styles.statItem}>
-//               <Text style={styles.statNumber}>24/7</Text>
-//               <Text style={styles.statLabel}>Support</Text>
-//             </View>
-//           </View>
-
-//           {/* Features Section */}
-//           <View style={styles.featuresSection}>
-//             <Text style={styles.sectionTitle}>Why Choose Us?</Text>
-//             <View style={styles.featuresGrid}>
-//               {features.map((feature, index) => (
-//                 <View key={index} style={styles.featureCard}>
-//                   <View style={styles.featureIconContainer}>
-//                     <Ionicons name={feature.icon} size={28} color="#2E8B57" />
-//                   </View>
-//                   <Text style={styles.featureTitle}>{feature.title}</Text>
-//                   <Text style={styles.featureDescription}>{feature.description}</Text>
-//                 </View>
-//               ))}
-//             </View>
-//           </View>
-
-//           {/* Services Preview */}
-//           <View style={styles.servicesSection}>
-//             <Text style={styles.sectionTitle}>Our Services</Text>
-//             <View style={styles.servicesContainer}>
-//               <TouchableOpacity style={styles.serviceItem}>
-//                 <Ionicons name="videocam" size={24} color="#2E8B57" />
-//                 <Text style={styles.serviceText}>Video Consultation</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity style={styles.serviceItem}>
-//                 <Ionicons name="calendar" size={24} color="#2E8B57" />
-//                 <Text style={styles.serviceText}>Book Appointment</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity style={styles.serviceItem}>
-//                 <Ionicons name="document-text" size={24} color="#2E8B57" />
-//                 <Text style={styles.serviceText}>Health Records</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity style={styles.serviceItem}>
-//                 <Ionicons name="fitness" size={24} color="#2E8B57" />
-//                 <Text style={styles.serviceText}>Health Tracking</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-
-//           {/* CTA Section */}
-//           <View style={styles.ctaSection}>
-//             <TouchableOpacity
-//               style={styles.primaryButton}
-//               onPress={() => navigation.navigate("Login")}
-//               activeOpacity={0.8}
-//             >
-//               <LinearGradient
-//                 colors={['#fff', '#f8f9fa']}
-//                 style={styles.buttonGradient}
-//               >
-//                 <Ionicons name="arrow-forward" size={20} color="#2E8B57" style={styles.buttonIcon} />
-//                 <Text style={styles.primaryButtonText}>Get Started</Text>
-//               </LinearGradient>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity
-//               style={styles.secondaryButton}
-//               onPress={() => navigation.navigate("Login")}
-//               activeOpacity={0.8}
-//             >
-//               <Text style={styles.secondaryButtonText}>Already have an account? Sign In</Text>
-//             </TouchableOpacity>
-//           </View>
-
-//           {/* Emergency Section */}
-//           <View style={styles.emergencySection}>
-//             <View style={styles.emergencyCard}>
-//               <Ionicons name="warning" size={24} color="#FF6B6B" />
-//               <View style={styles.emergencyText}>
-//                 <Text style={styles.emergencyTitle}>Emergency?</Text>
-//                 <Text style={styles.emergencyDescription}>Call 911 or visit nearest hospital</Text>
-//               </View>
-//               <TouchableOpacity style={styles.emergencyButton}>
-//                 <Ionicons name="call" size={20} color="#fff" />
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-
-//           {/* Footer */}
-//           <View style={styles.footer}>
-//             <Text style={styles.footerText}>
-//               Trusted by healthcare professionals worldwide
-//             </Text>
-//             <View style={styles.trustBadges}>
-//               <View style={styles.trustBadge}>
-//                 <Ionicons name="shield-checkmark" size={16} color="rgba(255,255,255,0.8)" />
-//                 <Text style={styles.trustText}>HIPAA Compliant</Text>
-//               </View>
-//               <View style={styles.trustBadge}>
-//                 <Ionicons name="lock-closed" size={16} color="rgba(255,255,255,0.8)" />
-//                 <Text style={styles.trustText}>SSL Encrypted</Text>
-//               </View>
-//             </View>
-//           </View>
-//         </ScrollView>
-//       </LinearGradient>
-//     </SafeAreaView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//   },
-//   gradient: {
-//     flex: 1,
-//   },
-//   scrollContainer: {
-//     paddingBottom: 30,
-//   },
-//   header: {
-//     alignItems: 'center',
-//     paddingTop: 40,
-//     paddingBottom: 20,
-//   },
-//   logoContainer: {
-//     position: 'relative',
-//     width: 100,
-//     height: 100,
-//     borderRadius: 50,
-//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginBottom: 20,
-//   },
-//   heartbeat: {
-//     position: 'absolute',
-//     top: -10,
-//     right: -10,
-//     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-//     borderRadius: 20,
-//     padding: 5,
-//   },
-//   appName: {
-//     fontSize: 32,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//     marginBottom: 8,
-//   },
-//   tagline: {
-//     fontSize: 16,
-//     color: 'rgba(255, 255, 255, 0.9)',
-//     fontWeight: '500',
-//   },
-//   heroSection: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 30,
-//     alignItems: 'center',
-//   },
-//   heroTitle: {
-//     fontSize: 28,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//     textAlign: 'center',
-//     marginBottom: 15,
-//     lineHeight: 36,
-//   },
-//   heroDescription: {
-//     fontSize: 16,
-//     color: 'rgba(255, 255, 255, 0.8)',
-//     textAlign: 'center',
-//     lineHeight: 24,
-//     paddingHorizontal: 10,
-//   },
-//   statsContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-around',
-//     alignItems: 'center',
-//     marginHorizontal: 30,
-//     marginVertical: 20,
-//     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-//     borderRadius: 15,
-//     paddingVertical: 20,
-//   },
-//   statItem: {
-//     alignItems: 'center',
-//   },
-//   statNumber: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//   },
-//   statLabel: {
-//     fontSize: 12,
-//     color: 'rgba(255, 255, 255, 0.8)',
-//     marginTop: 4,
-//   },
-//   statDivider: {
-//     width: 1,
-//     height: 30,
-//     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-//   },
-//   featuresSection: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 20,
-//   },
-//   sectionTitle: {
-//     fontSize: 22,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//     textAlign: 'center',
-//     marginBottom: 20,
-//   },
-//   featuresGrid: {
-//     flexDirection: 'row',
-//     flexWrap: 'wrap',
-//     justifyContent: 'space-between',
-//   },
-//   featureCard: {
-//     width: (width - 80) / 2,
-//     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-//     borderRadius: 15,
-//     padding: 20,
-//     marginBottom: 15,
-//     alignItems: 'center',
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 4,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 8,
-//     elevation: 5,
-//   },
-//   featureIconContainer: {
-//     width: 50,
-//     height: 50,
-//     borderRadius: 25,
-//     backgroundColor: 'rgba(46, 139, 87, 0.1)',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginBottom: 12,
-//   },
-//   featureTitle: {
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//     color: '#2E8B57',
-//     marginBottom: 8,
-//     textAlign: 'center',
-//   },
-//   featureDescription: {
-//     fontSize: 12,
-//     color: '#666',
-//     textAlign: 'center',
-//     lineHeight: 16,
-//   },
-//   servicesSection: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 20,
-//   },
-//   servicesContainer: {
-//     flexDirection: 'row',
-//     flexWrap: 'wrap',
-//     justifyContent: 'space-between',
-//   },
-//   serviceItem: {
-//     width: (width - 80) / 2,
-//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//     borderRadius: 12,
-//     padding: 15,
-//     marginBottom: 10,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   serviceText: {
-//     color: '#fff',
-//     fontSize: 14,
-//     fontWeight: '500',
-//     marginLeft: 10,
-//     flex: 1,
-//   },
-//   ctaSection: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 30,
-//   },
-//   primaryButton: {
-//     borderRadius: 25,
-//     marginBottom: 15,
-//     overflow: 'hidden',
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 6,
-//     },
-//     shadowOpacity: 0.3,
-//     shadowRadius: 10,
-//     elevation: 8,
-//   },
-//   buttonGradient: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     paddingVertical: 18,
-//     paddingHorizontal: 30,
-//   },
-//   buttonIcon: {
-//     marginRight: 10,
-//   },
-//   primaryButtonText: {
-//     color: '#2E8B57',
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//   },
-//   secondaryButton: {
-//     alignItems: 'center',
-//     paddingVertical: 15,
-//   },
-//   secondaryButtonText: {
-//     color: 'rgba(255, 255, 255, 0.9)',
-//     fontSize: 16,
-//     fontWeight: '500',
-//   },
-//   emergencySection: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 10,
-//   },
-//   emergencyCard: {
-//     backgroundColor: 'rgba(255, 107, 107, 0.9)',
-//     borderRadius: 15,
-//     padding: 20,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   emergencyText: {
-//     flex: 1,
-//     marginLeft: 15,
-//   },
-//   emergencyTitle: {
-//     color: '#fff',
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-//   emergencyDescription: {
-//     color: 'rgba(255, 255, 255, 0.9)',
-//     fontSize: 12,
-//     marginTop: 2,
-//   },
-//   emergencyButton: {
-//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//     borderRadius: 20,
-//     padding: 10,
-//   },
-//   footer: {
-//     paddingHorizontal: 30,
-//     paddingVertical: 20,
-//     alignItems: 'center',
-//   },
-//   footerText: {
-//     color: 'rgba(255, 255, 255, 0.8)',
-//     fontSize: 14,
-//     textAlign: 'center',
-//     marginBottom: 15,
-//   },
-//   trustBadges: {
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//   },
-//   trustBadge: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginHorizontal: 15,
-//   },
-//   trustText: {
-//     color: 'rgba(255, 255, 255, 0.8)',
-//     fontSize: 12,
-//     marginLeft: 5,
-//   },
-// });
-
-
-
-
-
-
-
-
-
-
-
-
-
 // LandingScreen.js
 import React, { useRef, useState, useEffect } from "react";
 import {
@@ -484,189 +12,189 @@ import {
   Animated,
   FlatList,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts, Inter_700Bold, Inter_400Regular } from "@expo-google-fonts/inter";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const slides = [
   {
     id: 1,
-    title: "Smart Healthcare for All",
-    subtitle: "With your AI Doctor, Wellness Oracle & Health Guardian.",
-    image: require("../../../assets/icons/Roboat.png"),
+    title: "Smart healthcare for all.",
+    subtitle: "A more connected, more intelligent way to understand your health, built for everyone, everywhere",
   },
   {
     id: 2,
-    title: "Doctors, Just a Tap Away",
-    subtitle: "Book appointments with certified doctors 24/7.",
-    image: require("../../../assets/icons/Group53.png"),
+    title: "Doctors, just a tap away.",
+    subtitle: "Seamless access to specialists, designed around your schedule.",
   },
   {
     id: 3,
-    title: "Your Reports, Organized",
-    subtitle: "Securely store, access, and share your reports in one place.",
-    image: require("../../../assets/icons/Girl.png"),
+    title: "Your reports, organized.",
+    subtitle: "All your medical documents, sorted and easy to access, right when you need them.",
   },
 ];
 
 export default function LandingScreen({ navigation }) {
   const [showSplash, setShowSplash] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isChecked, setIsChecked] = useState(false);
 
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
+  const loadingProgress = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef();
+
+  const [fontsLoaded] = useFonts({
+    Inter_700Bold,
+    Inter_400Regular,
+  });
 
   // Splash auto hide after 3 sec
   useEffect(() => {
+    // Animate loading bar
+    Animated.timing(loadingProgress, {
+      toValue: 70,
+      duration: 3000,
+      useNativeDriver: false,
+    }).start();
+
     const timer = setTimeout(() => setShowSplash(false), 3000);
     return () => clearTimeout(timer);
-  }, []);
-
-  // Splash animation
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 3,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Pulse animation for logo
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
   }, []);
 
   const handleScroll = (event) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(index);
-    setIsChecked(false);
   };
 
-  const currentSlide = slides[currentIndex];
+  const handleNext = () => {
+    if (currentIndex < slides.length - 1) {
+      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+    } else {
+      // Last slide - navigate to login
+      navigation.replace("Login");
+    }
+  };
 
   if (showSplash) {
     return (
-      <View style={styles.splashContainer}>
-        <Animated.View
-          style={[
-            styles.logoWrapper,
-            { 
-              transform: [{ scale: scaleAnim }], 
-              opacity: opacityAnim 
-            },
-          ]}
-        >
-          <Animated.View 
-            style={[
-              styles.logoIconContainer,
-              { transform: [{ scale: pulseAnim }] }
-            ]}
-          >
-            <Text style={styles.logoH}>H</Text>
-            <View style={styles.heartBeat}>
-              <Ionicons name="fitness" size={24} color="#fff" style={styles.heartIcon} />
-            </View>
-          </Animated.View>
-        </Animated.View>
-        <Animated.Text style={[styles.splashTitle, { opacity: opacityAnim }]}>
-          HealNOVA.AI
-        </Animated.Text>
-        <Animated.Text
-          style={[styles.splashSubtitle, { opacity: opacityAnim }]}
-        >
-          Your health is our priority
-        </Animated.Text>
-      </View>
+      <LinearGradient
+        colors={["#FFE5B4", "#FFD4A3", "#E8F4F8", "#D4E8F0", "#C8D4F0"]}
+        style={styles.splashContainer}
+      >
+        <View style={styles.splashContent}>
+          <Image
+            source={require("../../../assets/Dashoabdicons/Healnova.ai.png")}
+            style={styles.splashLogo}
+            resizeMode="contain"
+          />
+
+          {/* Green Loading Bar */}
+          <View style={styles.loadingBarContainer}>
+            <View style={styles.loadingBarBackground} />
+            <Animated.View
+              style={[
+                styles.loadingBarFill,
+                {
+                  width: loadingProgress.interpolate({
+                    inputRange: [0, 70],
+                    outputRange: ["0%", "70%"],
+                  }),
+                },
+              ]}
+            />
+          </View>
+        </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* FlatList for swipe */}
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
-            <Image source={item.image} style={styles.image} resizeMode="contain" />
+    <LinearGradient
+      colors={["#FFE5B4", "#FFD4A3", "#E8F4F8", "#D4E8F0", "#C8D4F0"]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        {/* Top Section with Logo and Robot */}
+        <View style={styles.topSection}>
+          {/* Static Logo */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../../assets/Dashoabdicons/Healnova.ai.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
-        )}
-      />
 
-      {/* Dots */}
-      <View style={styles.dotsContainer}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              currentIndex === index ? styles.activeDot : styles.inactiveDot,
-            ]}
+          {/* Static Robot Image */}
+          <View style={styles.illustrationContainer}>
+            <Image
+              source={require("../../../assets/Dashoabdicons/Robot.png")}
+              style={styles.illustration}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        {/* Bottom Section with White Card */}
+        <View style={styles.bottomSection}>
+          {/* Sliding Text */}
+          <FlatList
+            ref={flatListRef}
+            data={slides}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            renderItem={({ item }) => (
+              <View style={styles.textSlide}>
+                <Text
+                  style={[
+                    styles.onboardingTitle,
+                    !fontsLoaded && { fontFamily: undefined, fontWeight: "700" },
+                  ]}
+                >
+                  {item.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.onboardingSubtitle,
+                    !fontsLoaded && { fontFamily: undefined, fontWeight: "400" },
+                  ]}
+                >
+                  {item.subtitle}
+                </Text>
+              </View>
+            )}
           />
-        ))}
-      </View>
 
-      {/* Checkbox */}
-      <View style={styles.checkboxContainer}>
-        <TouchableOpacity
-          style={[
-            styles.customCheckbox,
-            isChecked && styles.customCheckboxChecked,
-          ]}
-          onPress={() => setIsChecked(!isChecked)}
-        >
-          {isChecked && <Ionicons name="checkmark" size={16} color="#fff" />}
-        </TouchableOpacity>
-        <Text style={styles.checkboxText}>
-          I agree to the <Text style={styles.link}>terms of service</Text> and{" "}
-          <Text style={styles.link}>privacy policy</Text> and provide my consent
-        </Text>
-      </View>
+          {/* Bottom Navigation Row */}
+          <View style={styles.bottomNavRow}>
+            {/* Pagination Dots - Left */}
+            <View style={styles.dotsContainer}>
+              {slides.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dot,
+                    currentIndex === index ? styles.activeDot : styles.inactiveDot,
+                  ]}
+                />
+              ))}
+            </View>
 
-      {/* Get Started Button */}
-      <TouchableOpacity
-        style={[
-          styles.button,
-          { backgroundColor: isChecked ? "#6B5AED" : "#aaa" },
-        ]}
-        disabled={!isChecked}
-        onPress={() => navigation.replace("Login")}
-      >
-        <Text style={styles.buttonText}>
-          {currentIndex === slides.length - 1 ? "Get Started" : "Get Started"}
-        </Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+            {/* Next Button - Right */}
+            <TouchableOpacity
+              style={styles.nextButton}
+              onPress={handleNext}
+            >
+              <Ionicons name="arrow-forward" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -674,169 +202,135 @@ const styles = StyleSheet.create({
   // Splash styles
   splashContainer: {
     flex: 1,
-    backgroundColor: "#D5D5FC",
     justifyContent: "center",
     alignItems: "center",
   },
-  logoWrapper: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "#fff",
-    justifyContent: "center",
+  splashContent: {
     alignItems: "center",
-    marginBottom: 20,
-    elevation: 8,
-    shadowColor: "#6B5AED",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-  },
-  logoIconContainer: {
-    width: 110,
-    height: 110,
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#6B5AED",
-    borderRadius: 25,
-    position: "relative",
-    overflow: "visible",
+    width: "100%",
   },
-  logoH: {
-    fontSize: 70,
-    fontWeight: "900",
-    color: "#fff",
-    letterSpacing: 2,
+  splashLogo: {
+    width: 200,
+    height: 80,
+    marginBottom: 30,
   },
-  heartBeat: {
+  loadingBarContainer: {
+    width: width * 0.7,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginTop: 10,
+  },
+  loadingBarBackground: {
     position: "absolute",
-    bottom: -8,
-    right: -8,
-    width: 40,
-    height: 40,
-    backgroundColor: "#279D7D",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#fff",
-    elevation: 4,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
-  heartIcon: {
-    marginLeft: 2,
-  },
-  splashTitle: { 
-    fontSize: 28, 
-    fontWeight: "700", 
-    color: "#222",
-    letterSpacing: 1,
-  },
-  splashSubtitle: { 
-    fontSize: 15, 
-    color: "#333", 
-    marginTop: 8,
-    fontStyle: "italic",
+  loadingBarFill: {
+    height: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 2,
   },
 
-  // Landing styles
+  // Onboarding styles
   container: {
-    marginTop: StatusBar.currentHeight || 0,
     flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "space-between",
   },
-  slide: {
-    width: width,
+  safeArea: {
+    flex: 1,
+    paddingTop: StatusBar.currentHeight || 0,
+  },
+  topSection: {
+    flex: 1,
+    justifyContent: "flex-start",
+  },
+  logoContainer: {
     alignItems: "center",
-    paddingHorizontal: 20,
-    marginTop: 60,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
-  title: { 
-    fontSize: 28, 
-    fontWeight: "500", 
-    color: "#222", 
-    textAlign: "left",
-    alignSelf: "flex-start",
-    fontFamily: "Poppins_400Regular",
+  logo: {
+    width: 180,
+    height: 70,
   },
-  subtitle: {
-    fontSize: 20,
-    color: "#555",
-    textAlign: "left",
-    alignSelf: "flex-start",
-    marginTop: 8,
-    marginBottom: 10,
-    fontWeight: "500",
-    fontFamily: "Poppins_400Regular",
-  },
-  image: { 
-    width: 350, 
-    height: 500, 
-    resizeMode: "contain",
-    marginTop: -40,
-    alignSelf: "center"
-  },
-
-  // Dots styles
-  dotsContainer: {
-    flexDirection: "row",
+  illustrationContainer: {
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
+    flex: 1,
     paddingVertical: 20,
   },
+  illustration: {
+    width: 325.3148193359375,
+    height: 358,
+  },
+  bottomSection: {
+    backgroundColor: "transparent",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 30,
+    paddingBottom: 30,
+    minHeight: height * 0.4,
+    flex: 0,
+  },
+  textSlide: {
+    width: width,
+    paddingHorizontal: 24,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+    paddingBottom: 20,
+  },
+  onboardingTitle: {
+    fontSize: 49.91,
+    fontWeight: "700",
+    lineHeight: 60,
+    color: "#000",
+    textAlign: "left",
+    fontFamily: "Inter_700Bold",
+    marginBottom: 16,
+  },
+  onboardingSubtitle: {
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
+    color: "#000",
+    textAlign: "left",
+    fontFamily: "Inter_400Regular",
+  },
+
+  // Bottom Navigation
+  bottomNavRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   dot: {
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 4,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   activeDot: {
     width: 24,
-    backgroundColor: "#6B5AED",
+    backgroundColor: "#000",
   },
   inactiveDot: {
-    width: 6,
-    backgroundColor: "#CCCCCC",
+    width: 8,
+    backgroundColor: "#fff",
   },
-
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-    marginBottom: 10,
-  },
-  customCheckbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: "#6B5AED",
-    borderRadius: 4,
+  nextButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#6B5AED",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
-  },
-  customCheckboxChecked: { 
-    backgroundColor: "#6B5AED" 
-  },
-  checkboxText: { 
-    flex: 1, 
-    fontSize: 16, 
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
-  },
-  link: { 
-    color: "#279D7D", 
-    textDecorationLine: "underline" 
-  },
-  button: {
-    marginHorizontal: 20,
-    marginBottom: 100,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonText: { 
-    color: "#fff", 
-    fontSize: 20, 
-    fontWeight: "600" 
   },
 });

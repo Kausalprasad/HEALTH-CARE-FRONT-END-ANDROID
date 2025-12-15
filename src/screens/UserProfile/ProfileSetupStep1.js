@@ -14,20 +14,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../../config/config';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const ProfileSetupStep1 = ({ navigation, route }) => {
   // Check if in edit mode
   const { params } = route;
   const isEdit = params?.isEdit || false;
   const profileData = params?.profileData || null;
+  const auth = getAuth();
 
   const [fullName, setFullName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
-  const [patientId, setPatientId] = useState('');
   const [email, setEmail] = useState('');
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -35,25 +37,70 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
   const [pendingPhoto, setPendingPhoto] = useState(null); // Store photo to upload after profile creation
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showBloodGroupDropdown, setShowBloodGroupDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const genderOptions = ['Male', 'Female', 'Other'];
   const bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+  // Format date for display (DD/MM/YYYY)
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day} / ${month} / ${year}`;
+  };
+
+  // Format date for API (YYYY-MM-DD)
+  const formatDateForAPI = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Handle date picker change
+  const onDateChange = (event, selectedDateValue) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (event.type === 'set' && selectedDateValue) {
+        setSelectedDate(selectedDateValue);
+        const formattedDate = formatDateForAPI(selectedDateValue);
+        setDateOfBirth(formattedDate);
+      }
+    } else {
+      // iOS
+      if (selectedDateValue) {
+        setSelectedDate(selectedDateValue);
+        const formattedDate = formatDateForAPI(selectedDateValue);
+        setDateOfBirth(formattedDate);
+      }
+      if (event.type === 'dismissed') {
+        setShowDatePicker(false);
+      }
+    }
+  };
+
   // Pre-fill form if editing
   useEffect(() => {
     if (isEdit && profileData) {
-      setFullName(profileData.basicInfo?.fullName || '');
-      setDateOfBirth(profileData.basicInfo?.dateOfBirth ? 
-        new Date(profileData.basicInfo.dateOfBirth).toISOString().split('T')[0] : '');
-      setGender(profileData.basicInfo?.gender || '');
-      setBloodGroup(profileData.basicInfo?.bloodGroup || '');
-      setPatientId(profileData.basicInfo?.patientID || '');
+      setFullName(profileData.personalInfo?.fullName || '');
+      if (profileData.personalInfo?.dateOfBirth) {
+        const dobDate = new Date(profileData.personalInfo.dateOfBirth);
+        setSelectedDate(dobDate);
+        setDateOfBirth(formatDateForAPI(dobDate));
+      }
+      setGender(profileData.personalInfo?.gender || '');
+      setBloodGroup(profileData.healthEssentials?.bloodGroup || '');
       setEmail(profileData.contactInfo?.email || '');
       setPrimaryPhone(profileData.contactInfo?.primaryPhone || '');
       
       // Set current profile photo
-      if (profileData.basicInfo?.profilePhoto?.url) {
-        setProfilePhoto(`${BASE_URL}${profileData.basicInfo.profilePhoto.url}`);
+      if (profileData.personalInfo?.profilePhoto?.url) {
+        setProfilePhoto(`${BASE_URL}${profileData.personalInfo.profilePhoto.url}`);
       }
     }
   }, [isEdit, profileData]);
@@ -143,12 +190,13 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
     setPhotoUploading(true);
 
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
+      const user = auth.currentUser;
+      if (!user) {
         Alert.alert('Error', 'User not authenticated');
         setPhotoUploading(false);
         return;
       }
+      const token = await user.getIdToken();
 
       // Create FormData with proper format
       const formData = new FormData();
@@ -210,7 +258,12 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem('token');
+              const user = auth.currentUser;
+              if (!user) {
+                Alert.alert('Error', 'User not authenticated');
+                return;
+              }
+              const token = await user.getIdToken();
               const response = await fetch(`${BASE_URL}/api/profile/photo`, {
                 method: 'DELETE',
                 headers: {
@@ -235,45 +288,36 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
     );
   };
 
-  const handleNext = async () => {
-    if (!fullName || !dateOfBirth || !gender || !bloodGroup || !primaryPhone) {
-      Alert.alert('Error', 'All fields are required!');
-      return;
-    }
-
+  const handleSave = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
+      // Get token from Firebase Auth
+      const user = auth.currentUser;
+      if (!user) {
         Alert.alert('Error', 'User not authenticated');
         return;
       }
+      const token = await user.getIdToken();
 
-      // Different endpoint for edit vs create
-      const endpoint = isEdit ? `${BASE_URL}/api/profile` : `${BASE_URL}/api/profile/step1`;
-      const method = isEdit ? 'PUT' : 'POST';
+      // Use new endpoint for personal info
+      const endpoint = `${BASE_URL}/api/profile/personal-info`;
 
-      const payload = isEdit ? {
-        // For edit, send complete profile update
-        'basicInfo.fullName': fullName,
-        'basicInfo.dateOfBirth': dateOfBirth,
-        'basicInfo.gender': gender,
-        'basicInfo.bloodGroup': bloodGroup,
-        'basicInfo.patientID': patientId,
-        'contactInfo.primaryPhone': primaryPhone,
-        'contactInfo.email': email,
-      } : {
-        // For create, send step1 data
-        fullName,
-        dateOfBirth,
-        gender,
-        bloodGroup,
-        patientId,
-        email,
-        primaryPhone,
-      };
+      // Build payload according to new schema
+      const payload = {};
+      if (fullName && fullName.trim()) payload.fullName = fullName.trim();
+      if (dateOfBirth) payload.dateOfBirth = dateOfBirth;
+      if (gender) payload.gender = gender;
 
+      // Check if payload is empty
+      if (Object.keys(payload).length === 0) {
+        Alert.alert('Info', 'Please fill at least one field to update');
+        return;
+      }
+
+      console.log('Sending personal info payload:', payload);
+
+      // Use PUT to update personal info
       const response = await fetch(endpoint, {
-        method: method,
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -281,45 +325,132 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
 
-      if (data.success) {
-        // If photo was selected but profile was just created, upload photo now
-        if (!isEdit && pendingPhoto) {
-          // Photo was selected but not uploaded yet
-          // Now that profile exists, upload the photo
+      let data;
+      let finalResponse = response;
+
+      // If profile doesn't exist (404), try to create it first
+      if (response.status === 404) {
+        console.log('Profile not found, creating profile first...');
+        
+        // Create profile with all required fields for step1
+        // Check if we have minimum required data
+        if (!payload.fullName && !user.displayName) {
+          Alert.alert('Error', 'Full name is required to create profile');
+          return;
+        }
+        
+        if (!payload.dateOfBirth) {
+          Alert.alert('Error', 'Date of birth is required to create profile');
+          return;
+        }
+        
+        if (!payload.gender) {
+          Alert.alert('Error', 'Gender is required to create profile');
+          return;
+        }
+        
+        // Create profile with required fields (phone is now optional)
+        const createPayload = {
+          fullName: payload.fullName || user.displayName || 'User',
+          dateOfBirth: payload.dateOfBirth,
+          gender: payload.gender,
+          bloodGroup: bloodGroup || 'O+', // Default blood group
+          primaryPhone: primaryPhone || user.phoneNumber || '', // Optional now
+          email: email || user.email || '', // Get from Firebase user
+        };
+        
+        console.log('Creating profile with payload:', createPayload);
+        
+        // Try to create profile with POST /api/profile/step1
+        const createResponse = await fetch(`${BASE_URL}/api/profile/step1`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createPayload),
+        });
+
+        if (createResponse.ok) {
+          console.log('Profile created successfully!');
+          const createData = await createResponse.json();
+          
+          // Profile already created with all data, so show success directly
+          if (createData.success || createResponse.status === 200 || createResponse.status === 201) {
+            // If photo was selected but not uploaded yet, upload photo now
+            if (pendingPhoto) {
+              try {
+                await uploadPhoto(pendingPhoto);
+                setPendingPhoto(null);
+              } catch (photoError) {
+                console.error('Photo upload failed:', photoError);
+              }
+            }
+            
+            Alert.alert('Success', 'Profile created successfully!', [
+              {
+                text: 'OK',
+                onPress: () => navigation.goBack()
+              }
+            ]);
+            return;
+          } else {
+            Alert.alert('Error', createData.message || createData.error || 'Something went wrong');
+            return;
+          }
+        } else {
+          const errorData = await createResponse.json().catch(() => ({ message: 'Network error' }));
+          console.error('Create Error:', errorData);
+          Alert.alert('Error', errorData.message || errorData.error || 'Failed to create profile');
+          return;
+        }
+      }
+
+      if (!finalResponse.ok) {
+        const errorData = await finalResponse.json().catch(() => ({ message: 'Network error' }));
+        console.error('API Error:', errorData);
+        Alert.alert('Error', errorData.message || errorData.error || `Server error: ${finalResponse.status}`);
+        return;
+      }
+
+      data = await finalResponse.json();
+      console.log('Response data:', data);
+
+      if (data.success || finalResponse.status === 200) {
+        // If photo was selected but not uploaded yet, upload photo now
+        if (pendingPhoto) {
           try {
             await uploadPhoto(pendingPhoto);
             setPendingPhoto(null); // Clear pending photo
           } catch (photoError) {
-            console.error('Photo upload after profile creation failed:', photoError);
+            console.error('Photo upload failed:', photoError);
             // Continue even if photo upload fails
           }
         }
         
-        if (isEdit) {
-          Alert.alert('Success', 'Basic information updated!', [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack() // Go back to ProfileView
-            }
-          ]);
-        } else {
-          Alert.alert('Success', 'Step 1 completed!');
-          navigation.navigate('ProfileSetupStep2');
-        }
+        Alert.alert('Success', 'Profile updated successfully!', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack() // Always go back to ProfileView
+          }
+        ]);
       } else {
-        Alert.alert('Error', data.message || 'Something went wrong');
+        Alert.alert('Error', data.message || data.error || 'Something went wrong');
       }
     } catch (err) {
       console.error('Step 1 error:', err);
-      Alert.alert('Error', 'Server error');
+      Alert.alert('Error', err.message || 'Network error. Please check your connection.');
     }
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={['#FFE5B4', '#FFD4A3', '#E8F4F8', '#D4E8F0', '#C8D4F0']}
+      style={styles.container}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       
       {/* Header */}
       <View style={styles.header}>
@@ -330,63 +461,36 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {isEdit ? 'Edit Basic Info' : 'Profile Setup'}
+          Personal Information
         </Text>
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Photo Section */}
-        <View style={styles.profilePhotoContainer}>
-          <TouchableOpacity 
-            style={styles.profilePhotoCircle}
-            onPress={selectPhoto}
-            disabled={photoUploading}
-          >
-            {profilePhoto ? (
-              <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
-            ) : (
-              <View style={styles.profilePhotoPlaceholder}>
-                <Ionicons name="image-outline" size={32} color="#8B7AD8" />
-              </View>
-            )}
-            
-            {photoUploading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color="#fff" />
-              </View>
-            )}
-            
-            <View style={styles.addIcon}>
-              <Ionicons name="add" size={16} color="#8B7AD8" />
-            </View>
-          </TouchableOpacity>
-
-          {profilePhoto && !photoUploading && (
-            <TouchableOpacity style={styles.deletePhotoButton} onPress={deletePhoto}>
-              <Text style={styles.deletePhotoText}>Remove Photo</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Basic Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic information</Text>
-          
-          <View style={styles.row}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Full Name"
-                placeholderTextColor="#999"
-              />
-            </View>
-            
+        <View style={styles.whiteCard}>
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <TextInput
+              style={styles.textInput}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Full Name"
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Gender</Text>
             <TouchableOpacity 
               style={styles.dropdownContainer}
               onPress={() => setShowGenderDropdown(!showGenderDropdown)}
+              activeOpacity={0.7}
             >
               <Text style={[styles.dropdownText, !gender && styles.placeholderText]}>
                 {gender || 'Gender'}
@@ -405,6 +509,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
                     setGender(option);
                     setShowGenderDropdown(false);
                   }}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.dropdownItemText}>{option}</Text>
                 </TouchableOpacity>
@@ -412,101 +517,51 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
             </View>
           )}
 
-          <View style={styles.row}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                value={dateOfBirth}
-                onChangeText={setDateOfBirth}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#999"
-              />
-              <Ionicons name="calendar-outline" size={20} color="#8B7AD8" style={styles.inputIcon} />
-            </View>
-            
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>DOB</Text>
             <TouchableOpacity 
-              style={styles.dropdownContainer}
-              onPress={() => setShowBloodGroupDropdown(!showBloodGroupDropdown)}
+              style={[styles.inputContainer, styles.dateInputContainer]}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.dropdownText, !bloodGroup && styles.placeholderText]}>
-                {bloodGroup || 'Blood Group'}
+              <Text style={[styles.dateInputText, !dateOfBirth && styles.placeholderText]}>
+                {dateOfBirth ? formatDateForDisplay(dateOfBirth) : 'DOB'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#999" />
-            </TouchableOpacity>
-          </View>
-
-          {showBloodGroupDropdown && (
-            <View style={styles.dropdownMenu}>
-              {bloodGroupOptions.map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setBloodGroup(option);
-                    setShowBloodGroupDropdown(false);
-                  }}
-                >
-                  <Text style={styles.dropdownItemText}>{option}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          <TextInput
-            style={styles.fullWidthInput}
-            value={patientId}
-            onChangeText={setPatientId}
-            placeholder="Patient ID (Optional)"
-            placeholderTextColor="#999"
-          />
-        </View>
-
-        {/* Contact Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          
-          <TextInput
-            style={styles.fullWidthInput}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email Address"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <View style={styles.phoneContainer}>
-            <TextInput
-              style={styles.phoneInput}
-              value={primaryPhone}
-              onChangeText={setPrimaryPhone}
-              placeholder="Phone Number"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-            />
-            <TouchableOpacity style={styles.verifyButton}>
-              <Text style={styles.verifyButtonText}>Verify</Text>
+              <Ionicons name="calendar-outline" size={20} color="#666" style={styles.inputIcon} />
             </TouchableOpacity>
           </View>
         </View>
+
       </ScrollView>
 
       {/* Action Button */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {isEdit ? 'Update' : 'Next'}
-          </Text>
+        <TouchableOpacity 
+          style={styles.nextButton} 
+          onPress={handleSave}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.nextButtonText}>Save</Text>
         </TouchableOpacity>
       </View>
-    </View>
+
+      {/* Date Picker */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onDateChange}
+          maximumDate={new Date()}
+        />
+      )}
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     marginTop: StatusBar.currentHeight || 0,
@@ -516,8 +571,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   backButton: {
     padding: 5,
@@ -604,11 +657,28 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     gap: 12,
   },
+  whiteCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  inputWrapper: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 8,
+  },
   inputContainer: {
     flex: 1,
     position: 'relative',
   },
   textInput: {
+    width: '100%',
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 12,
@@ -623,8 +693,22 @@ const styles = StyleSheet.create({
     right: 15,
     top: 17.5,
   },
+  dateInputContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+  },
+  dateInputText: {
+    fontSize: 16,
+    color: '#333',
+  },
   dropdownContainer: {
-    flex: 1,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../config/config';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -21,7 +22,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
   const [profile, setProfile] = useState(null);
 
   const handlePress = () => {
-    navigation.navigate('UserProfileScreen');
+    navigation.navigate('ProfileViewScreen');
   };
 
   const slideAnim = useRef(new Animated.Value(-screenWidth * 0.8)).current;
@@ -29,8 +30,10 @@ const Sidebar = ({ visible, onClose, navigation }) => {
 
   const fetchProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) return;
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
       const res = await fetch(`${BASE_URL}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -44,8 +47,12 @@ const Sidebar = ({ visible, onClose, navigation }) => {
   };
 
   useEffect(() => {
+    fetchProfile(); // Always fetch when component mounts
+  }, []);
+
+  useEffect(() => {
     if (visible) {
-      fetchProfile();
+      fetchProfile(); // Also fetch when sidebar opens
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -82,20 +89,101 @@ const Sidebar = ({ visible, onClose, navigation }) => {
     { icon: 'newspaper-outline', title: 'Blogs', route: 'Blogs' },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: logout },
+      { 
+        text: "Logout", 
+        style: "destructive", 
+        onPress: async () => {
+          try {
+            if (logout) {
+              await logout();
+            } else {
+              // Fallback logout
+              const { signOut } = require('firebase/auth');
+              const auth = getAuth();
+              await signOut(auth);
+              await AsyncStorage.clear();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Landing' }],
+              });
+            }
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert('Error', 'Failed to logout');
+          }
+        }
+      },
     ]);
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const auth = getAuth();
+              const user = auth.currentUser;
+              if (!user) {
+                Alert.alert('Error', 'User not authenticated');
+                return;
+              }
+              const token = await user.getIdToken();
+
+              const response = await fetch(`${BASE_URL}/api/profile/delete`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  confirmDelete: true
+                })
+              });
+
+              const data = await response.json();
+
+              if (data.success) {
+                await AsyncStorage.clear();
+                if (logout) {
+                  await logout();
+                } else {
+                  const { signOut } = require('firebase/auth');
+                  await signOut(auth);
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Landing' }],
+                  });
+                }
+                Alert.alert('Success', 'Account deleted successfully');
+              } else {
+                Alert.alert('Error', data.message || 'Failed to delete account');
+              }
+            } catch (error) {
+              console.error('Delete account error:', error);
+              Alert.alert('Error', 'Something went wrong. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (!visible) return null;
 
-  const profilePhotoUrl = profile?.basicInfo?.profilePhoto?.url 
-    ? `${BASE_URL}${profile.basicInfo.profilePhoto.url}` 
+  const profilePhotoUrl = profile?.personalInfo?.profilePhoto?.url 
+    ? `${BASE_URL}${profile.personalInfo.profilePhoto.url}` 
     : null;
   
-  const displayName = profile?.basicInfo?.fullName || user?.displayName || user?.email?.split('@')[0] || 'User';
+  const displayName = profile?.personalInfo?.fullName || user?.displayName || user?.email?.split('@')[0] || 'User';
   const displayEmail = profile?.contactInfo?.email || user?.email || 'email';
 
   return (
@@ -167,6 +255,18 @@ const Sidebar = ({ visible, onClose, navigation }) => {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Delete Account */}
+        <TouchableOpacity 
+          style={styles.deleteAccountItem} 
+          onPress={handleDeleteAccount}
+        >
+          <Ionicons name="trash-outline" size={24} color="#FF3B30" style={styles.menuIcon} />
+          <Text style={[styles.menuText, { color: '#FF3B30' }]}>Delete Account</Text>
+        </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.divider} />
@@ -283,6 +383,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2D2D2D',
     fontFamily: 'Poppins_400Regular',
+  },
+  deleteAccountItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 25,
   },
   logoutItem: {
     flexDirection: 'row',

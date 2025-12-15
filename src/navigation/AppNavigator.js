@@ -37,6 +37,8 @@ import ProfileSetupStep2 from "../screens/UserProfile/ProfileSetupStep2";
 import ProfileSetupStep3 from "../screens/UserProfile/ProfileSetupStep3";
 import ProfileSetupStep1 from "../screens/UserProfile/ProfileSetupStep1";
 import ProfileViewScreen from "../screens/UserProfile/ProfileViewScreen";
+import HealthEssentialsScreen from "../screens/UserProfile/HealthEssentialsScreen";
+import ContactSecurityScreen from "../screens/UserProfile/ContactSecurityScreen";
 import VitalsScreen from "../screens/Vitals/VitalsScreen";
 import MoodCheckupApp from "../screens/MoodCheckup/MoodCheckupScreen";
 import PreventiveHealthScreen from "../screens/PreventiveHealth/PreventiveHealthScreen";
@@ -85,6 +87,7 @@ import VaultEnterPinScreen from "../screens/Vault/VaultEnterPinScreen";
 import VaultCreateScreen from "../screens/Vault/VaultCreateScreen";
 import VaultCreatedScreen from "../screens/Vault/VaultCreatedScreen";
 import VaultDashboard from "../screens/Vault/VaultDashboard";
+import VaultAIReport from "../screens/Vault/VaultAIReport";
 import ResetPinScreen from "../screens/Vault/ResetPinScreen";
 import ConfirmResetPinScreen from "../screens/Vault/ConfirmResetPinScreen";
 
@@ -158,6 +161,7 @@ export default function AppNavigator() {
         <Stack.Screen name="VaultCreate" component={VaultCreateScreen} />
         <Stack.Screen name="VaultCreated" component={VaultCreatedScreen} />
         <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
+        <Stack.Screen name="VaultAIReport" component={VaultAIReport} />
         <Stack.Screen name="ResetPin" component={ResetPinScreen} />
         <Stack.Screen name="ConfirmResetPin" component={ConfirmResetPinScreen} />
       </>
@@ -172,6 +176,7 @@ export default function AppNavigator() {
       <Stack.Screen name="ConfirmResetPin" component={ConfirmResetPinScreen} />
       <Stack.Screen name="VaultEnterPin" component={VaultEnterPinScreen} />
       <Stack.Screen name="VaultDashboard" component={VaultDashboard} />
+      <Stack.Screen name="VaultAIReport" component={VaultAIReport} />
       <Stack.Screen name="VaultCreate" component={VaultCreateScreen} />
       <Stack.Screen name="VaultCreated" component={VaultCreatedScreen} />
     </>
@@ -211,6 +216,8 @@ export default function AppNavigator() {
   <Stack.Screen name="ProfileSetupStep3" component={ProfileSetupStep3}/>
   <Stack.Screen name="ProfileSetupStep1" component={ProfileSetupStep1}/>
   <Stack.Screen name="ProfileViewScreen" component={ProfileViewScreen}/>
+  <Stack.Screen name="HealthEssentialsScreen" component={HealthEssentialsScreen}/>
+  <Stack.Screen name="ContactSecurityScreen" component={ContactSecurityScreen}/>
   <Stack.Screen name="VitalsScreen" component={VitalsScreen}/>
   {/*
   
