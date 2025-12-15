@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   StatusBar,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -72,233 +73,151 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={["#FFE5B4", "#FFD4A3", "#E8F4F8", "#D4E8F0", "#C8D4F0"]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
 
-      {/* Heading */}
-      <Text style={styles.title}>Forgot Password?</Text>
-      <Text style={styles.subtitle}>
-        Don't worry! Enter your email and{"\n"}we'll send you a reset link
-      </Text>
-
-      {/* Purple Curved Background */}
-      <LinearGradient colors={["#F2F0FF", "#E7E4FF"]} style={styles.curvedBox}>
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your email address"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
+        {/* Header with Logo */}
+        <View style={styles.headerContainer}>
+          <Image
+            source={require("../../../assets/Dashoabdicons/Healnova.ai.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
           />
         </View>
 
-        {/* Send Reset Email Button */}
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={handlePasswordReset}
-          disabled={isLoading}
-        >
-          <Text style={styles.resetText}>
-            {isLoading ? "Sending..." : "Send Reset Email"}
+        {/* White Card */}
+        <View style={styles.whiteCard}>
+          <Text style={styles.title}>Forgot Password</Text>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter email"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+
+          {/* Instructional Text */}
+          <Text style={styles.instructionText}>
+            We'll send a verification link to your registered email to help you reset your password.
           </Text>
-        </TouchableOpacity>
 
-        {/* Instructions */}
-        <View style={styles.instructionsContainer}>
-          <View style={styles.instructionItem}>
-            <View style={styles.checkIcon}>
-              <Ionicons name="checkmark-circle" size={20} color="#6C63FF" />
-            </View>
-            <Text style={styles.instructionText}>Check your email inbox</Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.checkIcon}>
-              <Ionicons name="checkmark-circle" size={20} color="#6C63FF" />
-            </View>
-            <Text style={styles.instructionText}>Click the reset link</Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.checkIcon}>
-              <Ionicons name="checkmark-circle" size={20} color="#6C63FF" />
-            </View>
-            <Text style={styles.instructionText}>Create a new password</Text>
-          </View>
-        </View>
-
-        {/* OR Divider */}
-        <View style={styles.orContainer}>
-          <View style={styles.line} />
-          <Text style={styles.orText}>or</Text>
-          <View style={styles.line} />
-        </View>
-
-        {/* Contact Support */}
-        <TouchableOpacity
-          style={styles.supportButton}
-          onPress={() =>
-            Alert.alert(
-              "Contact Support",
-              "If you're having trouble, please contact our support team."
-            )
-          }
-        >
-          <Text style={styles.supportText}>Contact Support</Text>
-        </TouchableOpacity>
-
-        {/* Back to Login */}
-        <Text style={styles.loginText}>
-          Remember your password?{" "}
-          <Text
-            style={styles.loginLink}
-            onPress={() => navigation.navigate("Login")}
+          {/* Send Button */}
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={handlePasswordReset}
+            disabled={isLoading}
           >
-            Sign In
-          </Text>
-        </Text>
-      </LinearGradient>
-    </SafeAreaView>
+            <Text style={styles.resetButtonText}>
+              {isLoading ? "Sending..." : "Send"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Back to Login */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>
+              Already have an account?{" "}
+              <Text
+                style={styles.signInLink}
+                onPress={() => navigation.navigate("Login")}
+              >
+                Sign in
+              </Text>
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  headerContainer: {
+    alignItems: "center",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 40,
+    paddingBottom: 20,
+  },
+  headerLogo: {
+    width: 150,
+    height: 60,
+  },
+  whiteCard: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 60,
-  },
-  backButton: {
-    position: "absolute",
-    top: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 80,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F2F0FF",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 30,
+    marginTop: 20,
+    marginHorizontal: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "600",
-    color: "#6C63FF",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#000",
+    marginBottom: 24,
     textAlign: "center",
-    marginBottom: 8,
-    fontFamily: "Poppins_400Regular",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 20,
-    fontWeight: "500",
-    lineHeight: 26,
-    fontFamily: "Poppins_400Regular",
-  },
-  curvedBox: {
-    flex: 1,
-    backgroundColor: "#EDEBFF",
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 40,
-    padding: 40,
-    alignItems: "center",
-    marginTop: 30,
+  instructionText: {
+    fontSize: 14,
+    color: "#000",
+    marginBottom: 24,
+    lineHeight: 20,
+    textAlign: "left",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-    height: 60,
-    width: "100%",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+    height: 56,
   },
   input: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: "#333",
+    fontSize: 16,
+    color: "#222",
   },
   resetButton: {
-    backgroundColor: "#6C63FF",
-    paddingVertical: 14,
-    borderRadius: 8,
+    backgroundColor: "#1FA8E7",
+    borderRadius: 30,
+    paddingVertical: 16,
     alignItems: "center",
-    width: "100%",
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  resetText: {
+  resetButtonText: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "500",
-    fontFamily: "Poppins_400Regular",
-  },
-  instructionsContainer: {
-    width: "100%",
-    marginBottom: 30,
-  },
-  instructionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  checkIcon: {
-    marginRight: 12,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
-  },
-  orContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-    width: "100%",
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#000000",
-  },
-  orText: {
-    marginHorizontal: 10,
-    fontSize: 14,
-    color: "#333",
-  },
-  supportButton: {
-    borderColor: "rgba(204, 204, 204, 1)",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  supportText: {
     fontSize: 16,
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
-  },
-  loginText: {
-    marginTop: 10,
-    fontSize: 15,
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
-  },
-  loginLink: {
-    color: "#6C63FF",
     fontWeight: "600",
-    fontFamily: "Poppins_400Regular",
-    fontSize: 15,
+  },
+  signInContainer: {
+    marginTop: "auto",
+    alignItems: "center",
+  },
+  signInText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  signInLink: {
+    color: "#000",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

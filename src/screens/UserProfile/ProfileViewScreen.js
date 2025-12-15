@@ -10,25 +10,48 @@ import {
   Platform,
   Alert,
   Image,
-  Modal
+  Switch,
+  SafeAreaView
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CommonActions } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { BASE_URL } from '../../config/config';
 import { AuthContext } from '../../context/AuthContext';
+import { getAuth } from 'firebase/auth';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 
 const ProfileView = ({ navigation }) => {
   const { logout } = useContext(AuthContext);
+  const auth = getAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    personalInfo: false,
+    emergencyContacts: false,
+    healthEssentials: false,
+    medicalCondition: false,
+    contactSecurity: false,
+    appPreference: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+  });
 
   const fetchProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) return;
+      const user = auth.currentUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      const token = await user.getIdToken();
       const res = await fetch(`${BASE_URL}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -45,721 +68,936 @@ const ProfileView = ({ navigation }) => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
-
-  const handleEditBasicInfo = () => {
-    navigation.navigate('ProfileSetupStep1', { 
-      isEdit: true, 
-      profileData: profile 
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchProfile();
     });
+    return unsubscribe;
+  }, [navigation]);
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
-  const handleEditEmergencyContact = () => {
-    navigation.navigate('ProfileSetupStep2', { 
-      isEdit: true, 
-      profileData: profile 
-    });
+  // Request camera/gallery permissions
+  const requestPermissions = async () => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: galleryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (cameraStatus !== 'granted' || galleryStatus !== 'granted') {
+      Alert.alert('Permissions Required', 'Camera and gallery permissions are needed to upload photos.');
+      return false;
+    }
+    return true;
   };
 
-  const handleEditMedicalInfo = () => {
-    navigation.navigate('ProfileSetupStep3', { 
-      isEdit: true, 
-      profileData: profile 
-    });
-  };
+  // Show photo selection options
+  const selectPhoto = async () => {
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
 
-  const handleEditProfile = () => {
     Alert.alert(
-      'Edit Profile',
-      'What would you like to edit?',
+      'Select Photo',
+      'Choose how you want to select your profile photo',
       [
-        {
-          text: 'Basic Information',
-          onPress: handleEditBasicInfo
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Camera', onPress: () => openCamera() },
+        { text: 'Gallery', onPress: () => openGallery() },
+      ]
+    );
+  };
+
+  // Open camera
+  const openCamera = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'Images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Error', 'Failed to open camera');
+    }
+  };
+
+  // Open gallery
+  const openGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'Images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      Alert.alert('Error', 'Failed to open gallery');
+    }
+  };
+
+  // Upload photo to server
+  const uploadPhoto = async (imageAsset) => {
+    try {
+      setPhotoUploading(true);
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+      const token = await user.getIdToken();
+
+      // Create FormData
+      const formData = new FormData();
+      const filename = imageAsset.uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      formData.append('profilePhoto', {
+        uri: imageAsset.uri,
+        name: filename,
+        type: type,
+      });
+
+      console.log('Uploading to:', `${BASE_URL}/api/profile/photo`);
+      const response = await fetch(`${BASE_URL}/api/profile/photo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
         },
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log('Upload response:', data);
+
+      if (data.success) {
+        const photoUrl = `${BASE_URL}${data.data.profilePhoto.url}`;
+        // Refresh profile to get updated photo
+        await fetchProfile();
+        Alert.alert('Success', 'Profile photo updated successfully!');
+      } else {
+        Alert.alert('Error', data.message || 'Failed to upload photo');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Error', `Failed to upload photo: ${error.message}`);
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleEdit = (section) => {
+    switch(section) {
+      case 'personalInfo':
+        navigation.navigate('ProfileSetupStep1', { 
+          isEdit: true, 
+          profileData: profile 
+        });
+        break;
+      case 'emergencyContacts':
+        navigation.navigate('ProfileSetupStep2', { 
+          isEdit: true, 
+          profileData: profile 
+        });
+        break;
+      case 'healthEssentials':
+        navigation.navigate('HealthEssentialsScreen', { 
+          isEdit: true, 
+          profileData: profile 
+        });
+        break;
+      case 'medicalCondition':
+        navigation.navigate('ProfileSetupStep3', { 
+          isEdit: true, 
+          profileData: profile 
+        });
+        break;
+      case 'contactSecurity':
+        navigation.navigate('ContactSecurityScreen', { 
+          isEdit: true, 
+          profileData: profile 
+        });
+        break;
+      case 'appPreference':
+        Alert.alert('Edit App Preference', 'Edit functionality coming soon');
+        break;
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Emergency Contact', 
-          onPress: handleEditEmergencyContact
-        },
-        {
-          text: 'Medical Information',
-          onPress: handleEditMedicalInfo
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel'
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (logout) {
+                await logout();
+              } else {
+                // Fallback logout
+                const { signOut } = require('firebase/auth');
+                const { auth } = require('../../api/firebaseConfig');
+                await signOut(auth);
+                await AsyncStorage.clear();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Landing' }],
+                });
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to logout');
+            }
+          }
         }
       ]
     );
   };
 
-  const handleDeletePress = () => {
-    setDeleteModalVisible(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      setDeleting(true);
-      const token = await AsyncStorage.getItem('token');
-      
-      if (!token) {
-        Alert.alert('Error', 'Authentication token not found');
-        setDeleting(false);
-        return;
-      }
-
-      const response = await fetch(`${BASE_URL}/api/profile/delete`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          confirmDelete: true
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        await AsyncStorage.clear();
-        console.log('✅ All AsyncStorage data cleared');
-        
-        if (logout) {
-          try {
-            await logout();
-            console.log('✅ Firebase logout successful');
-          } catch (err) {
-            console.log('Logout error:', err);
-          }
-        }
-        
-        setDeleteModalVisible(false);
-        
-        Alert.alert(
-          'Account Deleted',
-          'Your account has been permanently deleted.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setTimeout(() => {
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'Landing' }],
-                    })
-                  );
-                }, 500);
-              }
-            }
-          ],
-          { cancelable: false }
-        );
-      } else {
-        Alert.alert('Error', data.message || 'Failed to delete account');
-      }
-    } catch (error) {
-      console.error('Delete account error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModalVisible(false);
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B7AD8" />
+        <ActivityIndicator size="large" color="#9C27B0" />
       </View>
     );
   }
 
-  if (!profile) {
+  if (!fontsLoaded) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.noDataText}>No profile found</Text>
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={() => navigation.navigate('ProfileSetupStep1')}
-        >
-          <Text style={styles.createButtonText}>Create Profile</Text>
-        </TouchableOpacity>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#9C27B0" />
       </View>
     );
   }
+
+  const user = auth.currentUser;
+  const userName = profile?.personalInfo?.fullName || user?.displayName || 'User';
+  const userEmail = profile?.contactInfo?.email || user?.email || 'email@example.com';
+  const profilePhotoUrl = profile?.personalInfo?.profilePhoto?.url 
+    ? `${BASE_URL}${profile.personalInfo.profilePhoto.url}` 
+    : null;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#B4A7D6" />
-      
-      {/* Fixed Back Button */}
-      <View style={styles.fixedHeader}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => {
-            // Try to go back, if can't go back, navigate to Dashboard
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('DashboardScreen');
-            }
-          }}
-        >
-          <Ionicons name="chevron-back" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Purple Header - Now Scrollable */}
+    <LinearGradient
+      colors={['#FFE5B4', '#FFD4A3', '#E8F4F8', '#D4E8F0', '#C8D4F0']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
+        
+        {/* Header */}
         <View style={styles.header}>
-          {/* Avatar */}
-          <View style={styles.avatarContainer}>
-            {profile?.basicInfo?.profilePhoto?.url ? (
-              <Image 
-                source={{ uri: `${BASE_URL}${profile.basicInfo.profilePhoto.url}` }} 
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder} />
-            )}
-          </View>
-        </View>
-
-        {/* Profile Header Card */}
-        <View style={styles.profileHeader}>
-          <Text style={styles.profileName}>
-            {profile.basicInfo?.fullName || 'Anushka'}
-          </Text>
-          <Text style={styles.profileSubtitle}>
-            {profile.basicInfo?.gender || 'Gender'} · {profile.basicInfo?.dateOfBirth ? 
-              new Date().getFullYear() - new Date(profile.basicInfo.dateOfBirth).getFullYear() + ' Age' : 'Age'} · {profile.basicInfo?.patientID || 'Patient ID'}
-          </Text>
-          
           <TouchableOpacity 
-            style={styles.editButton}
-            onPress={handleEditProfile}
+            style={styles.backButton}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('DashboardScreen');
+              }
+            }}
           >
-            <Text style={styles.editButtonText}>Edit Details</Text>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <View style={{ width: 24 }} />
         </View>
 
-        {/* Basic Info Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Info</Text>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>
-                {profile.contactInfo?.email || 'abc@gmail.com'}
-              </Text>
-            </View>
-            <View style={styles.dividerLine} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone no.</Text>
-              <Text style={styles.infoValue}>
-                {profile.contactInfo?.primaryPhone || '9876543210'}
-              </Text>
-            </View>
-            <View style={styles.dividerLine} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>DOB</Text>
-              <Text style={styles.infoValue}>
-                {profile.basicInfo?.dateOfBirth ? 
-                  new Date(profile.basicInfo.dateOfBirth).toLocaleDateString('en-GB') : 'DD/MM/YY'}
-              </Text>
-            </View>
-            <View style={styles.dividerLine} />
-            <View style={[styles.infoRow, styles.lastRow]}>
-              <Text style={styles.infoLabel}>Blood Group</Text>
-              <Text style={styles.infoValue}>
-                {profile.basicInfo?.bloodGroup || 'B+'}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Emergency Contact Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderWithEdit}>
-            <Text style={styles.sectionTitle}>Emergency Contact</Text>
-            <TouchableOpacity onPress={handleEditEmergencyContact}>
-              <Ionicons name="pencil" size={16} color="#8B7AD8" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>
-                {profile.emergencyContact?.name || 'Kaushal'}
-              </Text>
-            </View>
-            <View style={styles.dividerLine} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Relation</Text>
-              <Text style={styles.infoValue}>
-                {profile.emergencyContact?.relationship || 'Friend'}
-              </Text>
-            </View>
-            <View style={styles.dividerLine} />
-            <View style={[styles.infoRow, styles.lastRow]}>
-              <Text style={styles.infoLabel}>Phone No.</Text>
-              <Text style={styles.infoValue}>
-                {profile.emergencyContact?.phoneNumber || '9876543210'}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Medical Conditions Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderWithEdit}>
-            <Text style={styles.sectionTitle}>Medical Condition</Text>
-            <TouchableOpacity onPress={handleEditMedicalInfo}>
-              <Ionicons name="pencil" size={16} color="#8B7AD8" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.infoCard}>
-            {profile.medicalConditions && profile.medicalConditions.length > 0 ? (
-              profile.medicalConditions.map((condition, index) => (
-                <View key={`condition-${index}`}>
-                  <View style={styles.conditionRow}>
-                    <Text style={styles.conditionText}>{condition.conditionName}</Text>
-                  </View>
-                  {index < profile.medicalConditions.length - 1 && <View style={styles.dividerLine} />}
-                </View>
-              ))
-            ) : (
-              <>
-                <View style={styles.conditionRow}>
-                  <Text style={styles.conditionText}>Diabetes</Text>
-                </View>
-                <View style={styles.dividerLine} />
-                <View style={[styles.conditionRow, styles.lastRow]}>
-                  <Text style={styles.conditionText}>Hypertension</Text>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Allergies Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderWithEdit}>
-            <Text style={styles.sectionTitle}>Allergies</Text>
-            <TouchableOpacity onPress={handleEditMedicalInfo}>
-              <Ionicons name="pencil" size={16} color="#8B7AD8" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.infoCard}>
-            {profile.allergies && profile.allergies.length > 0 ? (
-              profile.allergies.map((allergy, index) => (
-                <View key={`allergy-${index}`}>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>{allergy.allergenName}</Text>
-                    <Text style={styles.infoValue}>{allergy.severity}</Text>
-                  </View>
-                  {index < profile.allergies.length - 1 && <View style={styles.dividerLine} />}
-                </View>
-              ))
-            ) : (
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Nuts</Text>
-                  <Text style={styles.infoValue}>Severe</Text>
-                </View>
-                <View style={styles.dividerLine} />
-                <View style={[styles.infoRow, styles.lastRow]}>
-                  <Text style={styles.infoLabel}>Pollen</Text>
-                  <Text style={styles.infoValue}>Mild</Text>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* DELETE ACCOUNT BUTTON */}
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.deleteProfileButton}
-            onPress={handleDeletePress}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            <Text style={styles.deleteProfileButtonText}>Delete Account</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* DELETE CONFIRMATION MODAL */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={deleteModalVisible}
-        onRequestClose={handleDeleteCancel}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.warningIconContainer}>
-              <Ionicons name="warning" size={50} color="#ef4444" />
-            </View>
-
-            <Text style={styles.modalTitle}>Delete Account?</Text>
-
-            <Text style={styles.modalMessage}>
-              Are you sure you want to permanently delete your account?{'\n\n'}
-              This will delete:
-            </Text>
-
-            <View style={styles.deleteItemsList}>
-              <View style={styles.deleteItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#ef4444" />
-                <Text style={styles.deleteItemText}>Your profile & medical data</Text>
-              </View>
-              <View style={styles.deleteItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#ef4444" />
-                <Text style={styles.deleteItemText}>Your Firebase account</Text>
-              </View>
-              <View style={styles.deleteItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#ef4444" />
-                <Text style={styles.deleteItemText}>Profile photo & documents</Text>
-              </View>
-              <View style={styles.deleteItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#ef4444" />
-                <Text style={styles.deleteItemText}>All saved information</Text>
-              </View>
-            </View>
-
-            <Text style={styles.warningText}>
-              ⚠️ This action CANNOT be undone!
-            </Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={handleDeleteCancel}
-                activeOpacity={0.8}
-                disabled={deleting}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmDeleteButton]}
-                onPress={handleDeleteConfirm}
-                activeOpacity={0.8}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
+        <ScrollView 
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Profile Picture and Info Card */}
+          <View style={styles.profileCard}>
+            <View style={styles.profileSection}>
+              <View style={styles.avatarContainer}>
+                {profilePhotoUrl ? (
+                  <Image 
+                    source={{ uri: profilePhotoUrl }} 
+                    style={styles.avatar}
+                  />
                 ) : (
-                  <Text style={styles.confirmDeleteButtonText}>Delete</Text>
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person" size={40} color="#999" />
+                  </View>
                 )}
+                <TouchableOpacity 
+                  style={styles.editPhotoButton}
+                  onPress={selectPhoto}
+                  disabled={photoUploading}
+                >
+                  {photoUploading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="pencil" size={14} color="#fff" />
+                  )}
+                </TouchableOpacity>
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.userName}>{userName}</Text>
+                <Text style={styles.userEmail}>{userEmail}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* All Sections in One White Card */}
+          <View style={styles.sectionsCard}>
+            {/* Personal Information */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('personalInfo')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#FF9800' }]}>
+                  <Ionicons name="person" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Personal Information</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.personalInfo && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('personalInfo');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.personalInfo ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.personalInfo && (
+              <View style={styles.sectionContent}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Full Name</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.personalInfo?.fullName || 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Gender</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.personalInfo?.gender || 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>DOB</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.personalInfo?.dateOfBirth 
+                      ? new Date(profile.personalInfo.dateOfBirth).toLocaleDateString('en-GB')
+                      : 'Not set'}
+                  </Text>
+                </View>
+              </View>
+            )}
+            </View>
+
+            {/* Emergency Contacts */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('emergencyContacts')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#00BCD4' }]}>
+                  <Ionicons name="notifications" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.emergencyContacts && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('emergencyContacts');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.emergencyContacts ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.emergencyContacts && (
+              <View style={styles.sectionContent}>
+                {/* Show all emergency contacts if array exists, otherwise show single contact */}
+                {(() => {
+                  const emergencyContactsArray = profile?.emergencyContacts;
+                  const singleContact = profile?.emergencyContact;
+                  
+                  
+                  // Check if emergencyContacts is an array with data
+                  if (emergencyContactsArray && Array.isArray(emergencyContactsArray) && emergencyContactsArray.length > 0) {
+                    return emergencyContactsArray.map((contact, index) => (
+                      <View key={index}>
+                        {index > 0 && <View style={[styles.divider, { marginTop: 16, marginBottom: 16 }]} />}
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Name</Text>
+                          <Text style={styles.infoValue}>
+                            {contact?.name || 'Not set'}
+                          </Text>
+                        </View>
+                        <View style={styles.divider} />
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Relation</Text>
+                          <Text style={styles.infoValue}>
+                            {contact?.relationship || 'Not set'}
+                          </Text>
+                        </View>
+                        <View style={styles.divider} />
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Phone Number</Text>
+                          <Text style={styles.infoValue}>
+                            {contact?.phoneNumber || 'Not set'}
+                          </Text>
+                        </View>
+                      </View>
+                    ));
+                  }
+                  
+                  // Fallback to single contact
+                  return (
+                    <>
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Name</Text>
+                        <Text style={styles.infoValue}>
+                          {singleContact?.name || 'Not set'}
+                        </Text>
+                      </View>
+                      <View style={styles.divider} />
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Relation</Text>
+                        <Text style={styles.infoValue}>
+                          {singleContact?.relationship || 'Not set'}
+                        </Text>
+                      </View>
+                      <View style={styles.divider} />
+                      <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Phone Number</Text>
+                        <Text style={styles.infoValue}>
+                          {singleContact?.phoneNumber || 'Not set'}
+                        </Text>
+                      </View>
+                    </>
+                  );
+                })()}
+              </View>
+            )}
+            </View>
+
+            {/* Health Essentials */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('healthEssentials')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#2196F3' }]}>
+                  <Ionicons name="medical" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Health Essentials</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.healthEssentials && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('healthEssentials');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.healthEssentials ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.healthEssentials && (
+              <View style={styles.sectionContent}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Blood Group</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.healthEssentials?.bloodGroup || 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Height</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.healthEssentials?.height || 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Weight</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.healthEssentials?.weight ? `${profile.healthEssentials.weight} kg` : 'Not set'}
+                  </Text>
+                </View>
+              </View>
+            )}
+            </View>
+
+            {/* Medical Condition */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('medicalCondition')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#9C27B0' }]}>
+                  <Ionicons name="medical-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Medical Condition</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.medicalCondition && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('medicalCondition');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.medicalCondition ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.medicalCondition && (
+              <View style={styles.sectionContent}>
+                {/* Medical Conditions */}
+                {profile?.medicalConditions && profile.medicalConditions.length > 0 ? (
+                  <>
+                    {profile.medicalConditions.map((condition, index) => (
+                      <View key={index}>
+                        {index > 0 && <View style={styles.divider} />}
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Medical Condition</Text>
+                          <Text style={styles.infoValue}>
+                            {condition?.conditionName || 'Not set'}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                    {(profile.allergies && profile.allergies.length > 0) || (profile.medications && profile.medications.length > 0) ? <View style={styles.divider} /> : null}
+                  </>
+                ) : (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Medical Condition</Text>
+                    <Text style={styles.infoValue}>Not set</Text>
+                  </View>
+                )}
+
+                {/* Allergies */}
+                {profile?.allergies && profile.allergies.length > 0 ? (
+                  <>
+                    {profile.allergies.map((allergy, index) => (
+                      <View key={index}>
+                        {index > 0 && <View style={styles.divider} />}
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Allergies</Text>
+                          <Text style={styles.infoValue}>
+                            {allergy?.allergenName || 'Not set'} {allergy?.severity ? `(${allergy.severity})` : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                    {profile.medications && profile.medications.length > 0 && <View style={styles.divider} />}
+                  </>
+                ) : (
+                  <>
+                    {(!profile?.medicalConditions || profile.medicalConditions.length === 0) && <View style={styles.divider} />}
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Allergies</Text>
+                      <Text style={styles.infoValue}>Not set</Text>
+                    </View>
+                  </>
+                )}
+
+                {/* Medications */}
+                {profile?.medications && profile.medications.length > 0 ? (
+                  <>
+                    {profile.medications.map((medication, index) => (
+                      <View key={index}>
+                        {index > 0 && <View style={styles.divider} />}
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Current Medication</Text>
+                          <Text style={styles.infoValue}>
+                            {medication?.name || 'Not set'} {medication?.dosage ? `- ${medication.dosage}` : ''} {medication?.frequency ? `(${medication.frequency})` : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {((!profile?.medicalConditions || profile.medicalConditions.length === 0) && (!profile?.allergies || profile.allergies.length === 0)) && <View style={styles.divider} />}
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Current Medication</Text>
+                      <Text style={styles.infoValue}>Not set</Text>
+                    </View>
+                  </>
+                )}
+              </View>
+            )}
+            </View>
+
+            {/* Contact and Security */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('contactSecurity')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#FF9800' }]}>
+                  <Ionicons name="lock-closed" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>Contact and Security</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.contactSecurity && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('contactSecurity');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.contactSecurity ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.contactSecurity && (
+              <View style={styles.sectionContent}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoValue}>{userEmail}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Phone Number</Text>
+                  <Text style={styles.infoValue}>
+                    {profile?.contactInfo?.primaryPhone || 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Password</Text>
+                  <View style={styles.passwordRow}>
+                    <Text style={styles.infoValue}>123*****</Text>
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Ionicons 
+                        name={showPassword ? "eye-off" : "eye"} 
+                        size={18} 
+                        color="#666" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+            </View>
+
+            {/* App Preference */}
+            <View style={styles.sectionItem}>
+            <TouchableOpacity 
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('appPreference')}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#4CAF50' }]}>
+                  <Ionicons name="settings" size={20} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitle}>App Preference</Text>
+              </View>
+              <View style={styles.sectionHeaderRight}>
+                {expandedSections.appPreference && (
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleEdit('appPreference');
+                    }}
+                    style={styles.editIconButton}
+                  >
+                    <Ionicons name="pencil" size={18} color="#9C27B0" />
+                  </TouchableOpacity>
+                )}
+                <Ionicons 
+                  name={expandedSections.appPreference ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#9C27B0" 
+                />
+              </View>
+            </TouchableOpacity>
+            {expandedSections.appPreference && (
+              <View style={styles.sectionContent}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Languages</Text>
+                  <Text style={styles.infoValue}>English US</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>App Notifications</Text>
+                  <Switch
+                    value={notificationsEnabled}
+                    onValueChange={setNotificationsEnabled}
+                    trackColor={{ false: '#E0E0E0', true: '#9C27B0' }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              </View>
+            )}
+            </View>
+
+            {/* Logout Button */}
+            <View style={styles.sectionItem}>
+              <TouchableOpacity 
+                style={styles.logoutButton}
+                onPress={handleLogout}
+              >
+                <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+                <Text style={styles.logoutText}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+
+          <View style={styles.bottomPadding} />
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+  },
+  safeArea: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: '#fff',
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  noDataText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    fontFamily: 'Poppins_400Regular',
-  },
-  createButton: {
-    backgroundColor: '#8B7AD8',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'Poppins_400Regular',
-  },
-  fixedHeader: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 10,
+    paddingBottom: 16,
   },
   backButton: {
-    padding: 5,
-    width: 40,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 25,
   },
-  header: {
-    backgroundColor: '#B4A7D6',
-    paddingTop: Platform.OS === 'ios' ? 90 : (StatusBar.currentHeight || 0) + 50,
-    paddingBottom: 50,
+  profileCard: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  profileSection: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   avatarContainer: {
-    borderRadius: 60,
-    backgroundColor: '#fff',
+    position: 'relative',
+    marginRight: 16,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  avatar: {
+    width: 71,
+    height: 71,
+    borderRadius: 50.78,
+  },
+  avatarPlaceholder: {
+    width: 71,
+    height: 71,
+    borderRadius: 50.78,
+    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#fff',
-    zIndex: 2,
   },
-  avatarImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  profileHeader: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    marginTop: -90,
-    paddingTop: 45,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+  editPhotoButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#9C27B0',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    overflow: 'visible',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  profileName: {
-    fontSize: 20,
-    fontWeight: '600',
+  userName: {
+    fontSize: 27,
+    fontFamily: 'Inter_700Bold',
+    fontWeight: '700',
     color: '#000',
-    marginBottom: 2,
-    fontFamily: 'Poppins_400Regular',
+    marginBottom: 4,
   },
-  profileSubtitle: {
-    fontSize: 13,
+  userEmail: {
+    fontSize: 16,
+    fontFamily: 'Inter_400Regular',
+    fontWeight: '400',
     color: '#666',
-    marginBottom: 12,
-    letterSpacing: 0.2,
-    fontFamily: 'Poppins_400Regular',
   },
-  editButton: {
-    backgroundColor: '#8B7AD8',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 10,
+  sectionsCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 20,
+    marginBottom: 20,
   },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'Poppins_400Regular',
+  sectionItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(233, 233, 233, 1)',
   },
-  section: {
-    marginHorizontal: 16,
-    marginBottom: 12,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#8B7AD8',
-    marginBottom: 8,
-    fontFamily: 'Poppins_400Regular',
+    fontSize: 16,
+    fontFamily: 'Inter_400Regular',
+    fontWeight: '400',
+    color: '#000',
   },
-  sectionHeaderWithEdit: {
+  sectionHeaderRight: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 12,
   },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    overflow: 'hidden',
+  editIconButton: {
+    padding: 4,
+  },
+  sectionContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  dividerLine: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginLeft: 20,
-  },
-  lastRow: {
-    borderBottomWidth: 0,
   },
   infoLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     fontWeight: '400',
-    fontFamily: 'Poppins_400Regular',
+    color: '#666',
   },
   infoValue: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '500',
-    fontFamily: 'Poppins_400Regular',
-  },
-  conditionRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  conditionText: {
-    fontSize: 14,
-    color: '#000',
+    fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     fontWeight: '400',
-    fontFamily: 'Poppins_400Regular',
+    color: '#000',
   },
-  deleteProfileButton: {
+  passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    gap: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#fee2e2',
-    gap: 10,
-  },
-  deleteProfileButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_400Regular',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  modalContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 28,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  warningIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#fee2e2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2d3748',
-    marginBottom: 16,
-    textAlign: 'center',
-    fontFamily: 'Poppins_400Regular',
-  },
-  modalMessage: {
-    fontSize: 16,
-    color: '#4a5568',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-    fontFamily: 'Poppins_400Regular',
-  },
-  deleteItemsList: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  deleteItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
   },
-  deleteItemText: {
-    fontSize: 15,
-    color: '#4a5568',
-    fontFamily: 'Poppins_400Regular',
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#ef4444',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 28,
-    fontFamily: 'Poppins_400Regular',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#e2e8f0',
-  },
-  cancelButtonText: {
-    color: '#2d3748',
+  logoutText: {
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_400Regular',
-  },
-  confirmDeleteButton: {
-    backgroundColor: '#ef4444',
-  },
-  confirmDeleteButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Inter_400Regular',
+    fontWeight: '400',
+    color: '#FF3B30',
   },
   bottomPadding: {
-    height: 40,
+    height: 20,
   },
 });
 

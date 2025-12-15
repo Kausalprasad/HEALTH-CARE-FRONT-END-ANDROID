@@ -9,10 +9,10 @@ import {
   Platform,
   Alert,
   StatusBar,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
-import { FontAwesome } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -270,261 +270,253 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
-      {/* Heading */}
-      <Text style={styles.title}>Welcome Back!</Text>
-      <Text style={styles.subtitle}>
-        Login to your account to access{"\n"}your dashboard
-      </Text>
-
-      {/* Purple Curved Background */}
-      <LinearGradient colors={["#F2F0FF", "#E7E4FF"]} style={styles.curvedBox}>
-        {/* Email */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
+    <LinearGradient
+      colors={["#FFE5B4", "#FFD4A3", "#E8F4F8", "#D4E8F0", "#C8D4F0"]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
+        
+        {/* Header with Logo */}
+        <View style={styles.headerContainer}>
+          <Image
+            source={require("../../../assets/Dashoabdicons/Healnova.ai.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
           />
         </View>
 
-        {/* Password */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#aaa" />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-outline" : "eye-off-outline"}
-              size={20}
-              color="#aaa"
-            />
-          </TouchableOpacity>
-        </View>
+        {/* White Card */}
+        <View style={styles.whiteCard}>
+          <Text style={styles.title}>Sign in</Text>
 
-        {/* Forgot Password */}
-        <TouchableOpacity
-          style={{ alignSelf: "flex-end", marginBottom: 20 }}
-          onPress={() => navigation.navigate("ForgotPassword")}
-        >
-          <Text style={styles.forgot}>Forgot Password</Text>
-        </TouchableOpacity>
-
-        {/* Login Button with Biometric Button Side by Side */}
-        <View style={styles.buttonRow}>
+          {/* Google Sign In Button */}
           <TouchableOpacity
-            style={styles.loginButton}
+            style={styles.googleButton}
+            disabled={!request}
+            onPress={() => promptAsync()}
+          >
+            <AntDesign name="google" size={20} color="#4285F4" />
+            <Text style={styles.googleButtonText}>Sign in with Google</Text>
+          </TouchableOpacity>
+
+          {/* OR Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter email"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter password"
+              placeholderTextColor="#999"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={20}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign In Button */}
+          <TouchableOpacity
+            style={styles.signInButton}
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.loginText}>
-              {isLoading ? "Signing In..." : "Login"}
+            <Text style={styles.signInButtonText}>
+              {isLoading ? "Signing In..." : "Sign In"}
             </Text>
           </TouchableOpacity>
 
-          {/* Biometric Button beside Login */}
-          {isBiometricSupported && biometricEnabled && (
+          {/* Bottom Row: Fingerprint + Forgot Password */}
+          <View style={styles.bottomRow}>
+            {isBiometricSupported && biometricEnabled && (
+              <TouchableOpacity
+                style={styles.fingerprintButton}
+                onPress={handleBiometricAuth}
+                disabled={isLoading}
+              >
+                <MaterialCommunityIcons
+                  name={Platform.OS === "ios" ? "face-recognition" : "fingerprint"}
+                  size={24}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              style={styles.biometricButton}
-              onPress={handleBiometricAuth}
-              disabled={isLoading}
-              activeOpacity={0.8}
+              style={styles.forgotPasswordButton}
+              onPress={() => navigation.navigate("ForgotPassword")}
             >
-              <MaterialCommunityIcons
-                name={Platform.OS === "ios" ? "face-recognition" : "fingerprint"}
-                size={28}
-                color="#fff"
-              />
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
-          )}
+          </View>
+
+          {/* Sign Up Link */}
+          <View style={styles.signUpContainer}>
+            <Text style={styles.signUpText}>
+              Don't have an account?{" "}
+              <Text
+                style={styles.signUpLink}
+                onPress={() => navigation.navigate("Signup")}
+              >
+                Sign up
+              </Text>
+            </Text>
+          </View>
         </View>
-
-        {/* Register */}
-        <Text style={styles.registerText}>
-          Don't have an account?{" "}
-          <Text
-            style={styles.registerLink}
-            onPress={() => navigation.navigate("Signup")}
-          >
-            Register
-          </Text>
-        </Text>
-
-        {/* OR Divider */}
-        <View style={styles.orContainer}>
-          <View style={styles.line} />
-          <Text style={styles.orText}>or</Text>
-          <View style={styles.line} />
-        </View>
-
-        {/* Social Buttons */}
-        <TouchableOpacity
-          style={styles.socialButton}
-          disabled={!request}
-          onPress={() => promptAsync()}
-        >
-          <AntDesign name="google" size={20} color="black" />
-          <Text style={styles.socialText}>Continue with Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.socialButton}
-          onPress={() =>
-            Alert.alert("Coming Soon", "Apple Sign-In will be available soon!")
-          }
-        >
-          <FontAwesome name="apple" size={22} color="black" />
-          <Text style={styles.socialText}>Continue with Apple</Text>
-        </TouchableOpacity>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  headerContainer: {
+    alignItems: "center",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 40,
+    paddingBottom: 20,
+  },
+  headerLogo: {
+    width: 150,
+    height: 60,
+  },
+  whiteCard: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 60,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 30,
+    marginTop: 20,
+    marginHorizontal: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "600",
-    color: "#6C63FF",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#222",
+    marginBottom: 32,
     textAlign: "center",
-    marginBottom: 8,
-    fontFamily: "Poppins_400Regular",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 20,
-    fontWeight: "500",
-    lineHeight: 26,
-    fontFamily: "Poppins_400Regular",
-  },
-  curvedBox: {
-    flex: 1,
-    backgroundColor: "#EDEBFF",
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 40,
-    padding: 40,
-    alignItems: "center",
-    marginTop: 30,
-  },
-  buttonRow: {
+  googleButton: {
     flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    marginTop: 10,
-    gap: 10,
-  },
-  biometricButton: {
-    width: 55,
-    height: 55,
-    borderRadius: 10,
-    backgroundColor: "#6C63FF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#6C63FF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 14,
-    height: 60,
-    width: "100%",
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: "#333",
-  },
-  forgot: {
-    color: "#333",
-    fontSize: 15,
-    fontWeight: "500",
-    fontFamily: "Poppins_400Regular",
-  },
-  loginButton: {
-    flex: 1,
-    backgroundColor: "#6C63FF",
+    borderWidth: 1,
+    borderColor: "rgba(30, 30, 30, 1)",
+    borderRadius: 30,
     paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
+    marginBottom: 24,
   },
-  loginText: {
-    color: "#fff",
-    fontSize: 15,
+  googleButtonText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#000",
     fontWeight: "500",
-    fontFamily: "Poppins_400Regular",
-  },
-  registerText: {
-    marginTop: 20,
-    fontSize: 15,
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
-  },
-  registerLink: {
-    color: "#6C63FF",
-    fontWeight: "600",
-    fontFamily: "Poppins_400Regular",
-    fontSize: 15,
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
-    width: "100%",
+    marginBottom: 24,
   },
-  line: {
+  orLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#E0E0E0",
   },
   orText: {
-    marginHorizontal: 10,
+    marginHorizontal: 12,
     fontSize: 14,
-    color: "#333",
+    color: "#999",
   },
-  socialButton: {
+  inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "rgba(204, 204, 204, 1)",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: "100%",
-    justifyContent: "center",
-    marginBottom: 10,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    height: 56,
   },
-  socialText: {
-    marginLeft: 10,
+  input: {
+    flex: 1,
     fontSize: 16,
-    color: "#333",
-    fontFamily: "Poppins_400Regular",
+    color: "#222",
+  },
+  eyeIcon: {
+    padding: 4,
+  },
+  signInButton: {
+    backgroundColor: "#1FA8E7",
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  signInButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  fingerprintButton: {
+    padding: 8,
+  },
+  forgotPasswordButton: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: "#1FA8E7",
+    fontWeight: "500",
+  },
+  signUpContainer: {
+    marginTop: "auto",
+    alignItems: "center",
+  },
+  signUpText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  signUpLink: {
+    color: "#1FA8E7",
+    fontWeight: "600",
   },
 });
