@@ -15,6 +15,7 @@ import BreathingGameScreen from "../screens/HealthGames/Games/BreathingGameScree
 import ResultsScreen from "../screens/HealthGames/Games/ResultsScreen";
 import EyeBubblesGameScreen from "../screens/HealthGames/Games/EyeBubblesGameScreen";
 import AIDoctorScreen from "../screens/Model/AIDoctorScreen";
+import AIDoctorReportScreen from "../screens/Model/AIDoctorReportScreen";
 import TongueDiseaseCheckerScreen from "../screens/Model/TongueDiseaseCheckerScreen";
 import ChatbotScreen from "../screens/Model/ChatbotScreen";
 import EyeScreen from "../screens/Model/EyeScreen";
@@ -186,6 +187,7 @@ export default function AppNavigator() {
   <Stack.Screen name="SymptomChecker" component={SymptomCheckerScreen} />
   <Stack.Screen name="NailAnalysis" component={NailAnalysisScreen} />
   <Stack.Screen name="AIDoctor" component={AIDoctorScreen} />
+  <Stack.Screen name="AIDoctorReportScreen" component={AIDoctorReportScreen} />
   <Stack.Screen name="TongueDiseaseChecker" component={TongueDiseaseCheckerScreen} />
    <Stack.Screen name="HealthGames" component={HealthGamesScreen} />
    <Stack.Screen name="BreathingGameScreen" component={BreathingGameScreen} />

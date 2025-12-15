@@ -248,22 +248,32 @@ const ProfileView = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              if (logout) {
-                await logout();
-              } else {
-                // Fallback logout
-                const { signOut } = require('firebase/auth');
-                const { auth } = require('../../api/firebaseConfig');
-                await signOut(auth);
-                await AsyncStorage.clear();
+              // Simple logout - just sign out from Firebase
+              const { signOut } = require('firebase/auth');
+              await signOut(auth);
+              
+              // Clear token from AsyncStorage
+              await AsyncStorage.removeItem('token');
+              await AsyncStorage.removeItem('profileSkipped');
+              
+              // Navigate to Landing screen (Login)
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Landing' }],
+              });
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Even if error, try to navigate to login
+              try {
+                await AsyncStorage.removeItem('token');
+                await AsyncStorage.removeItem('profileSkipped');
                 navigation.reset({
                   index: 0,
                   routes: [{ name: 'Landing' }],
                 });
+              } catch (navError) {
+                Alert.alert('Error', 'Failed to logout. Please try again.');
               }
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout');
             }
           }
         }
@@ -941,7 +951,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     fontWeight: '400',
-    color: '#000',
+    color: 'rgba(30, 30, 30, 1)',
   },
   sectionHeaderRight: {
     flexDirection: 'row',
@@ -965,13 +975,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     fontWeight: '400',
-    color: '#666',
+    color: ' rgba(133, 134, 137, 1)',
   },
   infoValue: {
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     fontWeight: '400',
-    color: '#000',
+    color: ' rgba(133, 134, 137, 1)',
   },
   passwordRow: {
     flexDirection: 'row',
