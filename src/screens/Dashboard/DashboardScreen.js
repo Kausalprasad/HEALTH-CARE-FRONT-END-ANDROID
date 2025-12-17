@@ -3015,7 +3015,11 @@ function DashboardScreenContent({ navigation }) {
       />
 
       {/* Bottom Navigation */}
-      <BottomNavigation navigation={navigation} activeScreen="Home" />
+      <BottomNavigation 
+        navigation={navigation} 
+        activeScreen="Home" 
+        onMenuPress={() => setSidebarVisible(true)}
+      />
 
       {/* Eye Health Scanner Modal */}
       <Modal
@@ -3071,7 +3075,7 @@ function DashboardScreenContent({ navigation }) {
                 onPress={() => {
                   setEyeHealthModalVisible(false);
                   // Navigate to gallery picker
-                  navigation.navigate('EyeScreen', { source: 'gallery' });
+                  navigation.navigate('EyeScreen', { source: 'gallery', from: 'DashboardScreen' });
                 }}
               >
                 <Ionicons name="add" size={32} color="#FF4444" />
@@ -3081,7 +3085,7 @@ function DashboardScreenContent({ navigation }) {
                 onPress={() => {
                   setEyeHealthModalVisible(false);
                   // Navigate to camera
-                  navigation.navigate('EyeScreen', { source: 'camera' });
+                  navigation.navigate('EyeScreen', { source: 'camera', from: 'DashboardScreen' });
                 }}
               >
                 <Ionicons name="camera" size={28} color="#FFFFFF" />
@@ -3789,7 +3793,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   metricsCard: {
-    backgroundColor: '#FFFFFFBF',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     marginHorizontal: 20,
     marginTop: 20,
     paddingHorizontal: 18,
@@ -3878,7 +3882,7 @@ const styles = StyleSheet.create({
   },
   // ===== AI Health Checkup main card =====
   aiHealthCheckupSection: {
-    backgroundColor: '#FFFFFFBF',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     borderRadius: 26,
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -3947,7 +3951,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   allFeaturesSection: {
-    backgroundColor: '#FFFFFFBF',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     borderRadius: 20,
     marginHorizontal: 20,
     marginTop: 24,

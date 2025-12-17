@@ -8,11 +8,13 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
   StatusBar,
   SafeAreaView,
   Dimensions,
+  Image,
+  Animated,
+  PanResponder,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from 'react-native-uuid';
@@ -22,15 +24,16 @@ import { BASE_URL } from "../../config/config";
 
 const { width, height } = Dimensions.get('window');
 
-export default function MentalHealthScreen() {
+export default function MentalHealthScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const flatListRef = useRef(null);
+  const translateY = useRef(new Animated.Value(0)).current;
 
-  // Initialize sessionId
   useEffect(() => {
     const initSession = async () => {
       try {
@@ -41,12 +44,11 @@ export default function MentalHealthScreen() {
         }
         setSessionId(savedId);
 
-        // Welcome message with typing animation
         setTimeout(() => {
           setMessages([
             {
               id: "welcome",
-              text: "Hello! I'm your AI therapist. How are you feeling today? 🌸",
+              text: "Hey! How are you?",
               sender: "bot",
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             },
@@ -59,6 +61,51 @@ export default function MentalHealthScreen() {
     };
     initSession();
   }, []);
+
+  // Pan Responder for drag gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (!isExpanded && gestureState.dy < 0) {
+          translateY.setValue(gestureState.dy);
+        } else if (isExpanded && gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (!isExpanded && gestureState.dy < -50) {
+          expandChat();
+        } else if (isExpanded && gestureState.dy > 50) {
+          collapseChat();
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  const expandChat = () => {
+    setIsExpanded(true);
+    Animated.spring(translateY, {
+      toValue: -height * 0.5,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const collapseChat = () => {
+    setIsExpanded(false);
+    Animated.spring(translateY, {
+      toValue: 0,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -81,7 +128,6 @@ export default function MentalHealthScreen() {
     setLoading(true);
     setIsTyping(true);
 
-    // Scroll to bottom after sending message
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -102,7 +148,6 @@ export default function MentalHealthScreen() {
         throw new Error("Server did not return JSON");
       }
 
-      // Simulate typing delay for natural feel
       setTimeout(() => {
         const botMessage = {
           id: Date.now().toString() + "_bot",
@@ -133,16 +178,19 @@ export default function MentalHealthScreen() {
   };
 
   const renderMessage = ({ item }) => (
-    <View style={styles.messageContainer}>
+    <View style={[
+      styles.messageContainer,
+      item.sender === "user" ? styles.userMessageContainer : styles.botMessageContainer
+    ]}>
       {item.sender === "bot" && (
         <View style={styles.botAvatar}>
-          <Ionicons name="heart-circle" size={24} color="#fff" />
+          <Ionicons name="add" size={24} color="#fff" />
         </View>
       )}
       
       <View
         style={[
-          styles.message,
+          styles.messageBubble,
           item.sender === "user" ? styles.userMessage : styles.botMessage,
         ]}
       >
@@ -152,28 +200,16 @@ export default function MentalHealthScreen() {
         ]}>
           {item.text}
         </Text>
-        <Text style={[
-          styles.timestamp,
-          item.sender === "user" ? styles.userTimestamp : styles.botTimestamp
-        ]}>
-          {item.timestamp}
-        </Text>
       </View>
-
-      {item.sender === "user" && (
-        <View style={styles.userAvatar}>
-          <Ionicons name="person-circle" size={24} color="#fff" />
-        </View>
-      )}
     </View>
   );
 
   const renderTypingIndicator = () => (
-    <View style={styles.messageContainer}>
+    <View style={[styles.messageContainer, styles.botMessageContainer]}>
       <View style={styles.botAvatar}>
-        <Ionicons name="heart-circle" size={24} color="#fff" />
+        <Ionicons name="add" size={24} color="#fff" />
       </View>
-      <View style={[styles.message, styles.botMessage, styles.typingMessage]}>
+      <View style={[styles.messageBubble, styles.botMessage, styles.typingMessage]}>
         <View style={styles.typingDots}>
           <View style={[styles.dot, styles.dot1]} />
           <View style={[styles.dot, styles.dot2]} />
@@ -184,269 +220,362 @@ export default function MentalHealthScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#667eea" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F0FFFE" />
       
-      {/* Header */}
-     <View
-  style={[styles.header, { backgroundColor: '#B2B3F2' }]}
->
-        <View style={styles.headerContent}>
-          <View style={styles.therapistInfo}>
-            <View style={styles.therapistAvatar}>
-              <Ionicons name="heart-circle" size={30} color="#fff" />
-            </View>
-            <View>
-              <Text style={styles.therapistName}>AI Therapist</Text>
-              <Text style={styles.therapistStatus}>
-                {isTyping ? "Typing..." : "Online"}
+      {/* Header Section with Gradient Background */}
+      {!isExpanded && (
+        <LinearGradient
+          colors={['rgba(31, 168, 231, 0)', 'rgba(31, 168, 231, 0.85)']}
+          locations={[0.2425, 1]}
+          start={{ x: 0.5, y: 1 }}
+          end={{ x: 0.5, y: 0 }}
+          style={styles.headerGradient}
+        >
+          <SafeAreaView>
+            <View style={styles.headerContent}>
+              {/* Logo */}
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={require('../../../assets/logo1.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+              
+              {/* Title */}
+              <View style={styles.titleContainer}>
+                <Text style={styles.titleText}>AI</Text>
+                <Text style={styles.titleText}>THERAPIST</Text>
+              </View>
+              
+              {/* Description */}
+              <Text style={styles.descriptionText}>
+                Our AI companion listens, supports, and gently guides you toward mental clarity and emotional balance.
               </Text>
             </View>
-          </View>
-          <TouchableOpacity style={styles.menuButton}>
-            <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+          </SafeAreaView>
+        </LinearGradient>
+      )}
 
-      <KeyboardAvoidingView
-        style={styles.chatSection}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      {/* Chat Section */}
+      <Animated.View 
+        style={[
+          styles.chatSection,
+          {
+            transform: [{ translateY }],
+          }
+        ]}
       >
-        {/* Chat Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.chatContainer}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={isTyping ? renderTypingIndicator : null}
-        />
+        {/* Drag Handle Bar */}
+        <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
+          <View style={styles.dragHandle} />
+        </View>
 
-        {/* Input Container */}
-        <LinearGradient
-          colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,1)']}
-          style={styles.inputContainer}
+        {/* Chat Header */}
+        <View style={styles.chatHeader}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation?.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          
+          <View style={styles.therapistInfo}>
+            <View style={styles.therapistAvatar}>
+              <Ionicons name="add" size={24} color="#fff" />
+            </View>
+            <View style={styles.therapistDetails}>
+              <Text style={styles.therapistName}>AI Therapist</Text>
+              <View style={styles.statusContainer}>
+                <View style={styles.statusDot} />
+                <Text style={styles.therapistStatus}>Active Now</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Messages */}
+        <KeyboardAvoidingView
+          style={styles.messagesWrapper}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type your message here..."
-              placeholderTextColor="#999"
-              value={input}
-              onChangeText={setInput}
-              editable={!!sessionId}
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                { opacity: (!sessionId || !input.trim()) ? 0.5 : 1 }
-              ]}
-              onPress={sendMessage}
-              disabled={!sessionId || !input.trim()}
-            >
-              <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                style={styles.sendButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messagesList}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={isTyping ? renderTypingIndicator : null}
+          />
+
+          {/* Input Section */}
+          <View style={styles.inputSection}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Send Message"
+                placeholderTextColor="#999"
+                value={input}
+                onChangeText={setInput}
+                editable={!!sessionId}
+                multiline
+                maxLength={500}
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={sendMessage}
+                disabled={!sessionId || !input.trim()}
               >
-                <Ionicons name="send" size={20} color="#fff" />
-              </LinearGradient>
+                <Ionicons 
+                  name="send" 
+                  size={20} 
+                  color={(!sessionId || !input.trim()) ? "#ccc" : "#666"} 
+                />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity style={styles.micButton}>
+              <Ionicons name="mic" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
-        </LinearGradient>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 10 : StatusBar.currentHeight + 10,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  headerGradient: {
+    paddingTop: Platform.OS === 'ios' ? 60 : StatusBar.currentHeight + 20,
+    paddingBottom: 90,
+    paddingHorizontal: 24,
   },
   headerContent: {
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginBottom: 24,
+  },
+  logoImage: {
+    width: 120,
+    height: 35,
+  },
+  titleContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  titleText: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: '#000000',
+    letterSpacing: 4,
+    lineHeight: 44,
+  },
+  descriptionText: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 32,
+    maxWidth: 320,
+  },
+  chatSection: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -50,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    paddingTop: 0,
+  },
+  dragHandleContainer: {
+    paddingTop: 12,
+    paddingBottom: 8,
+    alignItems: 'center',
+  },
+  dragHandle: {
+    width: 60,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+  },
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
   therapistInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   therapistAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#14B8A6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  therapistName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  therapistStatus: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  menuButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  therapistDetails: {
     justifyContent: 'center',
+  },
+  therapistName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  statusContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  chatSection: {
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#14B8A6',
+    marginRight: 6,
+  },
+  therapistStatus: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  messagesWrapper: {
     flex: 1,
   },
-  chatContainer: {
-    padding: 20,
-    paddingBottom: 10,
+  messagesList: {
+    padding: 16,
+    paddingBottom: 8,
   },
   messageContainer: {
     flexDirection: 'row',
-    marginVertical: 8,
+    marginBottom: 12,
     alignItems: 'flex-end',
   },
+  botMessageContainer: {
+    justifyContent: 'flex-start',
+    paddingRight: 50,
+  },
+  userMessageContainer: {
+    justifyContent: 'flex-end',
+    paddingLeft: 50,
+  },
   botAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#667eea',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#14B8A6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    marginBottom: 20,
   },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#764ba2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    marginBottom: 20,
-  },
-  message: {
-    maxWidth: width * 0.75,
-    padding: 16,
+  messageBubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  userMessage: {
-    backgroundColor: '#667eea',
-    marginLeft: 'auto',
-    borderBottomRightRadius: 6,
+    maxWidth: '100%',
   },
   botMessage: {
-    backgroundColor: '#fff',
-    marginRight: 'auto',
+    backgroundColor: '#F3F4F6',
     borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+  },
+  userMessage: {
+    backgroundColor: '#B2E5E0',
+    borderBottomRightRadius: 6,
+    alignSelf: 'flex-end',
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 21,
   },
   userMessageText: {
-    color: '#fff',
+    color: '#111827',
   },
   botMessageText: {
-    color: '#333',
-  },
-  timestamp: {
-    fontSize: 11,
-    marginTop: 6,
-    opacity: 0.7,
-  },
-  userTimestamp: {
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'right',
-  },
-  botTimestamp: {
-    color: '#888',
+    color: '#374151',
   },
   typingMessage: {
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   typingDots: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#667eea',
-    marginHorizontal: 3,
+    backgroundColor: '#14B8A6',
+  },
+  inputSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   inputContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
-  },
-  inputWrapper: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 28,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   input: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
+    color: '#111827',
     maxHeight: 100,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
   },
   sendButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    padding: 6,
+    marginLeft: 4,
   },
-  sendButtonGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 22.5,
+  micButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#14B8A6',
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#14B8A6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });

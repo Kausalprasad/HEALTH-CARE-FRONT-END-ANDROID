@@ -59,6 +59,8 @@ const EyeScreen = ({ navigation, route }) => {
   const [countdown, setCountdown] = useState(null)
   const autoClickTimerRef = useRef(null)
   const progressIntervalRef = useRef(null)
+  const [eyeHealthModalVisible, setEyeHealthModalVisible] = useState(false)
+  const [guidelinesModalVisible, setGuidelinesModalVisible] = useState(false)
 
   // Load fonts
   useEffect(() => {
@@ -496,10 +498,10 @@ const cropImageToGuideBox = async (imageUri, photoWidth = null, photoHeight = nu
     }
   }, [route?.params, fontsLoaded])
 
-  // Handle case when no route params and no valid state - go back
+  // Handle case when no route params - show modal instead of going back
   useEffect(() => {
     if (!route?.params?.source && !imageUri && !result && !showCamera && !loading && fontsLoaded) {
-      navigation.goBack()
+      setEyeHealthModalVisible(true)
     }
   }, [route?.params?.source, imageUri, result, showCamera, loading, fontsLoaded])
 
@@ -1634,9 +1636,158 @@ const cropImageToGuideBox = async (imageUri, photoWidth = null, photoHeight = nu
   )
   }
 
-  // No default screen - all navigation should come from modal
-  // Return null while waiting or if no valid state
-  return null
+  // Eye Health Scanner Modal - Show when no source param
+  return (
+    <>
+      <Modal
+        visible={eyeHealthModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setEyeHealthModalVisible(false)
+          navigation.goBack()
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Header with Close and Info buttons */}
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => {
+                  setEyeHealthModalVisible(false)
+                  const fromScreen = route?.params?.from || 'DashboardScreen'
+                  if (fromScreen === 'AiHealthCheckupScreen') {
+                    navigation.navigate('AiHealthCheckupScreen')
+                  } else {
+                    navigation.navigate('DashboardScreen')
+                  }
+                }}
+              >
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalInfoButton}
+                onPress={() => {
+                  setEyeHealthModalVisible(false)
+                  setGuidelinesModalVisible(true)
+                }}
+              >
+                <Ionicons name="information-circle" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Eye Icon */}
+            <View style={styles.modalIconContainer}>
+              <View style={styles.eyeIconCircle}>
+                <Image 
+                  source={require('../../../assets/AiHealthCheckUp/eye3.png')}
+                  style={styles.eyeIcon}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.modalTitle}>Eye Health Scanner</Text>
+
+            {/* Description */}
+            <Text style={styles.modalDescription}>
+              We use smart AI to scan your eye for potential health signs. For the most accurate results, make sure your photo is clear and well-lit.
+            </Text>
+
+            {/* Action Buttons */}
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.modalButtonGallery}
+                onPress={async () => {
+                  setEyeHealthModalVisible(false)
+                  setPhotoSource('gallery')
+                  await pickPhoto(false)
+                }}
+              >
+                <Ionicons name="add" size={32} color="#FF4444" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalButtonCamera}
+                onPress={async () => {
+                  setEyeHealthModalVisible(false)
+                  setPhotoSource('camera')
+                  await openCameraWithGuide()
+                }}
+              >
+                <Ionicons name="camera" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Picture Guidelines Modal */}
+      <Modal
+        visible={guidelinesModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setGuidelinesModalVisible(false)
+          setEyeHealthModalVisible(true)
+        }}
+      >
+        <View style={styles.guidelinesModalOverlay}>
+          <View style={styles.guidelinesModalContainer}>
+            {/* Back Button */}
+            <TouchableOpacity 
+              style={styles.guidelinesBackButton}
+              onPress={() => {
+                setGuidelinesModalVisible(false)
+                setEyeHealthModalVisible(true)
+              }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000000" />
+            </TouchableOpacity>
+
+            {/* Question Mark Icon */}
+            <View style={styles.guidelinesIconContainer}>
+              <View style={styles.guidelinesIconCircle}>
+                <Text style={styles.guidelinesQuestionMark}>?</Text>
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.guidelinesTitle}>Picture Guidelines</Text>
+
+            {/* Instructions List */}
+            <View style={styles.guidelinesInstructions}>
+              <View style={styles.guidelinesInstructionItem}>
+                <Ionicons name="ellipse" size={8} color="#333" style={styles.guidelinesBullet} />
+                <Text style={styles.guidelinesInstructionText}>
+                  Find a spot with bright, natural light.
+                </Text>
+              </View>
+              <View style={styles.guidelinesInstructionItem}>
+                <Ionicons name="ellipse" size={8} color="#333" style={styles.guidelinesBullet} />
+                <Text style={styles.guidelinesInstructionText}>
+                  Open your eye as wide as possible.
+                </Text>
+              </View>
+              <View style={styles.guidelinesInstructionItem}>
+                <Ionicons name="ellipse" size={8} color="#333" style={styles.guidelinesBullet} />
+                <Text style={styles.guidelinesInstructionText}>
+                  Hold still, we'll capture the image automatically in 5 seconds.
+                </Text>
+              </View>
+              <View style={styles.guidelinesInstructionItem}>
+                <Ionicons name="ellipse" size={8} color="#333" style={styles.guidelinesBullet} />
+                <Text style={styles.guidelinesInstructionText}>
+                  Center your eye inside the box on screen.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -2553,6 +2704,175 @@ const styles = StyleSheet.create({
     color: "#333",
     marginLeft: 10,
     flex: 1,
+  },
+  // ===== Eye Health Modal Styles =====
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#1E1E1EE5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#111827',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalInfoButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#111827',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  eyeIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#E8E0F5',
+    borderWidth: 2,
+    borderColor: '#9C27B0',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  eyeIcon: {
+    width: 80,
+    height: 80,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 32,
+    paddingHorizontal: 8,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  modalButtonGallery: {
+    flex: 1,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#FF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalButtonCamera: {
+    flex: 1,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guidelinesModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guidelinesModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    position: 'relative',
+  },
+  guidelinesBackButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  guidelinesIconContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  guidelinesIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FF9800',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guidelinesQuestionMark: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  guidelinesTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: 'Inter',
+  },
+  guidelinesInstructions: {
+    gap: 16,
+  },
+  guidelinesInstructionItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 8,
+  },
+  guidelinesBullet: {
+    marginTop: 6,
+    marginRight: 12,
+  },
+  guidelinesInstructionText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+    flex: 1,
+    fontFamily: 'Inter',
   },
 })
 

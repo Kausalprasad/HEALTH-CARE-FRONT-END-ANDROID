@@ -12,10 +12,15 @@ import {
   FlatList,
   SafeAreaView,
   Modal,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle } from 'react-native-svg';
 import { BASE_URL } from '../../config/config';
+
+const { width } = Dimensions.get('window');
 
 const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -34,7 +39,7 @@ const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
         <Text style={[styles.customPickerText, !selectedValue && styles.placeholderText]}>
           {getLabel()}
         </Text>
-        <Text style={styles.dropdownArrow}>▼</Text>
+        <Ionicons name="chevron-down" size={16} color="#666" />
       </TouchableOpacity>
 
       <Modal
@@ -91,7 +96,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
     diet: '',
     alcohol: '',
     sleep_hours: '',
-    stress_level: 5,
+    stress_level: '',
   });
 
   const [familyHistory, setFamilyHistory] = useState([]);
@@ -101,7 +106,8 @@ const RiskAssessmentScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('generate');
   const [userToken, setUserToken] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [detailTab, setDetailTab] = useState('cardiovascular');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const genderOptions = [
     { label: 'Male', value: 'male' },
@@ -144,6 +150,19 @@ const RiskAssessmentScreen = ({ navigation }) => {
     { label: 'Heavy', value: 'heavy' },
   ];
 
+  const stressOptions = [
+    { label: '1', value: 1 },
+    { label: '2', value: 2 },
+    { label: '3', value: 3 },
+    { label: '4', value: 4 },
+    { label: '5', value: 5 },
+    { label: '6', value: 6 },
+    { label: '7', value: 7 },
+    { label: '8', value: 8 },
+    { label: '9', value: 9 },
+    { label: '10', value: 10 },
+  ];
+
   const conditionOptions = [
     { label: 'Heart Disease', value: 'heart_disease' },
     { label: 'Diabetes', value: 'diabetes' },
@@ -178,24 +197,17 @@ const RiskAssessmentScreen = ({ navigation }) => {
       if (!token) {
         token = await AsyncStorage.getItem('authToken');
       }
-      console.log('🔑 Token found:', token ? 'Yes' : 'No');
       setUserToken(token);
     } catch (error) {
-      console.log('❌ Error fetching token:', error);
+      console.log('Error fetching token:', error);
     }
   };
 
   const fetchSavedReports = async () => {
-    if (!userToken) {
-      console.log('⚠️ No token available');
-      return;
-    }
+    if (!userToken) return;
 
     setLoadingSavedReports(true);
     try {
-      console.log('📡 Fetching reports from:', `${BASE_URL}/api/analyze-risk`);
-      console.log('🔑 Using token:', userToken.substring(0, 20) + '...');
-
       const response = await fetch(`${BASE_URL}/api/analyze-risk`, {
         method: 'GET',
         headers: {
@@ -204,16 +216,12 @@ const RiskAssessmentScreen = ({ navigation }) => {
         },
       });
 
-      console.log('📊 Response status:', response.status);
       const data = await response.json();
-      console.log('📦 Response data:', JSON.stringify(data, null, 2));
 
       if (response.ok) {
         const reports = data.data || data.assessments || data || [];
-        console.log('✅ Reports found:', reports.length);
         setSavedReports(Array.isArray(reports) ? reports : []);
       } else {
-        console.log('❌ Error response:', data.error || data.message);
         if (response.status !== 404) {
           Alert.alert('Error', data.error || data.message || 'Failed to fetch saved reports');
         } else {
@@ -221,56 +229,10 @@ const RiskAssessmentScreen = ({ navigation }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Error fetching saved reports:', error);
-      console.error('Error details:', error.message);
-      if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
-        Alert.alert('Error', 'Failed to connect to server. Please check your internet connection.');
-      }
+      console.error('Error fetching saved reports:', error);
     } finally {
       setLoadingSavedReports(false);
     }
-  };
-
-  const deleteSavedReport = async (reportId) => {
-    if (!userToken) return;
-
-    Alert.alert(
-      'Delete Report',
-      'Are you sure you want to delete this risk assessment report?',
-      [
-        { text: 'Cancel', onPress: () => {} },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            try {
-              const response = await fetch(`${BASE_URL}/api/analyze-risk/${reportId}`, {
-                method: 'DELETE',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${userToken}`,
-                },
-              });
-
-              const data = await response.json();
-              if (response.ok) {
-                Alert.alert('Success', 'Report deleted successfully');
-                fetchSavedReports();
-              } else {
-                Alert.alert('Error', data.error || 'Failed to delete');
-              }
-            } catch (error) {
-              console.error('Error deleting report:', error);
-              Alert.alert('Error', 'Failed to delete report');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const viewSavedReport = (report) => {
-    setSelectedReport(report);
-    setDetailTab('cardiovascular');
   };
 
   const handleInputChange = (field, value) => {
@@ -281,9 +243,8 @@ const RiskAssessmentScreen = ({ navigation }) => {
     setFamilyHistory([
       ...familyHistory,
       {
-        condition: 'heart_disease',
-        has_condition: true,
-        relative: 'father',
+        condition: '',
+        relative: '',
         diagnosis_age: '',
       },
     ]);
@@ -331,23 +292,24 @@ const RiskAssessmentScreen = ({ navigation }) => {
       height,
       weight,
       ethnicity: formData.ethnicity || 'Other',
-      family_history: familyHistory.map(fh => ({
-        ...fh,
-        diagnosis_age: parseInt(fh.diagnosis_age) || 0
-      })),
+      family_history: familyHistory
+        .filter(fh => fh.condition && fh.relative) // Only include valid entries
+        .map(fh => ({
+          condition: fh.condition,
+          relative: fh.relative,
+          diagnosis_age: fh.diagnosis_age && !isNaN(parseInt(fh.diagnosis_age)) ? parseInt(fh.diagnosis_age) : 0
+        })),
       smoking: formData.smoking || 'never',
       physical_activity: formData.physical_activity || 'moderate',
       diet: formData.diet || 'mixed',
       alcohol: formData.alcohol || 'none',
       sleep_hours: sleep_hours,
-      stress_level: formData.stress_level,
+      stress_level: typeof formData.stress_level === 'number' 
+        ? formData.stress_level 
+        : (formData.stress_level && !isNaN(parseInt(formData.stress_level)) ? parseInt(formData.stress_level) : 5),
     };
 
     try {
-      console.log('📤 Sending request to:', `${BASE_URL}/api/analyze-risk`);
-      console.log('📦 Request data:', JSON.stringify(requestData, null, 2));
-      console.log('🔑 Using token:', userToken.substring(0, 20) + '...');
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90000);
 
@@ -362,28 +324,35 @@ const RiskAssessmentScreen = ({ navigation }) => {
       });
 
       clearTimeout(timeoutId);
-
-      console.log('📊 Response status:', response.status);
       const data = await response.json();
-      console.log('📦 Response data:', JSON.stringify(data, null, 2));
 
       if (response.ok) {
-        Alert.alert('Success', 'Risk assessment generated successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              setActiveTab('history');
-              fetchSavedReports();
-            }
+        // Store response with inputData for display
+        const reportData = {
+          ...data,
+          inputData: {
+            age: formData.age,
+            gender: formData.gender,
+            height: formData.height,
+            weight: formData.weight,
+            ethnicity: formData.ethnicity,
+            smoking: formData.smoking,
+            physical_activity: formData.physical_activity,
+            diet: formData.diet,
+            alcohol: formData.alcohol,
+            sleep_hours: formData.sleep_hours,
+            stress_level: formData.stress_level,
           }
-        ]);
+        };
+        // Show results immediately
+        setSelectedReport(reportData);
       } else {
-        console.log('❌ Error:', data.error || data.message);
-        Alert.alert('Error', data.error || data.message || 'Failed to generate risk assessment');
+        const errorMessage = data.error || data.message || data.detail || 'Failed to generate risk assessment';
+        console.error('API Error:', errorMessage);
+        Alert.alert('Error', errorMessage);
       }
     } catch (error) {
-      console.error('❌ Error:', error);
-      console.error('Error details:', error.message);
+      console.error('Error:', error);
       if (error.name === 'AbortError') {
         Alert.alert('Timeout', 'Server is taking too long. Please try again.');
       } else {
@@ -403,96 +372,361 @@ const RiskAssessmentScreen = ({ navigation }) => {
     }
   };
 
-  const SavedReportItem = ({ item }) => {
-    const inputData = item.inputData || {};
-    const assessment = item.assessment || {};
-    const risks = assessment.risks || {};
-    
-    const avgRisk = Object.values(risks).reduce((sum, risk) => 
-      sum + (risk.risk_percentage || 0), 0) / Object.keys(risks).length;
-
-    return (
-      <View style={styles.savedReportCard}>
-        <View style={styles.savedReportHeader}>
-          <View style={styles.savedReportLeft}>
-            <Text style={styles.savedReportTitle}>RISK ASSESSMENT</Text>
-            <Text style={styles.savedReportDate}>
-              {new Date(item.createdAt).toLocaleDateString('en-GB')}
-            </Text>
-          </View>
-          <View style={styles.savedReportRight}>
-            <Text style={styles.savedReportRisk}>{avgRisk.toFixed(1)}%</Text>
-            <Text style={styles.savedReportRiskText}>avg risk</Text>
-          </View>
-        </View>
-        
-        <View style={styles.savedReportActions}>
-          <TouchableOpacity 
-            style={styles.savedViewButton}
-            onPress={() => viewSavedReport(item)}
-          >
-            <Text style={styles.savedViewButtonText}>view</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.savedDeleteButton}
-            onPress={() => deleteSavedReport(item._id)}
-          >
-            <Text style={styles.savedDeleteButtonText}>delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  const getRiskPercentage = (report) => {
+    if (!report || !report.assessment || !report.assessment.risks) return 0;
+    const risks = report.assessment.risks;
+    const values = Object.values(risks).map(r => r.risk_percentage || 0);
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
   };
 
-  const renderHistoryTab = () => (
-    <View style={styles.container}>
-      {loadingSavedReports ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#E74C3C" />
-          <Text style={styles.loadingText}>Loading your reports...</Text>
-        </View>
-      ) : savedReports.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🏥</Text>
-          <Text style={styles.emptyTitle}>No Reports Yet</Text>
-          <Text style={styles.emptyText}>Generate your first risk assessment to see it here</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={savedReports}
-          renderItem={({ item }) => <SavedReportItem item={item} />}
-          keyExtractor={item => item._id}
-          contentContainerStyle={styles.historyListContent}
-          scrollEnabled={true}
-        />
-      )}
-    </View>
-  );
+  const groupReportsByDate = (reports) => {
+    const grouped = {};
+    reports.forEach(report => {
+      const date = new Date(report.createdAt || report.created_at);
+      const dateKey = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', weekday: 'short' });
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(report);
+    });
+    return grouped;
+  };
 
-  // Detail View
+  const filteredReports = savedReports.filter(report => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      report._id?.toLowerCase().includes(query) ||
+      'Risk Assessment'.toLowerCase().includes(query)
+    );
+  });
+
+  const groupedReports = groupReportsByDate(filteredReports);
+
+  // Results/Output Screen
   if (selectedReport) {
-    const assessment = selectedReport.assessment || {};
-    const risks = assessment.risks || {};
-    const inputData = selectedReport.inputData || {};
+    // Extract data from API response - handle different response structures
+    const assessment = selectedReport.assessment || selectedReport.data || selectedReport;
+    const risks = assessment.risks || assessment || {};
+    const inputData = selectedReport.inputData || selectedReport.user_data || {};
     
-    const riskTypes = [
-      { key: 'cardiovascular', label: 'Heart', icon: '❤️' },
-      { key: 'diabetes', label: 'Diabetes', icon: '🩸' },
-      { key: 'hypertension', label: 'BP', icon: '💊' },
-      { key: 'cancer', label: 'Cancer', icon: '🎗️' },
-      { key: 'kidney_disease', label: 'Kidney', icon: '🫘' },
+    // Calculate average risk from all categories
+    const riskValues = Object.values(risks).map(r => {
+      if (typeof r === 'object' && r.risk_percentage) {
+        return r.risk_percentage;
+      }
+      return 0;
+    }).filter(v => v > 0);
+    
+    const avgRisk = riskValues.length > 0 
+      ? riskValues.reduce((a, b) => a + b, 0) / riskValues.length 
+      : (assessment.overall_risk_percentage || assessment.avg_risk || getRiskPercentage(selectedReport));
+    
+    const riskLevel = assessment.overall_risk_level || assessment.risk_level || 
+      (avgRisk < 20 ? 'Low' : avgRisk < 50 ? 'Moderate' : 'High');
+    
+    const categories = [
+      { key: 'cardiovascular', label: 'Heart', icon: 'heart', color: '#9C27B0' },
+      { key: 'diabetes', label: 'Diabetes', icon: 'leaf', color: '#4CAF50' },
+      { key: 'hypertension', label: 'BP', icon: 'pulse', color: '#2196F3' },
+      { key: 'cancer', label: 'Cancer', icon: 'ribbon', color: '#00BCD4' },
+      { key: 'kidney_disease', label: 'Kidney', icon: 'medical', color: '#FF9800' },
     ];
 
-    const currentRisk = risks[detailTab] || {};
+    // Collect risk factors and recommendations from all categories
+    let allRiskFactors = [];
+    let allRecommendations = [];
     
+    // Log risks for debugging
+    console.log('Risks object:', JSON.stringify(risks, null, 2));
+    
+    // Loop through all categories and collect their data
+    categories.forEach(cat => {
+      const risk = risks[cat.key] || {};
+      if (risk && typeof risk === 'object') {
+        // Collect risk factors from this category
+        const categoryRiskFactors = risk.top_risk_factors || 
+          risk.risk_factors || 
+          risk.factors ||
+          [];
+        
+        if (Array.isArray(categoryRiskFactors) && categoryRiskFactors.length > 0) {
+          allRiskFactors = [...allRiskFactors, ...categoryRiskFactors];
+        } else if (typeof categoryRiskFactors === 'string') {
+          allRiskFactors.push(categoryRiskFactors);
+        }
+        
+        // Collect recommendations from this category
+        const categoryRecommendations = risk.recommendations || 
+          risk.recommendation ||
+          risk.advice ||
+          [];
+        
+        if (Array.isArray(categoryRecommendations) && categoryRecommendations.length > 0) {
+          allRecommendations = [...allRecommendations, ...categoryRecommendations];
+        } else if (typeof categoryRecommendations === 'string') {
+          allRecommendations.push(categoryRecommendations);
+        }
+      }
+    });
+    
+    // Also try to get overall risk factors and recommendations
+    const overallRisk = assessment.overall || assessment.summary || {};
+    const overallRiskFactors = overallRisk.top_risk_factors || 
+      overallRisk.risk_factors || 
+      assessment.risk_factors ||
+      assessment.top_risk_factors ||
+      [];
+    
+    const overallRecommendations = overallRisk.recommendations || 
+      overallRisk.recommendation ||
+      assessment.recommendations ||
+      assessment.recommendation ||
+      [];
+    
+    // Combine all risk factors and recommendations, remove duplicates
+    const combinedRiskFactors = [...allRiskFactors, ...(Array.isArray(overallRiskFactors) ? overallRiskFactors : [])];
+    const combinedRecommendations = [...allRecommendations, ...(Array.isArray(overallRecommendations) ? overallRecommendations : [])];
+    
+    // Remove duplicates by converting to Set and back to array
+    const riskFactors = [...new Set(combinedRiskFactors.map(f => typeof f === 'string' ? f : JSON.stringify(f)))];
+    const recommendations = [...new Set(combinedRecommendations.map(r => typeof r === 'string' ? r : JSON.stringify(r)))];
+
     return (
+      <LinearGradient
+        colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+        locations={[0, 0.3, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+          
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setSelectedReport(null)}
+            >
+              <Ionicons name="chevron-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Risk Assessment</Text>
+            <View style={styles.headerPlaceholder} />
+          </View>
+
+          <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
+            {/* Risk Score Circle - Show selected category's percentage */}
+            <View style={styles.riskCircleContainer}>
+              {(() => {
+                const displayRisk = selectedCategory 
+                  ? (risks[selectedCategory] || {})
+                  : { risk_percentage: avgRisk, risk_level: riskLevel };
+                const displayPercent = displayRisk.risk_percentage || displayRisk.percentage || avgRisk;
+                const displayLevel = displayRisk.risk_level || 
+                  (displayPercent < 20 ? 'Low' : displayPercent < 50 ? 'Moderate' : 'High');
+                const progressPercent = Math.min(displayPercent, 100);
+                const radius = 72;
+                const circumference = 2 * Math.PI * radius;
+                const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+                const progressColor = getRiskColor(displayLevel);
+                
+                return (
+                  <View style={styles.riskCircleWrapper}>
+                    <Svg width={160} height={160} style={styles.riskCircleSvg}>
+                      {/* Background Circle */}
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r={radius}
+                        stroke="#E0E0E0"
+                        strokeWidth="8"
+                        fill="none"
+                      />
+                      {/* Progress Circle */}
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r={radius}
+                        stroke={progressColor}
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        transform="rotate(-90 80 80)"
+                      />
+                    </Svg>
+                    <View style={styles.riskCircleInner}>
+                      <Text style={styles.riskNumber}>{displayPercent.toFixed(0)}%</Text>
+                      <Text style={[styles.riskLevel, { color: progressColor }]}>
+                        {displayLevel}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
+            </View>
+
+            {/* Category Icons */}
+            <View style={styles.categoryContainer}>
+              {categories.map(cat => {
+                const isSelected = selectedCategory === cat.key;
+                return (
+                  <TouchableOpacity 
+                    key={cat.key} 
+                    style={styles.categoryItem}
+                    onPress={() => setSelectedCategory(selectedCategory === cat.key ? null : cat.key)}
+                  >
+                    <View style={[
+                      styles.categoryIcon, 
+                      { 
+                        backgroundColor: cat.color,
+                        borderWidth: isSelected ? 3 : 0,
+                        borderColor: '#FFF',
+                      }
+                    ]}>
+                      <Ionicons name={cat.icon} size={24} color="#FFF" />
+                    </View>
+                    <Text style={styles.categoryLabel}>{cat.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Risk Factors Card - Show selected category's or overall */}
+            <View style={styles.infoCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="search" size={20} color="#333" />
+                <Text style={styles.cardTitle}>Risk Factors</Text>
+              </View>
+              {(() => {
+                let riskFactorsList = [];
+                if (selectedCategory) {
+                  const risk = risks[selectedCategory] || {};
+                  const categoryRiskFactors = risk.top_risk_factors || 
+                    risk.risk_factors || 
+                    risk.factors ||
+                    [];
+                  riskFactorsList = Array.isArray(categoryRiskFactors) 
+                    ? categoryRiskFactors 
+                    : (categoryRiskFactors ? [categoryRiskFactors] : []);
+                } else {
+                  riskFactorsList = riskFactors;
+                }
+                
+                return riskFactorsList.length > 0 ? (
+                  riskFactorsList.map((factor, index) => (
+                    <View key={index} style={styles.listItem}>
+                      <Text style={styles.bullet}>•</Text>
+                      <Text style={styles.listText}>{typeof factor === 'string' ? factor : factor.factor || factor.name || JSON.stringify(factor)}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyDataText}>No risk factors identified</Text>
+                );
+              })()}
+            </View>
+
+            {/* Recommendations Card - Show selected category's or overall */}
+            <View style={styles.infoCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="megaphone" size={20} color="#333" />
+                <Text style={styles.cardTitle}>Recommendation</Text>
+              </View>
+              {(() => {
+                let recommendationsList = [];
+                if (selectedCategory) {
+                  const risk = risks[selectedCategory] || {};
+                  const categoryRecommendations = risk.recommendations || 
+                    risk.recommendation ||
+                    risk.advice ||
+                    [];
+                  recommendationsList = Array.isArray(categoryRecommendations) 
+                    ? categoryRecommendations 
+                    : (categoryRecommendations ? [categoryRecommendations] : []);
+                } else {
+                  recommendationsList = recommendations;
+                }
+                
+                return recommendationsList.length > 0 ? (
+                  recommendationsList.map((rec, index) => (
+                    <View key={index} style={styles.listItem}>
+                      <Text style={styles.bullet}>•</Text>
+                      <Text style={styles.listText}>{typeof rec === 'string' ? rec : rec.recommendation || rec.advice || rec.text || JSON.stringify(rec)}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyDataText}>No recommendations available</Text>
+                );
+              })()}
+            </View>
+
+            {/* Your Information Card */}
+            <View style={styles.infoCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="information-circle" size={20} color="#9C27B0" />
+                <Text style={styles.cardTitle}>Your Information</Text>
+              </View>
+              {/* Labels Row */}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Age:</Text>
+                <Text style={styles.infoLabel}>Gender</Text>
+                <Text style={styles.infoLabel}>Height</Text>
+                <Text style={styles.infoLabel}>Weight</Text>
+                <Text style={styles.infoLabel}>BMI</Text>
+              </View>
+              {/* Values Row */}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoValue}>{inputData.age || 'N/A'} years</Text>
+                <Text style={styles.infoValue}>{inputData.gender || 'N/A'}</Text>
+                <Text style={styles.infoValue}>{inputData.height || 'N/A'}cm</Text>
+                <Text style={styles.infoValue}>{inputData.weight || 'N/A'}kg</Text>
+                <Text style={styles.infoValue}>
+                  {inputData.height && inputData.weight 
+                    ? (inputData.weight / Math.pow(inputData.height/100, 2)).toFixed(1)
+                    : 'N/A'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Download and Share Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.downloadButton}>
+                <Text style={styles.buttonText}>Download</Text>
+              </TouchableOpacity>
+              <LinearGradient
+                colors={['#9C27B0', '#E91E63', '#FF9800']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.shareButton}
+              >
+                <TouchableOpacity>
+                  <Text style={styles.buttonText}>Share</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  // Main View
+  return (
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => setSelectedReport(null)}
+            onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
@@ -500,450 +734,800 @@ const RiskAssessmentScreen = ({ navigation }) => {
           <View style={styles.headerPlaceholder} />
         </View>
 
-        <ScrollView style={styles.detailContainer}>
-          <View style={styles.riskCircleContainer}>
-            <View style={styles.riskCircle}>
-              <View style={styles.riskCircleInner}>
-                <Text style={styles.riskNumber}>
-                  {currentRisk.risk_percentage || 0}%
-                </Text>
-                <Text style={[styles.riskLevel, { color: getRiskColor(currentRisk.risk_level) }]}>
-                  {currentRisk.risk_level || 'N/A'}
-                </Text>
-              </View>
-            </View>
-          </View>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('generate')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'generate' ? styles.tabTextGenerateActive : styles.tabTextGenerateInactive
+            ]}>
+              Generate
+            </Text>
+            {activeTab === 'generate' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('history')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'history' ? styles.tabTextReportsActive : styles.tabTextReportsInactive
+            ]}>
+              My Reports
+            </Text>
+            {activeTab === 'history' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.tabContainer}>
-            {riskTypes.map(type => (
-              <TouchableOpacity 
-                key={type.key}
-                style={detailTab === type.key ? styles.tabActive : styles.tab}
-                onPress={() => setDetailTab(type.key)}
-              >
-                <Text style={styles.tabIcon}>{type.icon}</Text>
-                <Text style={detailTab === type.key ? styles.tabTextActive : styles.tabText}>
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        {activeTab === 'generate' ? (
+          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            {/* White Card Container */}
+            <View style={styles.formCard}>
+              <View style={styles.formCardGradient}>
+                {/* Add Your Details Section */}
+                <Text style={styles.sectionTitle}>Add Your Details</Text>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.sectionTitle}>🎯 Risk Factors</Text>
-            {(currentRisk.top_risk_factors || []).map((factor, index) => (
-              <View key={index} style={styles.factorItem}>
-                <Text style={styles.factorBullet}>•</Text>
-                <Text style={styles.factorText}>{factor}</Text>
-              </View>
-            ))}
-          </View>
+                <View style={styles.inputRow}>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Age"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.age}
+                      onChangeText={(value) => handleInputChange('age', value)}
+                    />
+                  </View>
+                  <View style={styles.inputHalf}>
+                    <CustomPicker
+                      selectedValue={formData.gender}
+                      onValueChange={(value) => handleInputChange('gender', value)}
+                      items={genderOptions}
+                      placeholder="Gender"
+                    />
+                  </View>
+                </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.sectionTitle}>💡 Recommendations</Text>
-            {(currentRisk.recommendations || []).map((rec, index) => (
-              <View key={index} style={styles.factorItem}>
-                <Text style={styles.factorBullet}>✓</Text>
-                <Text style={styles.factorText}>{rec}</Text>
-              </View>
-            ))}
-          </View>
+                <View style={styles.inputRow}>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Height (cm)"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.height}
+                      onChangeText={(value) => handleInputChange('height', value)}
+                    />
+                  </View>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Weight (kg)"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.weight}
+                      onChangeText={(value) => handleInputChange('weight', value)}
+                    />
+                  </View>
+                </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.sectionTitle}>📋 Your Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Age:</Text>
-              <Text style={styles.infoValue}>{inputData.age || 'N/A'} years</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Gender:</Text>
-              <Text style={styles.infoValue}>{inputData.gender || 'N/A'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Height:</Text>
-              <Text style={styles.infoValue}>{inputData.height || 'N/A'} cm</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Weight:</Text>
-              <Text style={styles.infoValue}>{inputData.weight || 'N/A'} kg</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>BMI:</Text>
-              <Text style={styles.infoValue}>
-                {inputData.height && inputData.weight 
-                  ? (inputData.weight / Math.pow(inputData.height/100, 2)).toFixed(1)
-                  : 'N/A'}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Activity:</Text>
-              <Text style={styles.infoValue}>{inputData.physical_activity || 'N/A'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Sleep:</Text>
-              <Text style={styles.infoValue}>{inputData.sleep_hours || 'N/A'} hours</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // Main View
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
-      
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Risk Assessment</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      <View style={styles.tabButtonContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'generate' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('generate')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'generate' && styles.tabButtonTextActive]}>
-            Generate
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('history')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'history' && styles.tabButtonTextActive]}>
-            My Reports
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {activeTab === 'generate' ? (
-        <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Age"
-                placeholderTextColor="#BDBDBD"
-                keyboardType="numeric"
-                value={formData.age}
-                onChangeText={(value) => handleInputChange('age', value)}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <CustomPicker
-                selectedValue={formData.gender}
-                onValueChange={(value) => handleInputChange('gender', value)}
-                items={genderOptions}
-                placeholder="Gender"
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputRow}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Height (cm)"
-                placeholderTextColor="#BDBDBD"
-                keyboardType="numeric"
-                value={formData.height}
-                onChangeText={(value) => handleInputChange('height', value)}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Weight (kg)"
-                placeholderTextColor="#BDBDBD"
-                keyboardType="numeric"
-                value={formData.weight}
-                onChangeText={(value) => handleInputChange('weight', value)}
-              />
-            </View>
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <CustomPicker
-              selectedValue={formData.ethnicity}
-              onValueChange={(value) => handleInputChange('ethnicity', value)}
-              items={ethnicityOptions}
-              placeholder="Ethnicity"
-            />
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <CustomPicker
-              selectedValue={formData.smoking}
-              onValueChange={(value) => handleInputChange('smoking', value)}
-              items={smokingOptions}
-              placeholder="Smoking Status"
-            />
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <CustomPicker
-              selectedValue={formData.physical_activity}
-              onValueChange={(value) => handleInputChange('physical_activity', value)}
-              items={activityOptions}
-              placeholder="Physical Activity"
-            />
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <CustomPicker
-              selectedValue={formData.diet}
-              onValueChange={(value) => handleInputChange('diet', value)}
-              items={dietOptions}
-              placeholder="Diet Type"
-            />
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <CustomPicker
-              selectedValue={formData.alcohol}
-              onValueChange={(value) => handleInputChange('alcohol', value)}
-              items={alcoholOptions}
-              placeholder="Alcohol Consumption"
-            />
-          </View>
-
-          <View style={styles.dropdownContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Sleep Hours (per night)"
-              placeholderTextColor="#BDBDBD"
-              keyboardType="numeric"
-              value={formData.sleep_hours}
-              onChangeText={(value) => handleInputChange('sleep_hours', value)}
-            />
-          </View>
-
-          <View style={styles.sliderContainer}>
-            <Text style={styles.sliderLabel}>Stress Level: {formData.stress_level}/10</Text>
-            <View style={styles.sliderRow}>
-              {[1,2,3,4,5,6,7,8,9,10].map(level => (
-                <TouchableOpacity
-                  key={level}
-                  style={[
-                    styles.sliderButton,
-                    formData.stress_level === level && styles.sliderButtonActive
-                  ]}
-                  onPress={() => handleInputChange('stress_level', level)}
-                >
-                  <Text style={[
-                    styles.sliderButtonText,
-                    formData.stress_level === level && styles.sliderButtonTextActive
-                  ]}>{level}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.familyHistorySection}>
-            <View style={styles.familyHistoryHeader}>
-              <Text style={styles.familyHistoryTitle}>Family History</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={addFamilyHistory}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
-            </View>
-
-            {familyHistory.map((item, index) => (
-              <View key={index} style={styles.familyHistoryItem}>
-                <View style={styles.dropdownContainer}>
+                <View style={styles.fullInput}>
                   <CustomPicker
-                    selectedValue={item.condition}
-                    onValueChange={(value) => updateFamilyHistory(index, 'condition', value)}
-                    items={conditionOptions}
-                    placeholder="Condition"
+                    selectedValue={formData.ethnicity}
+                    onValueChange={(value) => handleInputChange('ethnicity', value)}
+                    items={ethnicityOptions}
+                    placeholder="Ethnicity"
                   />
                 </View>
 
-                <View style={styles.dropdownContainer}>
+                <View style={styles.fullInput}>
                   <CustomPicker
-                    selectedValue={item.relative}
-                    onValueChange={(value) => updateFamilyHistory(index, 'relative', value)}
-                    items={relativeOptions}
-                    placeholder="Relative"
+                    selectedValue={formData.smoking}
+                    onValueChange={(value) => handleInputChange('smoking', value)}
+                    items={smokingOptions}
+                    placeholder="Smoking Status"
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <CustomPicker
+                    selectedValue={formData.physical_activity}
+                    onValueChange={(value) => handleInputChange('physical_activity', value)}
+                    items={activityOptions}
+                    placeholder="Physical Activity"
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <CustomPicker
+                    selectedValue={formData.diet}
+                    onValueChange={(value) => handleInputChange('diet', value)}
+                    items={dietOptions}
+                    placeholder="Diet Type"
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <CustomPicker
+                    selectedValue={formData.alcohol}
+                    onValueChange={(value) => handleInputChange('alcohol', value)}
+                    items={alcoholOptions}
+                    placeholder="Alcohol Consumption"
                   />
                 </View>
 
                 <View style={styles.inputRow}>
-                  <View style={styles.inputWrapper}>
+                  <View style={styles.inputHalf}>
                     <TextInput
-                      style={styles.inputHalf}
-                      placeholder="Diagnosis Age"
-                      placeholderTextColor="#BDBDBD"
+                      style={styles.input}
+                      placeholder="Sleeping Hours"
+                      placeholderTextColor="#999"
                       keyboardType="numeric"
-                      value={item.diagnosis_age}
-                      onChangeText={(value) => updateFamilyHistory(index, 'diagnosis_age', value)}
+                      value={formData.sleep_hours}
+                      onChangeText={(value) => handleInputChange('sleep_hours', value)}
                     />
                   </View>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Stress Level (1-10)"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.stress_level ? formData.stress_level.toString() : ''}
+                      onChangeText={(value) => {
+                        if (value === '') {
+                          handleInputChange('stress_level', '');
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue) && numValue >= 1 && numValue <= 10) {
+                            handleInputChange('stress_level', numValue);
+                          }
+                        }
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {/* Family History Section */}
+                <View style={styles.familyHistorySection}>
+                  <View style={styles.familyHistoryHeader}>
+                    <Text style={styles.sectionTitle}>Family History</Text>
+                    {familyHistory.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setFamilyHistory([])}
+                      >
+                        <Text style={styles.removeAllText}>Remove</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {familyHistory.map((item, index) => (
+                    <View key={index} style={styles.familyHistoryItem}>
+                      <View style={styles.fullInput}>
+                        <CustomPicker
+                          selectedValue={item.condition}
+                          onValueChange={(value) => updateFamilyHistory(index, 'condition', value)}
+                          items={conditionOptions}
+                          placeholder="Disease Type"
+                        />
+                      </View>
+
+                      <View style={styles.inputRow}>
+                        <View style={styles.inputHalf}>
+                          <CustomPicker
+                            selectedValue={item.relative}
+                            onValueChange={(value) => updateFamilyHistory(index, 'relative', value)}
+                            items={relativeOptions}
+                            placeholder="Relation"
+                          />
+                        </View>
+                        <View style={styles.inputHalf}>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Diagnosis Age"
+                            placeholderTextColor="#999"
+                            keyboardType="numeric"
+                            value={item.diagnosis_age}
+                            onChangeText={(value) => updateFamilyHistory(index, 'diagnosis_age', value)}
+                          />
+                        </View>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeFamilyHistory(index)}
+                      >
+                        <Text style={styles.removeButtonText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
                   <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeFamilyHistory(index)}
+                    style={styles.addFamilyButton}
+                    onPress={addFamilyHistory}
                   >
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Ionicons name="add" size={20} color="#2196F3" />
+                    <Text style={styles.addFamilyText}>Add Family History</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
-          </View>
+            </View>
 
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={generateRiskAssessment}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
+            {/* Analyze Risk Button */}
+            <TouchableOpacity
+              style={styles.analyzeButton}
+              onPress={generateRiskAssessment}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.analyzeButtonText}>Analyze Risk</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          <View style={styles.historyContainer}>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search"
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+
+            {loadingSavedReports ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#9C27B0" />
+              </View>
+            ) : Object.keys(groupedReports).length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No reports found</Text>
+              </View>
             ) : (
-              <Text style={styles.submitButtonText}>Analyze Risk</Text>
+              <ScrollView style={styles.reportsScroll} showsVerticalScrollIndicator={false}>
+                {Object.entries(groupedReports).map(([date, reports]) => (
+                  <View key={date} style={styles.dateGroup}>
+                    <Text style={styles.dateHeader}>{date}</Text>
+                    {reports.map((report, index) => {
+                      const avgRisk = getRiskPercentage(report);
+                      return (
+                        <TouchableOpacity
+                          key={report._id || index}
+                          style={styles.reportCard}
+                          onPress={() => setSelectedReport(report)}
+                        >
+                          <View style={styles.reportLeft}>
+                            <View style={styles.reportIcon}>
+                              <Ionicons name="document-text" size={24} color="#9C27B0" />
+                            </View>
+                            <View>
+                              <Text style={styles.reportTitle}>Risk Assessment</Text>
+                              <Text style={styles.reportSize}>312 KB</Text>
+                            </View>
+                          </View>
+                          <View style={styles.reportRight}>
+                            <Text style={styles.reportRisk}>{avgRisk.toFixed(1)}%</Text>
+                            <Text style={styles.reportRiskLabel}>Avg risk</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+              </ScrollView>
             )}
-          </TouchableOpacity>
-        </ScrollView>
-      ) : (
-        renderHistoryTab()
-      )}
-    </SafeAreaView>
+          </View>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
-  header: { 
+  header: {
     marginTop: StatusBar.currentHeight || 0,
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6"
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    letterSpacing: 0.3,
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
-    width: 50,
+    width: 40,
   },
-  tabButtonContainer: {
+  tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 24,
+  },
+  tab: {
+    paddingBottom: 8,
+  },
+  tabText: {
+    fontFamily: 'Inter',
+  },
+  tabTextGenerateActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabTextGenerateInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabTextReportsActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabTextReportsInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabUnderline: {
+    height: 2,
+    backgroundColor: '#9C27B0',
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  formCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 8,
-    borderRadius: 25,
-    padding: 4,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    marginBottom: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
   },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 22,
+  formCardGradient: {
+    padding: 20,
   },
-  tabButtonActive: {
-    backgroundColor: '#7C6FDC',
-    elevation: 2,
-    shadowColor: '#7C6FDC',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  tabButtonText: {
-    fontSize: 15,
-    color: '#666666',
-    fontWeight: '500',
-  },
-  tabButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
   },
   inputRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 12,
-  },
-  inputWrapper: {
-    flex: 1,
+    gap: 16,
+    marginBottom: 16,
   },
   inputHalf: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 14,
-    color: '#000000',
+    flex: 1,
+  },
+  fullInput: {
+    marginBottom: 16,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     fontSize: 14,
-    color: '#000000',
-  },
-  dropdownContainer: {
-    marginBottom: 12,
+    color: '#000',
   },
   customPickerButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 50,
   },
   customPickerText: {
     fontSize: 14,
-    color: '#000000',
+    color: '#000',
   },
   placeholderText: {
-    color: '#BDBDBD',
+    color: '#999',
   },
-  dropdownArrow: {
+  familyHistorySection: {
+    marginTop: 8,
+  },
+  familyHistoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  removeAllText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  familyHistoryItem: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 30,
+    padding: 12,
+    marginBottom: 12,
+  },
+  removeButton: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  removeButtonText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addFamilyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    borderRadius: 30,
+    borderStyle: 'dashed',
+    marginTop: 8,
+  },
+  addFamilyText: {
+    color: '#2196F3',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  analyzeButton: {
+    backgroundColor: '#2196F3',
+    marginHorizontal: 16,
+    marginBottom: 40,
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  analyzeButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  historyContainer: {
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 14,
+    color: '#000',
+  },
+  reportsScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  dateGroup: {
+    marginBottom: 24,
+  },
+  dateHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+  },
+  reportCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  reportLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  reportIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F3E5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  reportTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+  },
+  reportSize: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  reportRight: {
+    alignItems: 'flex-end',
+  },
+  reportRisk: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  reportRiskLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  // Results Screen Styles
+  resultsContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  riskCircleContainer: {
+    alignItems: 'center',
+    marginVertical: 32,
+  },
+  riskCircleWrapper: {
+    width: 160,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  riskCircleSvg: {
+    position: 'absolute',
+  },
+  riskCircleInner: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  riskNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#000',
+  },
+  riskLevel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 4,
+    color: '#000',
+    textTransform: 'capitalize',
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  categoryItem: {
+    alignItems: 'center',
+  },
+  categoryIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: '500',
+  },
+  categoryRisk: {
     fontSize: 10,
     color: '#666',
+    marginTop: 2,
+  },
+  emptyDataText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  categoryCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  categoryCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  categoryCardHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  categoryCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  categoryCardRisk: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  categoryCardSection: {
+    padding: 16,
+    paddingTop: 12,
+  },
+  categoryCardSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  categoryCardSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 8,
+  },
+  infoCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 20,
+    marginBottom: 16,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginLeft: 8,
+  },
+  listItem: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  bullet: {
+    fontSize: 16,
+    color: '#333',
+    marginRight: 8,
+    fontWeight: 'bold',
+  },
+  listText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  downloadButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
@@ -952,11 +1536,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderRadius: 12,
     width: '80%',
     maxHeight: '60%',
-    overflow: 'hidden',
   },
   modalScroll: {
     maxHeight: 400,
@@ -967,357 +1550,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   modalItemSelected: {
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#F3E5F5',
   },
   modalItemText: {
     fontSize: 14,
-    color: '#000000',
+    color: '#000',
   },
   modalItemTextSelected: {
-    color: '#7C6FDC',
-    fontWeight: '600',
-  },
-  sliderContainer: {
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  sliderLabel: {
-    fontSize: 14,
-    color: '#333333',
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  sliderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sliderButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  sliderButtonActive: {
-    backgroundColor: '#7C6FDC',
-    borderColor: '#7C6FDC',
-  },
-  sliderButtonText: {
-    fontSize: 12,
-    color: '#666666',
-    fontWeight: '500',
-  },
-  sliderButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  familyHistorySection: {
-    marginBottom: 16,
-  },
-  familyHistoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  familyHistoryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  addButton: {
-    backgroundColor: '#7C6FDC',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  familyHistoryItem: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  removeButton: {
-    backgroundColor: '#FF5252',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-    marginLeft: 8,
-    justifyContent: 'center',
-  },
-  removeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  submitButton: {
-    backgroundColor: '#7C6FDC',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 40,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
-  historyListContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  savedReportCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  savedReportHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  savedReportLeft: {
-    flex: 1,
-  },
-  savedReportTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#7C6FDC',
-    letterSpacing: 0.5,
-  },
-  savedReportDate: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    marginTop: 4,
-  },
-  savedReportRight: {
-    alignItems: 'flex-end',
-  },
-  savedReportRisk: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  savedReportRiskText: {
-    fontSize: 11,
-    color: '#9E9E9E',
-    marginTop: 2,
-  },
-  savedReportActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  savedViewButton: {
-    flex: 1,
-    backgroundColor: '#00BFA5',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  savedViewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  savedDeleteButton: {
-    flex: 1,
-    backgroundColor: '#FF5252',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  savedDeleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  detailContainer: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-  },
-  riskCircleContainer: {
-    alignItems: 'center',
-    marginVertical: 28,
-  },
-  riskCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#FFF5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 8,
-    borderColor: '#7C6FDC',
-    borderTopColor: '#FFF5F5',
-    borderLeftColor: '#FFF5F5',
-  },
-  riskCircleInner: {
-    alignItems: 'center',
-  },
-  riskNumber: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#333333',
-  },
-  riskLevel: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    flexWrap: 'wrap',
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 3,
-    marginBottom: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  tabActive: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    backgroundColor: '#7C6FDC',
-    marginHorizontal: 3,
-    marginBottom: 6,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#7C6FDC',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  tabIcon: {
-    fontSize: 16,
-    marginBottom: 2,
-  },
-  tabText: {
-    fontSize: 11,
-    color: '#888888',
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 18,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#7C6FDC',
-    marginBottom: 14,
-  },
-  factorItem: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    paddingRight: 8,
-  },
-  factorBullet: {
-    fontSize: 16,
-    color: '#7C6FDC',
-    marginRight: 8,
-    fontWeight: 'bold',
-  },
-  factorText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#444444',
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    paddingVertical: 6,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#777777',
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#333333',
+    color: '#9C27B0',
     fontWeight: '600',
   },
 });
 
 export default RiskAssessmentScreen;
+
