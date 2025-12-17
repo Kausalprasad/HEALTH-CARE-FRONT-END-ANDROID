@@ -8,6 +8,7 @@ import {
   Animated,
   Alert,
   Image,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
@@ -27,6 +28,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
 
   const slideAnim = useRef(new Animated.Value(-screenWidth * 0.8)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef(null);
 
   const fetchProfile = async () => {
     try {
@@ -51,34 +53,70 @@ const Sidebar = ({ visible, onClose, navigation }) => {
   }, []);
 
   useEffect(() => {
+    // Stop any ongoing animations
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+
     if (visible) {
       fetchProfile(); // Also fetch when sidebar opens
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(overlayOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      // Always reset to initial position before animating
+      slideAnim.setValue(-screenWidth * 0.8);
+      overlayOpacity.setValue(0);
+      
+      // Small delay to ensure reset is applied
+      setTimeout(() => {
+        animationRef.current = Animated.parallel([
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 450,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(overlayOpacity, {
+            toValue: 1,
+            duration: 450,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]);
+        animationRef.current.start(() => {
+          animationRef.current = null;
+        });
+      }, 10);
     } else {
-      Animated.parallel([
+      animationRef.current = Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -screenWidth * 0.8,
-          duration: 300,
+          duration: 400,
+          easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(overlayOpacity, {
           toValue: 0,
-          duration: 300,
+          duration: 400,
+          easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+      animationRef.current.start((finished) => {
+        if (finished) {
+          // Ensure it's at the exact closed position
+          slideAnim.setValue(-screenWidth * 0.8);
+          overlayOpacity.setValue(0);
+        }
+        animationRef.current = null;
+      });
     }
+
+    // Cleanup function
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
+    };
   }, [visible]);
 
   const menuItems = [
@@ -194,7 +232,15 @@ const Sidebar = ({ visible, onClose, navigation }) => {
       </Animated.View>
 
       {/* Sidebar */}
-      <Animated.View style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View 
+        style={[
+          styles.sidebar, 
+          { 
+            transform: [{ translateX: slideAnim }],
+            width: screenWidth * 0.8,
+          }
+        ]}
+      >
         
         {/* User Profile */}
         <TouchableOpacity style={styles.profileSection} onPress={handlePress}>
@@ -288,7 +334,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000,
+    zIndex: 2000,
+    elevation: 2000,
   },
   overlay: {
     position: 'absolute',
@@ -304,12 +351,14 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: screenWidth * 0.8,
+    maxWidth: screenWidth * 0.8,
     backgroundColor: '#FFFFFF',
-    elevation: 10,
+    elevation: 20,
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
+    zIndex: 2001,
   },
   header: {
     flexDirection: 'row',

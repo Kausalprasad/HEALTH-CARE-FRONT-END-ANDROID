@@ -1,104 +1,93 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import HomeIcon from '../../assets/Dashoabdicons/Home1.png';
-import DeitIcon from '../../assets/Dashoabdicons/Diet1.png';
-import VitalsIcon from '../../assets/Dashoabdicons/Vitals1.png';
-import VaultIcon from '../../assets/Dashoabdicons/Vault1.png';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
-export default function BottomNavigation({ navigation, activeScreen = 'Home' }) {
+export default function BottomNavigation({ navigation, activeScreen = 'Home', onMenuPress }) {
   return (
-    <View style={styles.bottomNavContainer}>
-      {/* White Main Body with Icons */}
+    <LinearGradient
+      colors={["#F5D391", "#DADEE3", "#A6E2F1"]}
+      locations={[0, 0.5, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.bottomNavContainer}
+    >
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
+          onPress={() => {
+            // Open sidebar - use callback if provided, otherwise try drawer navigation
+            if (onMenuPress) {
+              onMenuPress();
+            } else if (navigation.openDrawer) {
+              navigation.openDrawer();
+            } else {
+              navigation.navigate('VaultMenu');
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name="menu" 
+            size={24} 
+            color="#4A4A4A" 
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
           onPress={() => navigation.navigate('DashboardScreen')}
+          activeOpacity={0.7}
         >
-          <Image 
-            source={HomeIcon}
-            style={[
-              styles.homeIcon,
-              { opacity: activeScreen === 'Home' ? 1 : 0.5 }
-            ]}
-            resizeMode="contain"
+          <Ionicons 
+            name="home" 
+            size={24} 
+            color="#4A4A4A" 
           />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('DietScreen')}
+          onPress={() => navigation.navigate('VaultWelcome')}
+          activeOpacity={0.7}
         >
-         <Image 
-            source={DeitIcon}
-            style={[
-              styles.homeIcon,
-              { opacity: activeScreen === 'Home' ? 1 : 0.5 }
-            ]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('VitalsScreen')}
-        >
-           <Image 
-            source={VitalsIcon}
-            style={[
-              styles.homeIcon,
-              { opacity: activeScreen === 'Home' ? 1 : 0.5 }
-            ]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('LoginVaultId')}
-        >
-          <Image 
-            source={VaultIcon}
-            style={[
-              styles.homeIcon,
-              { opacity: activeScreen === 'Home' ? 1 : 0.5 }
-            ]}
-            resizeMode="contain"
+          <Ionicons 
+            name="lock-closed" 
+            size={24} 
+            color="#4A4A4A" 
           />
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   bottomNavContainer: {
-    width: '100%',
+    width: 377,
+    height: 63,
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
+    bottom: 20,
+    alignSelf: 'center',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    overflow: 'hidden',
+    zIndex: 999,
+    elevation: 999,
   },
   bottomNav: {
+    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
   },
   navItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  homeIcon: {
-    width: 24,
-    height: 24,
   },
 });
-

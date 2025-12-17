@@ -6,17 +6,76 @@ import { LinearGradient } from "expo-linear-gradient";
 export default function VaultAIReport({ navigation, route }) {
   const { file } = route.params || {};
   
+  // Helper function to safely convert values to strings
+  const safeStringify = (value, fallback = "Not available") => {
+    if (value === null || value === undefined) {
+      return fallback;
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    if (Array.isArray(value)) {
+      return value.map(item => {
+        if (typeof item === "object") {
+          return JSON.stringify(item, null, 2);
+        }
+        return String(item);
+      }).join(", ");
+    }
+    if (typeof value === "object") {
+      // Try to extract meaningful text from object
+      if (value.text) return value.text;
+      if (value.description) return value.description;
+      if (value.content) return value.content;
+      // Otherwise stringify with formatting
+      return JSON.stringify(value, null, 2);
+    }
+    return fallback;
+  };
+  
   // Parse AI output or use default structure
   const aiOutput = file?.aiOutput || {};
   
-  // Extract data from AI output
-  const patientDetails = aiOutput.patientDetails || aiOutput.patient_info || "No patient details available.";
-  const diagnoses = aiOutput.diagnoses || aiOutput.diagnosis || "No diagnoses found.";
-  const medications = aiOutput.medications || aiOutput.medication || "None mentioned in the report";
-  const followUps = aiOutput.followUps || aiOutput.follow_up || aiOutput.recommendations || "No follow-up recommendations available.";
+  // Extract data from AI output and safely convert to strings
+  const patientDetails = safeStringify(
+    aiOutput.patientDetails || aiOutput.patient_info || aiOutput.patient_condition,
+    "No patient details available."
+  );
+  const diagnoses = safeStringify(
+    aiOutput.diagnoses || aiOutput.diagnosis,
+    "No diagnoses found."
+  );
+  const medications = safeStringify(
+    aiOutput.medications || aiOutput.medication,
+    "None mentioned in the report"
+  );
+  const followUps = safeStringify(
+    aiOutput.followUps || aiOutput.follow_up || aiOutput.recommendations,
+    "No follow-up recommendations available."
+  );
 
   const documentName = file?.name || "Unknown Document";
-  const generatedDate = file?.date || new Date().toLocaleString();
+  
+  // Safely format the date
+  const formatDate = (date) => {
+    if (!date) return new Date().toLocaleString();
+    if (date instanceof Date) {
+      return date.toLocaleString();
+    }
+    if (typeof date === "string") {
+      try {
+        return new Date(date).toLocaleString();
+      } catch {
+        return date;
+      }
+    }
+    return new Date().toLocaleString();
+  };
+  
+  const generatedDate = formatDate(file?.date);
 
   const sections = [
     {

@@ -7,24 +7,82 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  SafeAreaView,
-  Animated,
   StatusBar,
+  Dimensions,
+  Modal,
+  Alert,
 } from 'react-native';
-import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
+const { width } = Dimensions.get('window');
+
+const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const getLabel = () => {
+    const selected = items.find(item => item.value === selectedValue);
+    return selected ? selected.label : placeholder;
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={styles.customPickerButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={[styles.customPickerText, !selectedValue && styles.placeholderText]}>
+          {getLabel()}
+        </Text>
+        <Text style={styles.dropdownArrow}>▼</Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <ScrollView style={styles.modalScroll}>
+              {items.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.modalItem,
+                    selectedValue === item.value && styles.modalItemSelected
+                  ]}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.modalItemText,
+                    selectedValue === item.value && styles.modalItemTextSelected
+                  ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+};
 
 export default function PCOSScreening() {
   const navigation = useNavigation();
-
-  let [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-  });
 
   const [formData, setFormData] = useState({
     irregular_cycles: false,
@@ -35,7 +93,7 @@ export default function PCOSScreening() {
     age: '',
     weight: '',
     height: '',
-    family_history: null,
+    family_history: '',
   });
 
   const [result, setResult] = useState(null);
@@ -44,7 +102,7 @@ export default function PCOSScreening() {
 
   const handleSubmit = async () => {
     if (!formData.age || !formData.weight || !formData.height) {
-      setError('Please fill in age, weight, and height');
+      Alert.alert('Error', 'Please fill in age, weight, and height');
       return;
     }
 
@@ -61,7 +119,7 @@ export default function PCOSScreening() {
         age: parseInt(formData.age),
         weight: parseFloat(formData.weight),
         height: parseFloat(formData.height),
-        family_history: formData.family_history === true,
+        family_history: formData.family_history === true || formData.family_history === 'true' || formData.family_history === 'Yes' || formData.family_history === 'yes',
       };
 
       const response = await fetch(
@@ -82,332 +140,289 @@ export default function PCOSScreening() {
       const data = await response.json();
       setResult(data);
     } catch (err) {
-      setError('Unable to process screening. Please try again.');
+      Alert.alert('Error', 'Unable to process screening. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      irregular_cycles: false,
-      excess_hair_growth: false,
-      acne: false,
-      hair_loss: false,
-      weight_difficulty: false,
-      age: '',
-      weight: '',
-      height: '',
-      family_history: null,
-    });
-    setResult(null);
-    setError('');
-  };
-
   const getRiskColor = (level) => {
     switch (level?.toLowerCase()) {
       case 'high':
-        return '#DC2626';
+        return '#F44336';
       case 'moderate':
-        return '#F59E0B';
+        return '#FF9800';
       case 'low':
-        return '#10B981';
+        return '#4CAF50';
       default:
-        return '#6B7280';
+        return '#9E9E9E';
     }
   };
 
   const CheckBox = ({ checked, onPress, label }) => (
     <TouchableOpacity style={styles.checkboxContainer} onPress={onPress}>
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-        {checked && <View style={styles.checkboxInner} />}
+        {checked && <Ionicons name="checkmark" size={14} color="#FFF" />}
       </View>
       <Text style={styles.checkboxLabel}>{label}</Text>
     </TouchableOpacity>
   );
 
-  const YesNoButton = ({ selected, onPress, label }) => (
-    <TouchableOpacity
-      style={[styles.yesNoButton, selected && styles.yesNoButtonSelected]}
-      onPress={onPress}
-    >
-      <Text style={[styles.yesNoText, selected && styles.yesNoTextSelected]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const CircularProgress = ({ percentage, color }) => {
-    const radius = 54;
-    const strokeWidth = 12;
+  const renderResults = () => {
+    const riskPercent = parseFloat(result.risk_score) || 0;
+    const riskLevel = result.risk_level || 'Low';
+    const radius = 76;
     const circumference = 2 * Math.PI * radius;
-    const progress = (percentage / 100) * circumference;
+    const strokeDashoffset = circumference - (riskPercent / 100) * circumference;
+    const progressColor = getRiskColor(riskLevel);
 
     return (
-      <View style={styles.circleContainer}>
-        <Svg width={140} height={140}>
-          <Circle
-            cx={70}
-            cy={70}
-            r={radius}
-            stroke="#F3F4F6"
-            strokeWidth={strokeWidth}
-            fill="none"
-          />
-          <Circle
-            cx={70}
-            cy={70}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={`${circumference} ${circumference}`}
-            strokeDashoffset={circumference - progress}
-            strokeLinecap="round"
-            transform={`rotate(-90, 70, 70)`}
-          />
-        </Svg>
-        <View style={styles.circleTextContainer}>
-          <Text style={styles.circlePercentage}>{percentage}%</Text>
+      <View style={styles.resultsContainer}>
+        {/* Risk Score Circle */}
+        <View style={styles.riskCircleContainer}>
+          <Svg height="160" width="160" style={styles.circularProgressSvg}>
+            <Circle
+              cx="80" cy="80" r={radius} stroke="#E0E0E0" strokeWidth="8" fill="none"
+            />
+            <Circle
+              cx="80" cy="80" r={radius}
+              stroke={progressColor}
+              strokeWidth="8"
+              fill="none"
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              transform="rotate(-90, 80, 80)"
+            />
+          </Svg>
+          <View style={styles.riskCircleInner}>
+            <Text style={styles.riskNumber}>{riskPercent.toFixed(0)}%</Text>
+            <Text style={[styles.riskLevelText, { color: progressColor }]}>
+              {riskLevel}
+            </Text>
+          </View>
+        </View>
+
+        {/* Recommendation Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="megaphone" size={20} color="#FF9800" />
+            <Text style={styles.cardTitle}>Recommendation</Text>
+          </View>
+          <Text style={styles.recommendationText}>
+            {result.recommendation}
+          </Text>
+        </View>
+
+        {/* Next Steps Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="help-circle" size={20} color="#00BCD4" />
+            <Text style={styles.cardTitle}>Next Steps</Text>
+          </View>
+          {result.next_steps?.map((step, index) => (
+            <View key={index} style={styles.stepItem}>
+              <Text style={styles.stepBullet}>•</Text>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Download and Share Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.downloadButton}>
+            <Text style={styles.buttonText}>Download</Text>
+          </TouchableOpacity>
+          <LinearGradient
+            colors={['#9C27B0', '#E91E63', '#FF9800']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.shareButton}
+          >
+            <TouchableOpacity>
+              <Text style={styles.buttonText}>Share</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
       </View>
     );
   };
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
-      </View>
-    );
-  }
-
-  if (result) {
-    const riskColor = getRiskColor(result.risk_level);
-
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-           <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => (navigation && navigation.goBack ? navigation.goBack() : null)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-          <Text style={styles.headerTitle}>PCOS Screening</Text>
-          <View style={styles.backButton} />
-        </View>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.resultContent}>
-            <View style={styles.riskLevelCard}>
-              <View style={styles.riskLevelHeader}>
-                <Text style={styles.riskLevelLabel}>Risk Level</Text>
-                <Text style={[styles.riskLevelValue, { color: riskColor }]}>
-                  {result.risk_level?.toUpperCase()}
-                </Text>
-              </View>
-              
-              <CircularProgress percentage={result.risk_score} color={riskColor} />
-            </View>
-
-            <View style={styles.recommendationCard}>
-              <Text style={styles.cardTitle}>Recommendation</Text>
-              <Text style={styles.recommendationText}>
-                {result.recommendation}
-              </Text>
-            </View>
-
-            <View style={styles.nextStepsCard}>
-              <Text style={styles.cardTitle}>Next Steps</Text>
-              {result.next_steps?.map((step, index) => (
-                <View key={index} style={styles.stepItem}>
-                  <View style={styles.stepBullet} />
-                  <Text style={styles.stepText}>{step}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => (navigation && navigation.goBack ? navigation.goBack() : null)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>PCOS Screening</Text>
-        <View style={styles.backButton} />
-      </View>
+  const renderForm = () => (
+    <View style={styles.formContainer}>
+      <Text style={styles.sectionTitle}>Symptoms</Text>
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.formContent}>
-          {error ? (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
+      <CheckBox
+        checked={formData.irregular_cycles}
+        onPress={() => setFormData({ ...formData, irregular_cycles: !formData.irregular_cycles })}
+        label="Irregular menstrual cycle"
+      />
+      <CheckBox
+        checked={formData.excess_hair_growth}
+        onPress={() => setFormData({ ...formData, excess_hair_growth: !formData.excess_hair_growth })}
+        label="Excess hair growth (face, chest, back)"
+      />
+      <CheckBox
+        checked={formData.acne}
+        onPress={() => setFormData({ ...formData, acne: !formData.acne })}
+        label="Acne or oily skin"
+      />
+      <CheckBox
+        checked={formData.hair_loss}
+        onPress={() => setFormData({ ...formData, hair_loss: !formData.hair_loss })}
+        label="Hair loss or thinning"
+      />
+      <CheckBox
+        checked={formData.weight_difficulty}
+        onPress={() => setFormData({ ...formData, weight_difficulty: !formData.weight_difficulty })}
+        label="Difficulty maintaining weight"
+      />
 
-          <Text style={styles.sectionTitle}>Symptoms</Text>
-          
-          <CheckBox
-            checked={formData.irregular_cycles}
-            onPress={() => setFormData({ ...formData, irregular_cycles: !formData.irregular_cycles })}
-            label="Irregular menstrual cycle"
-          />
-          <CheckBox
-            checked={formData.excess_hair_growth}
-            onPress={() => setFormData({ ...formData, excess_hair_growth: !formData.excess_hair_growth })}
-            label="Excess hair growth (face, chest, back)"
-          />
-          <CheckBox
-            checked={formData.acne}
-            onPress={() => setFormData({ ...formData, acne: !formData.acne })}
-            label="Acne or oily skin"
-          />
-          <CheckBox
-            checked={formData.hair_loss}
-            onPress={() => setFormData({ ...formData, hair_loss: !formData.hair_loss })}
-            label="Hair loss or thinning"
-          />
-          <CheckBox
-            checked={formData.weight_difficulty}
-            onPress={() => setFormData({ ...formData, weight_difficulty: !formData.weight_difficulty })}
-            label="Difficulty maintaining weight"
-          />
-
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-          
+      <Text style={styles.sectionTitle}>Personal Information</Text>
+      
+      <View style={styles.inputRow}>
+        <View style={styles.inputHalf}>
           <TextInput
             style={styles.input}
             value={formData.age}
             onChangeText={(text) => setFormData({ ...formData, age: text })}
             keyboardType="numeric"
-            placeholder="Age (years)"
-            placeholderTextColor="#9CA3AF"
+            placeholder="Age"
+            placeholderTextColor="#999"
           />
-          
+        </View>
+        <View style={styles.inputHalf}>
           <TextInput
             style={styles.input}
             value={formData.weight}
             onChangeText={(text) => setFormData({ ...formData, weight: text })}
             keyboardType="numeric"
             placeholder="Weight (kg)"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#999"
           />
-          
+        </View>
+      </View>
+
+      <View style={styles.inputRow}>
+        <View style={styles.inputHalf}>
           <TextInput
             style={styles.input}
             value={formData.height}
             onChangeText={(text) => setFormData({ ...formData, height: text })}
             keyboardType="numeric"
             placeholder="Height (cm)"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#999"
           />
+        </View>
+        <View style={styles.inputHalf}>
+          <CustomPicker
+            selectedValue={formData.family_history}
+            onValueChange={(value) => setFormData({ ...formData, family_history: value })}
+            items={[
+              { label: 'Yes', value: true },
+              { label: 'No', value: false },
+            ]}
+            placeholder="Family History"
+          />
+        </View>
+      </View>
+    </View>
+  );
 
-          <Text style={styles.familyHistoryQuestion}>
-            Does anyone in your family have{'\n'}PCOS or Diabetes?
-          </Text>
-          
-          <View style={styles.yesNoContainer}>
-            <YesNoButton
-              selected={formData.family_history === true}
-              onPress={() => setFormData({ ...formData, family_history: true })}
-              label="Yes"
-            />
-            <YesNoButton
-              selected={formData.family_history === false}
-              onPress={() => setFormData({ ...formData, family_history: false })}
-              label="No"
-            />
-          </View>
+  return (
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => (navigation && navigation.goBack ? navigation.goBack() : null)}
+          >
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>PCOS Screening</Text>
+          <View style={styles.headerPlaceholder} />
+        </View>
 
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {result ? renderResults() : renderForm()}
+        </ScrollView>
+        
+        {/* Analyze Risk Button - Outside card */}
+        {!result && (
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.disabledButton]}
             onPress={handleSubmit}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Get Result</Text>
+              <Text style={styles.submitButtonText}>Analyze Risk</Text>
             )}
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   header: {
-      marginTop: StatusBar.currentHeight || 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#1F2937',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#1F2937',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  scrollView: {
-    flex: 1,
+  headerPlaceholder: {
+    width: 40,
   },
-  formContent: {
-    padding: 20,
+  scrollContent: {
+    paddingBottom: 40,
   },
-  resultContent: {
-    padding: 20,
-  },
-  errorCard: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    padding: 12,
+  formContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 24,
+    marginHorizontal: 16,
+    marginTop: 16,
     marginBottom: 20,
-  },
-  errorText: {
-    color: '#991B1B',
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    width: width - 32,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#1F2937',
-    marginBottom: 16,
-    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
+    fontFamily: 'Inter',
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -415,82 +430,108 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#D1D5DB',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFF',
   },
   checkboxChecked: {
-    borderColor: '#6366F1',
-    backgroundColor: '#6366F1',
-  },
-  checkboxInner: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
+    borderColor: '#2196F3',
+    backgroundColor: '#2196F3',
   },
   checkboxLabel: {
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#4B5563',
+    fontFamily: 'Inter',
+    color: '#000',
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16,
+  },
+  inputHalf: {
     flex: 1,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 14,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#1F2937',
-    marginBottom: 16,
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  familyHistoryQuestion: {
-    fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
-    color: '#1F2937',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  yesNoContainer: {
+  customPickerButton: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 32,
-    gap: 12,
-  },
-  yesNoButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
   },
-  yesNoButtonSelected: {
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: '#6366F1',
-  },
-  yesNoText: {
+  customPickerText: {
     fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  placeholderText: {
+    color: '#999',
+  },
+  dropdownArrow: {
+    fontSize: 10,
     color: '#6B7280',
   },
-  yesNoTextSelected: {
-    color: '#6366F1',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    width: '80%',
+    maxHeight: '60%',
+    overflow: 'hidden',
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  modalItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalItemSelected: {
+    backgroundColor: '#EEF2FF',
+  },
+  modalItemText: {
+    fontSize: 14,
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  modalItemTextSelected: {
+    color: '#2196F3',
+    fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: '#6366F1',
-    borderRadius: 8,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
     padding: 16,
     alignItems: 'center',
-    marginBottom: 20,
+    marginHorizontal: 16,
+    marginBottom: 40,
   },
   disabledButton: {
     opacity: 0.6,
@@ -498,101 +539,107 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
-  riskLevelCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  resultsContainer: {
+    gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
-  riskLevelHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  riskLevelLabel: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#1F2937',
-  },
-  riskLevelValue: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  circleContainer: {
+  riskCircleContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 24,
     position: 'relative',
   },
-  circleTextContainer: {
+  circularProgressSvg: {
     position: 'absolute',
-    justifyContent: 'center',
+  },
+  riskCircleInner: {
     alignItems: 'center',
+    justifyContent: 'center',
+    width: 160,
+    height: 160,
   },
-  circlePercentage: {
-    fontSize: 32,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#1F2937',
+  riskNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  recommendationCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+  riskLevelText: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Inter',
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 16,
   },
-  nextStepsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   cardTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#1F2937',
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    fontFamily: 'Inter',
   },
   recommendationText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#4B5563',
-    lineHeight: 22,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+    fontFamily: 'Inter',
   },
   stepItem: {
     flexDirection: 'row',
+    marginBottom: 10,
     alignItems: 'flex-start',
-    marginBottom: 12,
   },
   stepBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#6B7280',
-    marginTop: 8,
-    marginRight: 12,
+    fontSize: 16,
+    color: '#333',
+    marginRight: 8,
+    marginTop: 2,
+    fontWeight: 'bold',
   },
   stepText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#4B5563',
-    lineHeight: 22,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+    fontFamily: 'Inter',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  downloadButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
+    padding: 16,
+    alignItems: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    borderRadius: 30,
+    padding: 16,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
 });

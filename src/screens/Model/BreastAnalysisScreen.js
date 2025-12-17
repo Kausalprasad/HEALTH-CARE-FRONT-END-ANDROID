@@ -16,6 +16,10 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
@@ -87,9 +91,9 @@ const BreastAnalysisScreen = ({ navigation }) => {
     weight: '',
     exercise_hours: '',
     alcohol_drinks: '',
-    smoking: 'never',
-    diet: 'good',
-    family_history: false,
+    smoking: '',
+    diet: '',
+    family_history: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -138,23 +142,43 @@ const BreastAnalysisScreen = ({ navigation }) => {
   };
 
   const assessRisk = async () => {
-    if (!formData.age || !formData.height || !formData.weight || 
-        !formData.exercise_hours || !formData.alcohol_drinks) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!formData.age || !formData.height || !formData.weight) {
+      Alert.alert('Error', 'Please fill in age, height, and weight');
       return;
     }
 
     const age = parseInt(formData.age);
     const height = parseFloat(formData.height);
     const weight = parseFloat(formData.weight);
-    const exercise_hours = parseFloat(formData.exercise_hours);
-    const alcohol_drinks = parseInt(formData.alcohol_drinks);
+    
+    // Parse exercise and alcohol from string values
+    let exercise_hours = 0;
+    if (formData.exercise_hours) {
+      if (formData.exercise_hours.includes('-')) {
+        const parts = formData.exercise_hours.split('-');
+        exercise_hours = parseFloat(parts[0]) || 0;
+      } else if (formData.exercise_hours.includes('+')) {
+        exercise_hours = parseFloat(formData.exercise_hours.replace('+', '')) || 0;
+      } else {
+        exercise_hours = parseFloat(formData.exercise_hours) || 0;
+      }
+    }
+    
+    let alcohol_drinks = 0;
+    if (formData.alcohol_drinks) {
+      if (formData.alcohol_drinks.includes('-')) {
+        const parts = formData.alcohol_drinks.split('-');
+        alcohol_drinks = parseFloat(parts[0]) || 0;
+      } else if (formData.alcohol_drinks.includes('+')) {
+        alcohol_drinks = parseFloat(formData.alcohol_drinks.replace('+', '')) || 0;
+      } else {
+        alcohol_drinks = parseFloat(formData.alcohol_drinks) || 0;
+      }
+    }
 
     if (isNaN(age) || isNaN(height) || isNaN(weight) || 
-        isNaN(exercise_hours) || isNaN(alcohol_drinks) ||
-        age <= 0 || height <= 0 || weight <= 0 || 
-        exercise_hours < 0 || alcohol_drinks < 0) {
-      Alert.alert('Error', 'Please enter valid values');
+        age <= 0 || height <= 0 || weight <= 0) {
+      Alert.alert('Error', 'Please enter valid age, height, and weight');
       return;
     }
 
@@ -166,9 +190,9 @@ const BreastAnalysisScreen = ({ navigation }) => {
       height,
       exercise_hours,
       alcohol_drinks,
-      smoking: formData.smoking,
-      diet: formData.diet,
-      family_history: formData.family_history,
+      smoking: formData.smoking || 'never',
+      diet: formData.diet || 'good',
+      family_history: formData.family_history === true || formData.family_history === 'true' || formData.family_history === 'Yes',
     };
 
     try {
@@ -213,343 +237,386 @@ const BreastAnalysisScreen = ({ navigation }) => {
 
   const renderForm = () => (
     <View style={styles.formContainer}>
-      <Text style={styles.sectionTitle}>Patient Information</Text>
+      <Text style={styles.sectionTitle}>Basic Details</Text>
       
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Age (years) *</Text>
-        <TextInput
-          style={styles.inputField}
-          placeholder="Your Age"
-          keyboardType="numeric"
-          value={formData.age}
-          onChangeText={(value) => handleInputChange('age', value)}
-          placeholderTextColor="#BDBDBD"
-        />
+      <View style={styles.inputRow}>
+        <View style={styles.inputHalf}>
+          <TextInput
+            style={styles.inputField}
+            placeholder="Age"
+            keyboardType="numeric"
+            value={formData.age}
+            onChangeText={(value) => handleInputChange('age', value)}
+            placeholderTextColor="#999"
+          />
+        </View>
+        <View style={styles.inputHalf}>
+          <TextInput
+            style={styles.inputField}
+            placeholder="Weight (kg)"
+            keyboardType="numeric"
+            value={formData.weight}
+            onChangeText={(value) => handleInputChange('weight', value)}
+            placeholderTextColor="#999"
+          />
+        </View>
       </View>
 
       <View style={styles.inputRow}>
         <View style={styles.inputHalf}>
-          <Text style={styles.inputLabel}>Height (cm) *</Text>
           <TextInput
             style={styles.inputField}
-            placeholder="Height"
+            placeholder="Height (cm)"
             keyboardType="numeric"
             value={formData.height}
             onChangeText={(value) => handleInputChange('height', value)}
-            placeholderTextColor="#BDBDBD"
+            placeholderTextColor="#999"
           />
         </View>
         <View style={styles.inputHalf}>
-          <Text style={styles.inputLabel}>Weight (kg) *</Text>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Weight"
-            keyboardType="numeric"
-            value={formData.weight}
-            onChangeText={(value) => handleInputChange('weight', value)}
-            placeholderTextColor="#BDBDBD"
+          <CustomPicker
+            selectedValue={formData.diet}
+            onValueChange={(value) => handleInputChange('diet', value)}
+            items={dietOptions}
+            placeholder="Diet Quality"
           />
         </View>
       </View>
 
       <Text style={styles.sectionTitle}>Lifestyle Factors</Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Exercise (hours/week) *</Text>
-        <TextInput
-          style={styles.inputField}
-          placeholder="Hours of exercise per week"
-          keyboardType="numeric"
-          value={formData.exercise_hours}
-          onChangeText={(value) => handleInputChange('exercise_hours', value)}
-          placeholderTextColor="#BDBDBD"
+      <View style={styles.fullInput}>
+        <CustomPicker
+          selectedValue={formData.exercise_hours}
+          onValueChange={(value) => handleInputChange('exercise_hours', value)}
+          items={[
+            { label: '0-1 hours', value: '0-1' },
+            { label: '2-3 hours', value: '2-3' },
+            { label: '4-5 hours', value: '4-5' },
+            { label: '6+ hours', value: '6+' },
+          ]}
+          placeholder="Exercise (hrs per week)"
         />
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Alcohol (drinks/week) *</Text>
-        <TextInput
-          style={styles.inputField}
-          placeholder="Number of drinks per week"
-          keyboardType="numeric"
-          value={formData.alcohol_drinks}
-          onChangeText={(value) => handleInputChange('alcohol_drinks', value)}
-          placeholderTextColor="#BDBDBD"
+      <View style={styles.fullInput}>
+        <CustomPicker
+          selectedValue={formData.alcohol_drinks}
+          onValueChange={(value) => handleInputChange('alcohol_drinks', value)}
+          items={[
+            { label: '0 drinks', value: '0' },
+            { label: '1-3 drinks', value: '1-3' },
+            { label: '4-7 drinks', value: '4-7' },
+            { label: '8+ drinks', value: '8+' },
+          ]}
+          placeholder="Alcohol (drinks per week)"
         />
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Smoking Status</Text>
+      <View style={styles.fullInput}>
         <CustomPicker
           selectedValue={formData.smoking}
           onValueChange={(value) => handleInputChange('smoking', value)}
           items={smokingOptions}
-          placeholder="Select smoking status"
+          placeholder="Smoking Habit"
         />
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Diet Quality</Text>
-        <CustomPicker
-          selectedValue={formData.diet}
-          onValueChange={(value) => handleInputChange('diet', value)}
-          items={dietOptions}
-          placeholder="Diet Quality"
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.familyHistoryQuestion}>
-          Family History of Breast Cancer?
-        </Text>
+      <View style={styles.fullInput}>
         <CustomPicker
           selectedValue={formData.family_history}
           onValueChange={(value) => handleInputChange('family_history', value)}
           items={familyHistoryOptions}
-          placeholder="Select family history"
+          placeholder="Family History of Cancer"
         />
       </View>
-
-      <TouchableOpacity
-        style={[styles.assessButton, loading && styles.buttonDisabled]}
-        onPress={assessRisk}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.assessButtonText}>Assess Risk</Text>
-        )}
-      </TouchableOpacity>
     </View>
   );
 
-  const renderResults = () => (
-    <View style={styles.resultsContainer}>
-      {/* YouTube Video */}
-      <View style={styles.videoContainer}>
-        <Text style={styles.videoTitle}>Self-Examination for Breast Cancer</Text>
-        <View style={styles.videoWrapper}>
-          <WebView
-            style={styles.video}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            source={{
-              uri: 'https://www.youtube.com/embed/I7wSEIOz-1k',
-            }}
-            allowsFullscreenVideo={true}
-          />
-        </View>
-      </View>
+  const renderResults = () => {
+    const riskPercent = parseFloat(assessmentResult.risk_assessment.lifetime_risk_percentage) || 0;
+    const riskLevel = assessmentResult.risk_assessment.overall_risk_level || 'Low';
+    const radius = 76;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (riskPercent / 100) * circumference;
+    const progressColor = getRiskColor(riskLevel);
 
-      {/* Risk Level Display */}
-      <View style={styles.riskLevelCard}>
-        <View style={styles.riskLevelHeader}>
-          <Text style={styles.riskLevelLabel}>Risk Level</Text>
-          <View style={styles.riskLevelBadge}>
-            <Text style={[
-              styles.riskLevelValue,
-              { color: getRiskColor(assessmentResult.risk_assessment.overall_risk_level) }
-            ]}>
-              {assessmentResult.risk_assessment.overall_risk_level?.toUpperCase()}
+    return (
+      <View style={styles.resultsContainer}>
+        {/* Risk Score Circle */}
+        <View style={styles.riskCircleContainer}>
+          <Svg height="160" width="160" style={styles.circularProgressSvg}>
+            <Circle
+              cx="80" cy="80" r={radius} stroke="#E0E0E0" strokeWidth="8" fill="none"
+            />
+            <Circle
+              cx="80" cy="80" r={radius}
+              stroke={progressColor}
+              strokeWidth="8"
+              fill="none"
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              transform="rotate(-90, 80, 80)"
+            />
+          </Svg>
+          <View style={styles.riskCircleInner}>
+            <Text style={styles.riskNumber}>{riskPercent.toFixed(1)}%</Text>
+            <Text style={[styles.riskLevelText, { color: progressColor }]}>
+              {riskLevel}
             </Text>
           </View>
         </View>
-        <View style={styles.riskPercentageContainer}>
-          <View style={styles.riskCircle}>
-            <Text style={styles.riskPercentage}>
-              {assessmentResult.risk_assessment.lifetime_risk_percentage}%
+
+        {/* Risk Score Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bar-chart" size={20} color="#9C27B0" />
+            <Text style={styles.cardTitle}>Risk Score</Text>
+          </View>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreLabel}>Behavior</Text>
+            <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.behavioral_risk_score}</Text>
+          </View>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreLabel}>Genomic</Text>
+            <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.genomic_risk_score}</Text>
+          </View>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreLabel}>Lifetime</Text>
+            <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.lifetime_risk_percentage}%</Text>
+          </View>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreLabel}>Combined</Text>
+            <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.combined_risk_score}</Text>
+          </View>
+        </View>
+
+        {/* Screening Plan */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="search" size={20} color="#2196F3" />
+            <Text style={styles.cardTitle}>Screening Plan</Text>
+          </View>
+          <View style={styles.planItem}>
+            <Text style={styles.planText}>
+              <Text style={styles.planLabel}>Screening Frequency: </Text>
+              {assessmentResult.screening_plan.screening_frequency}
+            </Text>
+          </View>
+          <View style={styles.planItem}>
+            <Text style={styles.planText}>
+              <Text style={styles.planLabel}>Mammogram: </Text>
+              {assessmentResult.screening_plan.mammogram_recommendation}
+            </Text>
+          </View>
+          <View style={styles.planItem}>
+            <Text style={styles.planText}>
+              <Text style={styles.planLabel}>Clinical Exam: </Text>
+              {assessmentResult.screening_plan.clinical_exam}
+            </Text>
+          </View>
+          <View style={styles.planItem}>
+            <Text style={styles.planText}>
+              <Text style={styles.planLabel}>Self Exam: </Text>
+              {assessmentResult.screening_plan.self_exam}
+            </Text>
+          </View>
+          <View style={styles.planItem}>
+            <Text style={styles.planText}>
+              <Text style={styles.planLabel}>Specialist Referral: </Text>
+              {assessmentResult.screening_plan.specialist_referral ? 'Yes' : 'No'}
             </Text>
           </View>
         </View>
-      </View>
 
-      {/* Risk Score */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Risk Score</Text>
-        <View style={styles.scoreRow}>
-          <Text style={styles.scoreLabel}>Behaviour Risk Score</Text>
-          <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.behavioral_risk_score}</Text>
-        </View>
-        <View style={styles.scoreRow}>
-          <Text style={styles.scoreLabel}>Genomic Risk Score</Text>
-          <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.genomic_risk_score}</Text>
-        </View>
-        <View style={styles.scoreRow}>
-          <Text style={styles.scoreLabel}>Lifetime Risk Score</Text>
-          <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.lifetime_risk_percentage}%</Text>
-        </View>
-        <View style={styles.scoreRow}>
-          <Text style={styles.scoreLabel}>Combined Risk Score</Text>
-          <Text style={styles.scoreValue}>{assessmentResult.risk_assessment.combined_risk_score}</Text>
-        </View>
-      </View>
-
-      {/* Screening Plan */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Screening Plan</Text>
-        <View style={styles.planItem}>
-          <Text style={styles.planText}>
-            <Text style={styles.planLabel}>Screening Frequency: </Text>
-            {assessmentResult.screening_plan.screening_frequency}
-          </Text>
-        </View>
-        <View style={styles.planItem}>
-          <Text style={styles.planText}>
-            <Text style={styles.planLabel}>Mammogram: </Text>
-            {assessmentResult.screening_plan.mammogram_recommendation}
-          </Text>
-        </View>
-        <View style={styles.planItem}>
-          <Text style={styles.planText}>
-            <Text style={styles.planLabel}>Clinical Exam: </Text>
-            {assessmentResult.screening_plan.clinical_exam}
-          </Text>
-        </View>
-        <View style={styles.planItem}>
-          <Text style={styles.planText}>
-            <Text style={styles.planLabel}>Self Exam: </Text>
-            {assessmentResult.screening_plan.self_exam}
-          </Text>
-        </View>
-        <View style={styles.planItem}>
-          <Text style={styles.planText}>
-            <Text style={styles.planLabel}>Specialist Referral: </Text>
-            {assessmentResult.screening_plan.specialist_referral ? 'Yes' : 'No'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Next Steps */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Next Steps</Text>
-        {assessmentResult.next_steps.map((step, index) => (
-          <View key={index} style={styles.stepItem}>
-            <Text style={styles.stepBullet}>•</Text>
-            <Text style={styles.stepText}>{step}</Text>
+        {/* Next Steps */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="help-circle" size={20} color="#FF9800" />
+            <Text style={styles.cardTitle}>Next Steps</Text>
           </View>
-        ))}
-      </View>
+          {assessmentResult.next_steps.map((step, index) => (
+            <View key={index} style={styles.stepItem}>
+              <Text style={styles.stepBullet}>•</Text>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+        </View>
 
-      <TouchableOpacity
-        style={styles.newAssessmentButton}
-        onPress={() => setAssessmentResult(null)}
-      >
-        <Text style={styles.newAssessmentButtonText}>New Assessment</Text>
-      </TouchableOpacity>
-    </View>
-  );
+        {/* Self Examination */}
+        <View style={styles.videoContainer}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="play-circle" size={20} color="#F44336" />
+            <Text style={styles.videoTitle}>Self Examination</Text>
+          </View>
+          <View style={styles.videoWrapper}>
+            <WebView
+              style={styles.video}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              source={{
+                uri: 'https://www.youtube.com/embed/I7wSEIOz-1k',
+              }}
+              allowsFullscreenVideo={true}
+            />
+          </View>
+        </View>
+
+        {/* Download and Share Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.downloadButton}>
+            <Text style={styles.buttonText}>Download</Text>
+          </TouchableOpacity>
+          <LinearGradient
+            colors={['#9C27B0', '#E91E63', '#FF9800']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.shareButton}
+          >
+            <TouchableOpacity>
+              <Text style={styles.buttonText}>Share</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      <View style={styles.headerSafeArea}>
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Breast Cancer Analysis</Text>
+          <Text style={styles.headerTitle}>Breast Cancer Assessment</Text>
           <View style={styles.headerPlaceholder} />
         </View>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {assessmentResult ? renderResults() : renderForm()}
-      </ScrollView>
-    </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {assessmentResult ? renderResults() : renderForm()}
+        </ScrollView>
+        
+        {/* Analyze Risk Button - Outside card */}
+        {!assessmentResult && (
+          <TouchableOpacity
+            style={[styles.assessButton, loading && styles.buttonDisabled]}
+            onPress={assessRisk}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.assessButtonText}>Analyze Risk</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  headerSafeArea: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 32,
-    color: '#000000',
-    fontWeight: '300',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
     width: 40,
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 40,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 24,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 20,
+    width: width - 32,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 16,
-    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
+    fontFamily: 'Inter',
   },
   inputRow: {
     flexDirection: 'row',
-    marginBottom: 12,
-    gap: 12,
+    gap: 16,
+    marginBottom: 16,
   },
   inputHalf: {
     flex: 1,
   },
+  fullInput: {
+    marginBottom: 16,
+  },
   inputContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '500',
     color: '#374151',
     marginBottom: 6,
+    fontFamily: 'Inter',
   },
   inputField: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 14,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     fontSize: 14,
-    color: '#111827',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   customPickerButton: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 14,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -602,13 +669,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#374151',
     marginBottom: 6,
+    fontFamily: 'Inter',
   },
   assessButton: {
-    backgroundColor: '#6366F1',
-    borderRadius: 8,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
     padding: 16,
     alignItems: 'center',
-    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 40,
   },
   buttonDisabled: {
     backgroundColor: '#A5B4FC',
@@ -616,21 +685,59 @@ const styles = StyleSheet.create({
   assessButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
   resultsContainer: {
     gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  riskCircleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 24,
+    position: 'relative',
+  },
+  circularProgressSvg: {
+    position: 'absolute',
+  },
+  riskCircleInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 160,
+    height: 160,
+  },
+  riskNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  riskLevelText: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Inter',
+    marginTop: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   videoContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 20,
+    marginBottom: 16,
   },
   videoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
     marginBottom: 12,
+    fontFamily: 'Inter',
   },
   videoWrapper: {
     width: '100%',
@@ -643,9 +750,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   riskLevelCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
     padding: 20,
+    marginBottom: 16,
   },
   riskLevelHeader: {
     flexDirection: 'row',
@@ -654,9 +762,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   riskLevelLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    fontFamily: 'Inter',
   },
   riskLevelBadge: {
     flexDirection: 'row',
@@ -666,35 +775,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     marginRight: 4,
+    fontFamily: 'Inter',
   },
   riskPercentageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   riskCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     borderWidth: 8,
-    borderColor: '#E5E7EB',
+    borderColor: '#E0E0E0',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFF',
   },
   riskPercentage: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: '700',
-    color: '#111827',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
     padding: 20,
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
     marginBottom: 16,
+    fontFamily: 'Inter',
   },
   scoreRow: {
     flexDirection: 'row',
@@ -708,11 +822,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     flex: 1,
+    fontFamily: 'Inter',
   },
   scoreValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   planItem: {
     marginBottom: 12,
@@ -721,10 +837,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#374151',
     lineHeight: 20,
+    fontFamily: 'Inter',
   },
   planLabel: {
     fontWeight: '600',
-    color: '#111827',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   stepItem: {
     flexDirection: 'row',
@@ -733,27 +851,75 @@ const styles = StyleSheet.create({
   },
   stepBullet: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#333',
     marginRight: 8,
     marginTop: 2,
+    fontWeight: 'bold',
   },
   stepText: {
     flex: 1,
     fontSize: 13,
-    color: '#374151',
+    color: '#666',
     lineHeight: 20,
+    fontFamily: 'Inter',
   },
-  newAssessmentButton: {
-    backgroundColor: '#6366F1',
-    borderRadius: 8,
+  riskCircleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 24,
+    position: 'relative',
+  },
+  circularProgressSvg: {
+    position: 'absolute',
+  },
+  riskCircleInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 160,
+    height: 160,
+  },
+  riskNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  riskLevelText: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Inter',
+    marginTop: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  downloadButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8, //test 
   },
-  newAssessmentButtonText: {
+  shareButton: {
+    flex: 1,
+    borderRadius: 30,
+    padding: 16,
+    alignItems: 'center',
+  },
+  buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
 });
 

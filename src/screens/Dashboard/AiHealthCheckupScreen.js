@@ -7,180 +7,211 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
+const cardWidth = (width - 48) / 2; // 2 columns with padding
 
 const HealthCheckupApp = ({ navigation }) => {
   const healthItems = [
     { 
+      id: 1,
       title: 'Skin Cancer Detection', 
       subtitle: 'Get skin health analysis', 
-      icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/skinCancerDectection.png'),
+      iconBg: '#FBBF24',
+      cardBg: '#1F2937', // Dark gray for first card
+      textColor: '#FFFFFF',
+      subtitleColor: '#E5E7EB',
       onPress: () => navigation.navigate('SkinCheck') 
     },
     { 
+      id: 2,
       title: 'Eye Health', 
-      subtitle: 'Eye health recommendations', 
-      icon: require('../../../assets/AiHealthCheckUp/eye3.png'),
-      bgColor: '#EAEAF8',
+      subtitle: 'Eye health recommendation', 
+      icon: require('../../../assets/AiHealthCheckUp/eye.png'),
+      iconBg: '#FF9800',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('EyeScreen') 
     },
     { 
+      id: 3,
       title: 'Nail Health', 
       subtitle: 'Get insights with nail health', 
-      icon: require('../../../assets/AiHealthCheckUp/nail.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/nail1.png'),
+      iconBg: '#9C27B0',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('NailAnalysis') 
     },
     { 
+      id: 4,
       title: 'Tongue Health', 
       subtitle: 'Analyze your tongue condition', 
-      icon: require('../../../assets/AiHealthCheckUp/t.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/tough1.png'),
+      iconBg: '#2196F3',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('TongueDiseaseChecker') 
     },
     { 
+      id: 5,
       title: 'Scalp Health', 
       subtitle: 'Get scalp health analysis', 
-      icon: require('../../../assets/AiHealthCheckUp/scalp.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/Hair.png'),
+      iconBg: '#4CAF50',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('HairCheckScreen') 
     },
-    // { 
-    //   title: 'Melanoma Detector', 
-    //   subtitle: 'Live melanoma risk detection', 
-    //   icon: require('../../../assets/AiHealthCheckUp/Melanoma.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('CameraStreamScreen') 
-    // },
     { 
+      id: 6,
       title: 'Posture Analysis', 
-      subtitle: 'Live melanoma risk detection', 
-      icon: require('../../../assets/AiHealthCheckUp/p.png'),
-      bgColor: '#EAEAF8',
+      subtitle: 'Live posture risk detection', 
+      icon: require('../../../assets/AiHealthCheckUp/PostureAnalysis.png'),
+      iconBg: '#00BCD4',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('InjuryScreen') 
     },
     { 
-      title: 'Genomic Insights', 
+      id: 7,
+      title: 'Genomic Insights',
       subtitle: 'AI-based health risk analysis', 
-      icon: require('../../../assets/AiHealthCheckUp/Biology.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/Genomic.png'),
+      iconBg: '#607D8B',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('RiskAssessmentScreen') 
     },
     { 
+      id: 8,
       title: 'Dental Analysis', 
       subtitle: 'AI-powered dental health detection', 
-      icon: require('../../../assets/AiHealthCheckUp/Dental.png'),
-      bgColor: '#EAEAF8',
+      icon: require('../../../assets/AiHealthCheckUp/theet.png'),
+      iconBg: '#009688',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
       onPress: () => navigation.navigate('DentalCheckScreen') 
     },
- {
-  title: 'Breast Cancer Analysis',
-  subtitle: 'AI-powered breast cancer detection',
-  icon: require('../../../assets/AiHealthCheckUp/Cancer.png'),
-  bgColor: '#FBE9E7',
-  onPress: () => navigation.navigate('BreastAnalysisScreen'),
-},
-{
-  title: 'PCOSS Test',
-  subtitle: 'AI-powered PCOSS detection',
-  icon: require('../../../assets/AiHealthCheckUp/Cycle.png'),
-  bgColor: '#FBE9E7',
-  onPress: () => navigation.navigate('PCOSScreening'),
-}
-
-
-   
-   
-    // { 
-    //   title: 'Preventive Health', 
-    //   subtitle: 'Get Preventive Health analysis', 
-    //   icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('PreventiveHealthScreen') 
-    // },
-    // { 
-    //   title: 'Insurance', 
-    //   subtitle: 'Get Insurance Health analysis', 
-    //   icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('InsuranceScreen') 
-    // },
-    // { 
-    //   title: 'Diet Plan', 
-    //   subtitle: 'Diet Health analysis', 
-    //   icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('DietScreen') 
-    // },
-    // { 
-    //   title: 'Vitals Monitor', 
-    //   subtitle: 'Get Vitals Health analysis', 
-    //   icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('VitalsScreen') 
-    // },
-    // { 
-    //   title: 'Vitals Monitor', 
-    //   subtitle: 'Get Vitals Health analysis', 
-    //   icon: require('../../../assets/AiHealthCheckUp/skinHealth.png'),
-    //   bgColor: '#EAEAF8',
-    //   onPress: () => navigation.navigate('XrayScreen') 
-    // },
-     
+    {
+      id: 9,
+      title: 'Breast Cancer Analysis',
+      subtitle: 'AI-powered breast cancer detection',
+      icon: require('../../../assets/AiHealthCheckUp/BresastCancer.png'),
+      iconBg: '#E91E63',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
+      onPress: () => navigation.navigate('BreastAnalysisScreen'),
+    },
+    {
+      id: 10,
+      title: 'PCOS Test',
+      subtitle: 'AI-powered PCOSS detection',
+      icon: require('../../../assets/AiHealthCheckUp/PcossTest.png'),
+      iconBg: '#FF5722',
+      cardBg: 'rgba(255, 255, 255, 0.75)',
+      textColor: '#1F2937',
+      subtitleColor: '#6B7280',
+      onPress: () => navigation.navigate('PCOSScreening'),
+    }
   ];
 
-  const renderHealthCard = (item, index) => (
+  const renderHealthCard = (item) => (
     <TouchableOpacity
-      key={index}
-      style={styles.healthCard}
+      key={item.id}
+      style={[
+        styles.healthCard,
+        { 
+          backgroundColor: item.cardBg,
+          width: cardWidth,
+          borderColor: item.id === 1 ? 'transparent' : 'rgba(233, 233, 233, 1)'
+        }
+      ]}
       onPress={item.onPress}
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-      </View>
-      <View style={styles.iconWrapper}>
-        <View style={[styles.iconCircle, { backgroundColor: item.bgColor }]} />
-        <Image 
-          source={item.icon} 
-          style={styles.iconImage}
-          resizeMode="contain"
-        />
+        <View style={styles.iconContainer}>
+          <Image 
+            source={item.icon} 
+            style={[
+              styles.iconImage,
+              item.id === 2 ? { width: 32, height: 20 } : { width: 40, height: 40 }
+            ]}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={[styles.cardTitle, { color: item.textColor }]}>
+          {item.title}
+        </Text>
+        <Text style={[styles.cardSubtitle, { color: item.subtitleColor }]}>
+          {item.subtitle}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={[
+        'rgba(254, 215, 112, 0.9)',  // Yellow (top-left)
+        'rgba(235, 177, 180, 0.8)',  // Pink (top-center)
+        'rgba(145, 230, 251, 0.7)',  // Blue (top-right)
+        'rgba(217, 213, 250, 0.6)',  // Purple (middle)
+        'rgba(255, 255, 255, 0.95)'  // White (bottom)
+      ]}
+      locations={[0, 0.2, 0.4, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Health Checkup</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.cardsContainer}>
-          {healthItems.map((item, index) => renderHealthCard(item, index))}
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>AI Health Checkup</Text>
+          <View style={{ width: 40 }} />
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        {/* Content */}
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.cardsContainer}>
+            {healthItems.map((item) => renderHealthCard(item))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff'
   },
   header: {
     marginTop: StatusBar.currentHeight || 0,
@@ -189,9 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0'
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
@@ -202,74 +231,58 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000'
+    color: '#000',
+    fontFamily: "Poppins_400Regular",
   },
   content: {
-    flex: 1
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   cardsContainer: {
-    padding: 16
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   healthCard: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  backgroundColor: '#fff',
-  borderRadius: 16,
-  padding: 8,
-  marginBottom: 12,
-  overflow: 'hidden',
-
-  // Border
-  borderWidth: 1,
-  borderColor: '#e0e0e0', // light gray (you can change to any color you prefer)
-
-  // Optional shadow if you want a more elevated look
-  // shadowColor: '#000',
-  // shadowOffset: { width: 0, height: 2 },
-  // shadowOpacity: 0.08,
-  // shadowRadius: 4,
-  // elevation: 3,
-},
-
+    borderRadius: 30,
+    padding: 16,
+    marginBottom: 16,
+    minHeight: 160,
+    borderWidth: 1,
+    borderColor: 'rgba(233, 233, 233, 1)',
+  },
   cardContent: {
     flex: 1,
-    marginLeft: 12
+    justifyContent: 'flex-start',
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: "Poppins_400Regular",
-    color: '#000',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 15,
-    fontFamily: "Poppins_400Regular",
-    color: '#666',
-    lineHeight: 18
-  },
-  iconWrapper: {
-    width: 90,
-    height: 90,
-    position: 'relative',
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  iconCircle: {
-    position: 'absolute',
-    width: 122,
-    height: 122,
-    borderRadius: 60,
-    bottom: -40,
-    left: -8
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: 'transparent',
   },
   iconImage: {
-    width: 69,
-    height: 69,
-    zIndex: 1,
-    top: 22,
-    left: 5
+    width: 40,
+    height: 40,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: "Poppins_400Regular",
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    fontFamily: "Poppins_400Regular",
+    lineHeight: 18,
   }
 });
 
