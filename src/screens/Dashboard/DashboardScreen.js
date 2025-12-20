@@ -2594,7 +2594,7 @@ function DashboardScreenContent({ navigation }) {
   // Reset image error when appointment changes
   useEffect(() => {
     setDoctorImageError(false);
-  }, [appointment?.doctor?.profilePicture]);
+  }, [appointment?.doctor?.profilePicture, appointment?.doctorId?.profilePicture]);
 
   // Refresh data when screen is focused
   useEffect(() => {
@@ -2698,8 +2698,8 @@ function DashboardScreenContent({ navigation }) {
           <View style={styles.appointmentTopSection}>
             <Image
               source={
-                appointment?.doctor?.profilePicture && !doctorImageError
-                  ? { uri: appointment.doctor.profilePicture }
+                (appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture) && !doctorImageError
+                  ? { uri: appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture }
                   : require("../../../assets/doctor.png")
               }
               style={styles.doctorAvatarImage}
@@ -2717,7 +2717,7 @@ function DashboardScreenContent({ navigation }) {
                 {appointmentDate
                   ? `${appointmentDate.month} ${appointmentDate.day}, ${appointmentDate.weekday}`
                   : "Nov 25, Tuesday"}{" "}
-                | {appointment?.time || "12 noon"}
+                | {appointment?.time || appointment?.startTime || "12 noon"}
               </Text>
             </View>
             <TouchableOpacity style={styles.infoIconButton}>
@@ -2727,15 +2727,22 @@ function DashboardScreenContent({ navigation }) {
 
           {/* Bottom Section */}
           <View style={styles.appointmentBottomSection}>
-            <Text style={styles.doctorName}>
-              {appointment?.doctor?.name || "Dr. Sahil Mehta"}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.doctorName}>
+                {appointment?.doctor?.name || appointment?.doctorId?.name || "Dr. Sahil Mehta"}
+              </Text>
+              <Text style={styles.doctorSpecialty}>
+                {appointment?.doctor?.specialization || appointment?.doctorId?.specialization || "Specialist"}
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.seeProfileButton}
-              onPress={() =>
-                appointment?.doctor &&
-                navigation.navigate("DoctorCard", { doctor: appointment.doctor })
-              }
+              onPress={() => {
+                const doctor = appointment?.doctor || appointment?.doctorId;
+                if (doctor) {
+                  navigation.navigate("DoctorCard", { doctor });
+                }
+              }}
             >
               <Text style={styles.seeProfileButtonText}>See Profile</Text>
             </TouchableOpacity>
@@ -2829,6 +2836,22 @@ function DashboardScreenContent({ navigation }) {
               </Svg>
               <Text style={styles.chartPercentage}>25%</Text>
             </View>
+          </View>
+        </View>
+
+        {/* Mood Checker */}
+        <View style={styles.moodCheckerCard}>
+          <View style={styles.moodCheckerContent}>
+            <View style={styles.moodCheckerLeft}>
+              <Text style={styles.moodCheckerEmoji}>😊</Text>
+              <Text style={styles.moodCheckerTitle}>Mood Checker</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.moodCheckerButton}
+              onPress={() => navigation.navigate('MoodCheckupApp')}
+            >
+              <Text style={styles.moodCheckerButtonText}>Start Now</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -3780,6 +3803,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111827",
     flexShrink: 1,
+    marginBottom: 4,
+  },
+  doctorSpecialty: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "500",
   },
   seeProfileButton: {
     paddingHorizontal: 18,
@@ -3864,6 +3893,47 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#111827',
+  },
+  // ===== Mood Checker Card =====
+  moodCheckerCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 26,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#E9E9E9',
+  },
+  moodCheckerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  moodCheckerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  moodCheckerEmoji: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  moodCheckerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  moodCheckerButton: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: 99,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  moodCheckerButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   section: {
     marginTop: 24,

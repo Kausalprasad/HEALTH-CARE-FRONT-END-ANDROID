@@ -33,10 +33,8 @@ const ProfileView = ({ navigation }) => {
     healthEssentials: false,
     medicalCondition: false,
     contactSecurity: false,
-    appPreference: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [photoUploading, setPhotoUploading] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -231,49 +229,59 @@ const ProfileView = ({ navigation }) => {
           profileData: profile 
         });
         break;
-      case 'appPreference':
-        Alert.alert('Edit App Preference', 'Edit functionality coming soon');
-        break;
     }
   };
 
-  const handleLogout = async () => {
+  const handleDeleteAccount = async () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Logout',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
-              // Simple logout - just sign out from Firebase
-              const { signOut } = require('firebase/auth');
-              await signOut(auth);
-              
-              // Clear token from AsyncStorage
-              await AsyncStorage.removeItem('token');
-              await AsyncStorage.removeItem('profileSkipped');
-              
-              // Navigate to Landing screen (Login)
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Landing' }],
-              });
-            } catch (error) {
-              console.error('Logout error:', error);
-              // Even if error, try to navigate to login
-              try {
-                await AsyncStorage.removeItem('token');
-                await AsyncStorage.removeItem('profileSkipped');
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Landing' }],
-                });
-              } catch (navError) {
-                Alert.alert('Error', 'Failed to logout. Please try again.');
+              const user = auth.currentUser;
+              if (!user) {
+                Alert.alert('Error', 'User not authenticated');
+                return;
               }
+              const token = await user.getIdToken();
+
+              const response = await fetch(`${BASE_URL}/api/profile/delete`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  confirmDelete: true
+                })
+              });
+
+              const data = await response.json();
+
+              if (data.success) {
+                await AsyncStorage.clear();
+                if (logout) {
+                  await logout();
+                } else {
+                  const { signOut } = require('firebase/auth');
+                  await signOut(auth);
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Landing' }],
+                  });
+                }
+                Alert.alert('Success', 'Account deleted successfully');
+              } else {
+                Alert.alert('Error', data.message || 'Failed to delete account');
+              }
+            } catch (error) {
+              console.error('Delete account error:', error);
+              Alert.alert('Error', 'Something went wrong. Please try again.');
             }
           }
         }
@@ -327,7 +335,7 @@ const ProfileView = ({ navigation }) => {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.placeholder} />
         </View>
 
         <ScrollView 
@@ -756,65 +764,18 @@ const ProfileView = ({ navigation }) => {
             )}
             </View>
 
-            {/* App Preference */}
-            <View style={styles.sectionItem}>
-            <TouchableOpacity 
-              style={styles.sectionHeader}
-              onPress={() => toggleSection('appPreference')}
-            >
-              <View style={styles.sectionHeaderLeft}>
-                <View style={[styles.sectionIcon, { backgroundColor: '#4CAF50' }]}>
-                  <Ionicons name="settings" size={20} color="#fff" />
-                </View>
-                <Text style={styles.sectionTitle}>App Preference</Text>
-              </View>
-              <View style={styles.sectionHeaderRight}>
-                {expandedSections.appPreference && (
-                  <TouchableOpacity 
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      handleEdit('appPreference');
-                    }}
-                    style={styles.editIconButton}
-                  >
-                    <Ionicons name="pencil" size={18} color="#9C27B0" />
-                  </TouchableOpacity>
-                )}
-                <Ionicons 
-                  name={expandedSections.appPreference ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color="#9C27B0" 
-                />
-              </View>
-            </TouchableOpacity>
-            {expandedSections.appPreference && (
-              <View style={styles.sectionContent}>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Languages</Text>
-                  <Text style={styles.infoValue}>English US</Text>
-                </View>
-                <View style={styles.divider} />
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>App Notifications</Text>
-                  <Switch
-                    value={notificationsEnabled}
-                    onValueChange={setNotificationsEnabled}
-                    trackColor={{ false: '#E0E0E0', true: '#9C27B0' }}
-                    thumbColor="#fff"
-                  />
-                </View>
-              </View>
-            )}
-            </View>
-
-            {/* Logout Button */}
-            <View style={styles.sectionItem}>
+            {/* Delete My Account */}
+            <View style={[styles.sectionItem, { borderBottomWidth: 0 }]}>
               <TouchableOpacity 
-                style={styles.logoutButton}
-                onPress={handleLogout}
+                style={styles.deleteAccountButton}
+                onPress={handleDeleteAccount}
               >
-                <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-                <Text style={styles.logoutText}>Logout</Text>
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={[styles.sectionIcon, { backgroundColor: '#FF3B30' }]}>
+                    <Ionicons name="person-remove-outline" size={20} color="#fff" />
+                  </View>
+                  <Text style={styles.deleteAccountText}>Delete My Account</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -840,20 +801,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
+    marginTop: StatusBar.currentHeight || 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 10,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#000',
+    fontFamily: 'Poppins_400Regular',
+  },
+  placeholder: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
@@ -992,15 +961,14 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E0E0E0',
   },
-  logoutButton: {
+  deleteAccountButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 12,
   },
-  logoutText: {
+  deleteAccountText: {
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     fontWeight: '400',

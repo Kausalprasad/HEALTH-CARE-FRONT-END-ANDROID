@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Picker } from "@react-native-picker/picker";
 import { BASE_URL } from "../../config/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,10 +23,10 @@ export default function AddPatientScreen({ route, navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
-  const [relation, setRelation] = useState("Self");
+  const [relation, setRelation] = useState("");
   const [dob, setDob] = useState("");
   const [age, setAge] = useState("");
-  const [gender, setGender] = useState("Male");
+  const [gender, setGender] = useState("");
   const [height, setHeight] = useState("");
   const [heightUnit, setHeightUnit] = useState("ft/inch");
   const [weight, setWeight] = useState("");
@@ -171,232 +172,209 @@ export default function AddPatientScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={[
+        'rgba(254, 215, 112, 0.9)',
+        'rgba(235, 177, 180, 0.8)',
+        'rgba(145, 230, 251, 0.7)',
+        'rgba(217, 213, 250, 0.6)',
+        'rgba(255, 255, 255, 0.95)'
+      ]}
+      locations={[0, 0.2, 0.4, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color="#111" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Patient</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Name */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>
-            Name<Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter member name"
-            placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
-          />
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Add Member</Text>
+          <View style={{ width: 24 }} />
         </View>
 
-        {/* Member Relation */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>
-            Member Relation<Text style={styles.required}>*</Text>
-          </Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={relation}
-              onValueChange={(itemValue) => setRelation(itemValue)}
-              style={styles.picker}
-            >
-              {relations.map((rel) => (
-                <Picker.Item key={rel} label={rel} value={rel} />
-              ))}
-            </Picker>
-          </View>
-        </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* White Card Container */}
+          <View style={styles.whiteCard}>
+            {/* Add Your Details Heading */}
+            <Text style={styles.cardHeading}>Add Your Details</Text>
 
-        {/* DOB and Age Row */}
-        <View style={styles.rowContainer}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-            <Text style={styles.label}>
-              Date Of Birth<Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="DD-MM-YYYY"
-              placeholderTextColor="#999"
-              value={dob}
-              onChangeText={handleDobChange}
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-            <Text style={styles.label}>
-              Age<Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex.- 5 years"
-              placeholderTextColor="#999"
-              value={age}
-              onChangeText={setAge}
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        {/* Gender */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>
-            Gender<Text style={styles.required}>*</Text>
-          </Text>
-          <View style={styles.genderRow}>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                gender === "Male" && styles.genderButtonActive,
-              ]}
-              onPress={() => setGender("Male")}
-            >
-              <Ionicons
-                name="male"
-                size={18}
-                color={gender === "Male" ? "#fff" : "#666"}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === "Male" && styles.genderTextActive,
-                ]}
-              >
-                Male
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                gender === "Female" && styles.genderButtonActive,
-              ]}
-              onPress={() => setGender("Female")}
-            >
-              <Ionicons
-                name="female"
-                size={18}
-                color={gender === "Female" ? "#fff" : "#666"}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === "Female" && styles.genderTextActive,
-                ]}
-              >
-                Female
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Height and Weight Row */}
-        <View style={styles.rowContainer}>
-          {/* Height */}
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Height</Text>
-            <View style={styles.unitRow}>
+            {/* Name */}
+            <View style={styles.inputGroup}>
               <TextInput
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                placeholder='0\'
+                style={styles.input}
+                placeholder="Name"
                 placeholderTextColor="#999"
-                value={height}
-                onChangeText={setHeight}
-                keyboardType="numeric"
+                value={name}
+                onChangeText={setName}
               />
-              <View style={styles.unitBox}>
-                <Text style={styles.unitText}>{heightUnit}</Text>
+            </View>
+
+            {/* Member Relation */}
+            <View style={styles.inputGroup}>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={relation || ""}
+                  onValueChange={(itemValue) => {
+                    if (itemValue) setRelation(itemValue);
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Member Relation" value="" />
+                  {relations.map((rel) => (
+                    <Picker.Item key={rel} label={rel} value={rel} />
+                  ))}
+                </Picker>
+                <View style={styles.pickerIcon}>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Weight */}
-          <View style={[styles.inputGroup, { flex: 1, marginLeft: 16 }]}>
-            <Text style={styles.label}>Weight</Text>
-            <View style={styles.unitRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                placeholder="0"
-                placeholderTextColor="#999"
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="numeric"
-              />
-              <View style={styles.unitBox}>
-                <Text style={styles.unitText}>{weightUnit}</Text>
+            {/* DOB and Age Row */}
+            <View style={styles.rowContainer}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="DD/MM/YYYY"
+                  placeholderTextColor="#999"
+                  value={dob}
+                  onChangeText={handleDobChange}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Age"
+                  placeholderTextColor="#999"
+                  value={age}
+                  onChangeText={setAge}
+                  keyboardType="numeric"
+                />
               </View>
             </View>
+
+            {/* Weight and Height Row */}
+            <View style={styles.rowContainer}>
+              {/* Weight */}
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Weight"
+                  placeholderTextColor="#999"
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              {/* Height */}
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Height"
+                  placeholderTextColor="#999"
+                  value={height}
+                  onChangeText={setHeight}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* Gender and Contact Row */}
+            <View style={styles.rowContainer}>
+              {/* Gender */}
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={gender || ""}
+                    onValueChange={(itemValue) => {
+                      if (itemValue) setGender(itemValue);
+                    }}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Gender" value="" />
+                    <Picker.Item label="Male" value="Male" />
+                    <Picker.Item label="Female" value="Female" />
+                  </Picker>
+                  <View style={styles.pickerIcon}>
+                    <Ionicons name="chevron-down" size={20} color="#666" />
+                  </View>
+                </View>
+              </View>
+
+              {/* Contact */}
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Contact"
+                  placeholderTextColor="#999"
+                  value={mobile}
+                  onChangeText={setMobile}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
+            </View>
+
+            {/* Email */}
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
           </View>
+        </ScrollView>
+        {/* Bottom Buttons */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.addButton, loading && styles.addButtonDisabled]}
+            onPress={handleAddPatient}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.addButtonText}>Add Member</Text>
+            )}
+          </TouchableOpacity>
         </View>
-
-        {/* Mobile Number */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Mobile Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter mobile number"
-            placeholderTextColor="#999"
-            value={mobile}
-            onChangeText={setMobile}
-            keyboardType="phone-pad"
-            maxLength={10}
-          />
-        </View>
-
-        {/* Email */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>
-            Email<Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="someone@example.com"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-      </ScrollView>
-
-      {/* Bottom Buttons */}
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.addButton, loading && styles.addButtonDisabled]}
-          onPress={handleAddPatient}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.addButtonText}>Add Member</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
+  gradientContainer: {
+    flex: 1,
+  },
+  safe: { 
+    flex: 1, 
+    backgroundColor: "transparent" 
+  },
   header: {
     marginTop: StatusBar.currentHeight || 0,
     flexDirection: "row",
@@ -404,45 +382,61 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111" },
-  container: {
+  headerTitle: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    color: "#000" 
+  },
+  scrollContent: {
     padding: 16,
     paddingBottom: 100,
   },
-  inputGroup: {
+  whiteCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+    borderRadius: 30,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  cardHeading: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000",
     marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-  },
-  required: {
-    color: "#FF6B6B",
+  inputGroup: {
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
+    borderColor: "rgba(233, 233, 233, 1)",
+    borderRadius: 30,
     padding: 14,
     fontSize: 15,
-    backgroundColor: "#fafafa",
-    color: "#111",
+    backgroundColor: "#FFFFFF",
+    color: "#000",
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#0D9488",
-    borderRadius: 12,
-    backgroundColor: "#fafafa",
+    borderColor: "rgba(233, 233, 233, 1)",
+    borderRadius: 30,
+    backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
   },
   picker: {
+    flex: 1,
     height: 50,
-    color: "#0D9488",
+    color: "#000",
+  },
+  pickerIcon: {
+    position: "absolute",
+    right: 14,
+    top: 15,
+    pointerEvents: "none",
   },
   rowContainer: {
     flexDirection: "row",
@@ -450,7 +444,7 @@ const styles = StyleSheet.create({
   },
   genderRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   genderButton: {
     flex: 1,
@@ -459,14 +453,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#E0E0E0",
     borderRadius: 12,
-    backgroundColor: "#fafafa",
-    gap: 8,
+    backgroundColor: "#FFFFFF",
+    gap: 6,
   },
   genderButtonActive: {
-    backgroundColor: "#0D9488",
-    borderColor: "#0D9488",
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
   },
   genderText: {
     fontSize: 15,
@@ -476,63 +470,45 @@ const styles = StyleSheet.create({
   genderTextActive: {
     color: "#fff",
   },
-  unitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  unitBox: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  unitText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-  },
   bottomContainer: {
     position: "absolute",
-    bottom: 0,
+    bottom: 20,
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    backgroundColor: "transparent",
     flexDirection: "row",
     gap: 12,
   },
   cancelButton: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#0D9488",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#000",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#0D9488",
+    fontWeight: "600",
+    color: "#000",
   },
   addButton: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 24,
-    backgroundColor: "#0D9488",
+    borderRadius: 30,
+    backgroundColor: "#007AFF",
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#CCCCCC",
   },
   addButtonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#fff",
   },
 });

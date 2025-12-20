@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,213 +12,137 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { BASE_URL } from "../../config/config"
+import { useFonts, Inter_300Light, Inter_400Regular } from '@expo-google-fonts/inter';
 
 const { width } = Dimensions.get('window');
+const cardWidth = (width - 60) / 3; // 3 columns with padding
 
-// Enhanced emotions array with PNG icons
-// Step 1: Add your PNG files in assets/emotions/ folder
+// Only 6 emotions as per design
 const emotions = [
   { 
-    id: 'happy', 
-    label: 'Happy', 
-    emoji: '😊', // Keep as fallback
-    icon: require('../../../assets/emotions/happy.png'), // Your PNG path
-    color: '#FFD93D' 
+    id: 'lazy', 
+    label: 'Lazy', 
+    emoji: '😴',
+    icon: require('../../../assets/emotions/Lazy.png'),
+    color: '#FF9800' // Orange
   },
   { 
-    id: 'sad', 
-    label: 'Sad', 
-    emoji: '😢', 
-    icon: require('../../../assets/emotions/sad.png'),
-    color: '#4A90E2' 
+    id: 'shocked', 
+    label: 'Shocked', 
+    emoji: '😲',
+    icon: require('../../../assets/emotions/Shocked.png'),
+    color: '#FFD93D' // Yellow
   },
   { 
     id: 'worried', 
     label: 'Worried', 
-    emoji: '😟', 
+    emoji: '😟',
     icon: require('../../../assets/emotions/Worried.png'),
-    color: '#9B59B6' 
+    color: '#4A90E2' // Light Blue
   },
   { 
     id: 'stressed', 
     label: 'Stressed', 
-    emoji: '😤', 
+    emoji: '😰',
     icon: require('../../../assets/emotions/Stressed.png'),
-    color: '#E74C3C' 
-  },
-  { 
-    id: 'low_energy', 
-    label: 'Low Energy', 
-    emoji: '😴', 
-    icon: require('../../../assets/emotions/Low Energy.png'),
-    color: '#95A5A6' 
-  },
-  { 
-    id: 'confident', 
-    label: 'Confident', 
-    emoji: '😎', 
-    icon: require('../../../assets/emotions/Confident.png'),
-    color: '#2ECC71' 
-  },
-  { 
-    id: 'angry', 
-    label: 'Angry', 
-    emoji: '😡', 
-    icon: require('../../../assets/emotions/Angry.png'),
-    color: '#FF5722' 
-  },
-  { 
-    id: 'overwhelmed', 
-    label: 'Overwhelmed', 
-    emoji: '🤯', 
-    icon: require('../../../assets/emotions/Overwhelmed.png'),
-    color: '#FF9800' 
-  },
-  { 
-    id: 'calm', 
-    label: 'Calm', 
-    emoji: '😌', 
-    icon: require('../../../assets/emotions/Calm.png'),
-    color: '#00BCD4' 
+    color: '#F5A5A5' // Light Pink/Beige
   },
   { 
     id: 'confused', 
     label: 'Confused', 
-    emoji: '😕', 
-    icon: require('../../../assets/emotions/Confused.png'),
-    color: '#795548' 
+    emoji: '😕',
+    icon: require('../../../assets/emotions/Consfused.png'),
+    color: '#5F9EA0' // Teal/Blue-grey
+  },
+  { 
+    id: 'happy', 
+    label: 'Happy', 
+    emoji: '😄',
+    icon: require('../../../assets/emotions/happy.png'),
+    color: '#FFD93D' // Yellow
   },
 ];
 
-// Comprehensive recommendations for all emotions
+// Recommendations for each mood
 const recommendations = {
-  happy: [
-    { icon: '🎉', text: 'Share your happiness with others' },
-    { icon: '📸', text: 'Capture this moment with photos' },
-    { icon: '🎨', text: 'Do something creative' },
-    { icon: '🌟', text: 'Plan something exciting for tomorrow' },
-    { icon: '💝', text: 'Do something kind for someone else' },
+  lazy: [
+    'Share your happiness with others.',
+    'Capture this moment with photos.',
+    'Do something creative.',
+    'Plan something exciting for tomorrow.',
+    'Do something kind for someone.',
   ],
-  sad: [
-    { icon: '🛁', text: 'Take a warm shower or bath' },
-    { icon: '📝', text: 'Write down your feelings for 5 minutes' },
-    { icon: '👥', text: 'Reach out to a close friend' },
-    { icon: '🎵', text: 'Play some uplifting music' },
-    { icon: '🤗', text: 'Practice self-compassion' },
+  shocked: [
+    'Take a moment to process what happened.',
+    'Talk to someone you trust about it.',
+    'Write down your thoughts and feelings.',
+    'Take deep breaths to calm yourself.',
+    'Focus on what you can control.',
   ],
   worried: [
-    { icon: '🧘', text: 'Practice deep breathing for 10 minutes' },
-    { icon: '📋', text: 'Make a list of your concerns' },
-    { icon: '☎️', text: 'Talk to someone you trust' },
-    { icon: '🌿', text: 'Go for a walk in nature' },
-    { icon: '📚', text: 'Focus on what you can control' },
+    'Practice deep breathing for 10 minutes.',
+    'Make a list of your concerns.',
+    'Talk to someone you trust.',
+    'Go for a walk in nature.',
+    'Focus on what you can control.',
   ],
   stressed: [
-    { icon: '💆', text: 'Take a 15-minute break' },
-    { icon: '🏃', text: 'Do some light exercise' },
-    { icon: '📱', text: 'Turn off notifications for an hour' },
-    { icon: '🍃', text: 'Practice mindfulness meditation' },
-    { icon: '⏰', text: 'Prioritize your tasks for today' },
-  ],
-  low_energy: [
-    { icon: '☕', text: 'Have a healthy snack or drink water' },
-    { icon: '😴', text: 'Take a 20-minute power nap' },
-    { icon: '🌞', text: 'Get some sunlight or fresh air' },
-    { icon: '🎵', text: 'Listen to energizing music' },
-    { icon: '💪', text: 'Do gentle stretching exercises' },
-  ],
-  confident: [
-    { icon: '🎯', text: 'Set a challenging goal for yourself' },
-    { icon: '📢', text: 'Share your achievements with others' },
-    { icon: '🚀', text: 'Take on a new challenge' },
-    { icon: '👑', text: 'Celebrate your accomplishments' },
-    { icon: '🌟', text: 'Mentor or help someone else' },
-  ],
-  angry: [
-    { icon: '🥊', text: 'Do some physical exercise' },
-    { icon: '🧘', text: 'Practice deep breathing techniques' },
-    { icon: '📝', text: 'Write about what made you angry' },
-    { icon: '⏰', text: 'Take a timeout before reacting' },
-    { icon: '💭', text: 'Think about the root cause' },
-  ],
-  overwhelmed: [
-    { icon: '📝', text: 'Break tasks into smaller steps' },
-    { icon: '⏸️', text: 'Take a step back and pause' },
-    { icon: '🎯', text: 'Focus on one thing at a time' },
-    { icon: '🤝', text: 'Ask for help when needed' },
-    { icon: '🗂️', text: 'Organize and prioritize your tasks' },
-  ],
-  calm: [
-    { icon: '🌱', text: 'Enjoy this peaceful moment' },
-    { icon: '📖', text: 'Read something inspiring' },
-    { icon: '🍃', text: 'Practice gratitude' },
-    { icon: '🎨', text: 'Engage in a creative activity' },
-    { icon: '🧘', text: 'Extend your meditation practice' },
+    'Take a 15-minute break.',
+    'Do some light exercise.',
+    'Turn off notifications for an hour.',
+    'Practice mindfulness meditation.',
+    'Prioritize your tasks for today.',
   ],
   confused: [
-    { icon: '📝', text: 'Write down what\'s confusing you' },
-    { icon: '🤔', text: 'Break the problem into parts' },
-    { icon: '👨‍🏫', text: 'Seek advice from someone experienced' },
-    { icon: '📚', text: 'Research or learn more about it' },
-    { icon: '⏰', text: 'Give yourself time to think it through' },
+    'Write down what\'s confusing you.',
+    'Break the problem into parts.',
+    'Seek advice from someone experienced.',
+    'Research or learn more about it.',
+    'Give yourself time to think it through.',
+  ],
+  happy: [
+    'Share your happiness with others.',
+    'Capture this moment with photos.',
+    'Do something creative.',
+    'Plan something exciting for tomorrow.',
+    'Do something kind for someone.',
   ],
 };
 
-// Enhanced blog posts covering all emotions
+// Blog posts
 const blogPosts = [
-  // Happy/Positive emotions
-  { id: 1, title: 'The Science of Sustainable Happiness', author: 'Dr. Sarah Johnson', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Happiness', emotions: ['happy', 'confident'] },
-  { id: 2, title: 'Building Unshakeable Confidence', author: 'Coach Michael Torres', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Confidence', emotions: ['confident', 'happy'] },
-  
-  // Negative emotions
-  { id: 3, title: 'Managing Difficult Emotions', author: 'Dr. Lisa Chen', readTime: '5 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Emotional Health', emotions: ['sad', 'worried'] },
-  { id: 4, title: 'Overcoming Worry and Anxiety', author: 'Dr. James Wilson', readTime: '8 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Anxiety', emotions: ['worried', 'stressed'] },
-  { id: 5, title: 'Stress Relief Techniques That Work', author: 'Prof. Maria Garcia', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Stress Management', emotions: ['stressed', 'overwhelmed'] },
-  { id: 6, title: 'Healthy Ways to Handle Anger', author: 'Dr. Robert Kim', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Anger Management', emotions: ['angry', 'stressed'] },
-  
-  // Energy and clarity
-  { id: 7, title: 'Boosting Energy Naturally', author: 'Nutritionist Emma Davis', readTime: '5 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Energy', emotions: ['low_energy', 'overwhelmed'] },
-  { id: 8, title: 'Finding Clarity in Confusion', author: 'Life Coach Alex Murphy', readTime: '6 min', image: require('../../../assets/Dashoabdicons/stress2.png'), tag: 'Clarity', emotions: ['confused', 'overwhelmed'] },
-  { id: 9, title: 'The Power of Being Present', author: 'Mindfulness Expert Zen Master', readTime: '8 min', image: require('../../../assets/Dashoabdicons/stress3.png'), tag: 'Mindfulness', emotions: ['calm', 'stressed'] },
-  { id: 10, title: 'When Life Feels Too Much', author: 'Dr. Patricia Lee', readTime: '7 min', image: require('../../../assets/Dashoabdicons/stress.png'), tag: 'Coping Strategies', emotions: ['overwhelmed', 'confused'] },
+  { id: 1, title: 'Happiness', description: 'The science of sustainable...', tag: 'Happiness' },
+  { id: 2, title: 'Confidence', description: 'Building unshakable confidence.', tag: 'Confidence' },
+  { id: 3, title: 'Emotional Health', description: 'Managing difficult emotions.', tag: 'Emotional Health' },
 ];
 
 export default function MoodCheckupScreen() {
-  const navigation = useNavigation(); // Add navigation hook
-  
-  const [selectedEmotion, setSelectedEmotion] = useState('happy');
+  const navigation = useNavigation();
+  const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
-  const [savedEmotions, setSavedEmotions] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [savedEmotions, setSavedEmotions] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [pressedEmotion, setPressedEmotion] = useState(null);
+  const [buttonClicked, setButtonClicked] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    Inter_300Light,
+    Inter_400Regular,
+  });
 
   useEffect(() => {
-    loadMoods();
-  }, []);
+    if (showCalendar) {
+      loadMoods();
+    }
+  }, [showCalendar]);
 
   const getToken = async () => {
     return await AsyncStorage.getItem('token');
-  };
-
-  const saveMoodToBackend = async (emotionData) => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`${BASE_URL}/moods/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(emotionData),
-      });
-      return await res.json();
-    } catch (err) {
-      console.error('Error saving mood to backend:', err);
-      return null;
-    }
   };
 
   const fetchMoodsFromBackend = async () => {
@@ -242,7 +165,32 @@ export default function MoodCheckupScreen() {
     setSavedEmotions(moods);
   };
 
-  const saveEmotion = async () => {
+  const saveMoodToBackend = async (emotionData) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${BASE_URL}/moods/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(emotionData),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('Error saving mood to backend:', err);
+      return null;
+    }
+  };
+
+  const handleGetRecommendations = async () => {
+    if (!selectedEmotion) {
+      Alert.alert('Please Select', 'Please select your mood first.');
+      return;
+    }
+
+    setButtonClicked(true);
+
     try {
       const currentEmotion = emotions.find(e => e.id === selectedEmotion);
       const emotionData = {
@@ -252,27 +200,24 @@ export default function MoodCheckupScreen() {
       };
 
       const res = await saveMoodToBackend(emotionData);
-
       if (res && res.success) {
-        const moods = await fetchMoodsFromBackend();
-        setSavedEmotions(moods);
         setShowRecommendations(true);
-        Alert.alert('Saved!', 'Your mood has been saved.');
       } else {
-        Alert.alert('Error', 'Could not save your mood. Try again.');
+        // Still show recommendations even if save fails
+        setShowRecommendations(true);
       }
     } catch (error) {
       console.error('Error saving emotion:', error);
-      Alert.alert('Error', 'Could not save your mood. Try again.');
+      setShowRecommendations(true);
     }
   };
 
-  // Smart back button handler
   const handleBackPress = () => {
     if (showCalendar) {
       setShowCalendar(false);
     } else if (showRecommendations) {
       setShowRecommendations(false);
+      setButtonClicked(false);
     } else {
       navigation.goBack();
     }
@@ -303,484 +248,493 @@ export default function MoodCheckupScreen() {
     'July','August','September','October','November','December'
   ];
 
-  const currentEmotion = emotions.find(e => e.id === selectedEmotion);
-  const emotionRecommendations = recommendations[selectedEmotion] || recommendations.happy;
-  
-  // Filter blog posts relevant to current emotion
-  const relevantBlogPosts = blogPosts.filter(post => 
-    post.emotions.includes(selectedEmotion)
-  ).slice(0, 3); // Show max 3 relevant posts
+  const currentEmotion = selectedEmotion ? emotions.find(e => e.id === selectedEmotion) : null;
+  const emotionRecommendations = selectedEmotion ? recommendations[selectedEmotion] : [];
 
-  // If no relevant posts, show general posts
-  const displayBlogPosts = relevantBlogPosts.length > 0 ? relevantBlogPosts : blogPosts.slice(0, 3);
-
-  if (showCalendar) {
-    const days = getDaysInMonth(currentMonth);
-    const monthYear = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
-
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBackPress}>
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Emotion Calendar</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView style={styles.content}>
-          <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}>
-              <Ionicons name="chevron-back" size={20} color="#8B5CF6" />
-            </TouchableOpacity>
-            <Text style={styles.monthText}>{monthYear}</Text>
-            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}>
-              <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.weekdayHeader}>
-            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => <Text key={day} style={styles.weekdayText}>{day}</Text>)}
-          </View>
-
-          <View style={styles.calendarGrid}>
-            {days.map((dayData, index) => (
-              <View key={index} style={styles.dayCell}>
-                {dayData && (
-                  <>
-                    {dayData.emotion && (
-                      <View style={[styles.emotionDot, { backgroundColor: dayData.emotion.color }]} />
-                    )}
-                    <Text style={[
-                      styles.dayNumber,
-                      dayData.emotion && { color: '#fff', fontWeight: 'bold' }
-                    ]}>
-                      {dayData.day}
-                    </Text>
-                  </>
-                )}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-     </SafeAreaView>
-    );
+  if (!fontsLoaded) {
+    return null;
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackPress}>
-          <Ionicons name="chevron-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkup</Text>
-        <TouchableOpacity onPress={() => setShowCalendar(true)}>
-          <Ionicons name="calendar-outline" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
+    <LinearGradient
+      colors={[
+        'rgba(254, 215, 112, 0.9)',
+        'rgba(235, 177, 180, 0.8)',
+        'rgba(145, 230, 251, 0.7)',
+        'rgba(217, 213, 250, 0.6)',
+        'rgba(255, 255, 255, 0.95)'
+      ]}
+      locations={[0, 0.2, 0.4, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Check Your Mood</Text>
+          <TouchableOpacity onPress={() => setShowCalendar(true)}>
+            <Ionicons name="calendar-outline" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {!showRecommendations ? (
-          <>
-            <Text style={styles.title}>How do you feel today?</Text>
-            <Text style={styles.subtitle}>Share your emotions and let us help you navigate them.</Text>
-
-            <View style={styles.largeEmotionContainer}>
-              <View style={[styles.largeEmotion, { backgroundColor: currentEmotion.color }]}>
-                {/* Try PNG first, fallback to emoji */}
-                {currentEmotion.icon ? (
-                  <Image 
-                    source={currentEmotion.icon} 
-                    style={styles.largeEmotionIcon}
-                    onError={() => console.log('PNG load failed, using emoji fallback')}
-                  />
-                ) : (
-                  <Text style={styles.largeEmoji}>{currentEmotion.emoji}</Text>
-                )}
-              </View>
+        {showCalendar ? (
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}>
+                <Ionicons name="chevron-back" size={20} color="#8B5CF6" />
+              </TouchableOpacity>
+              <Text style={styles.monthText}>
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </Text>
+              <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}>
+                <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
+              </TouchableOpacity>
             </View>
 
-            {/* Horizontal scrollable emotions */}
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.emotionScrollContainer}
-              style={styles.emotionScroll}
-            >
-              {emotions.map((emotion) => (
-                <TouchableOpacity 
-                  key={emotion.id}
-                  style={styles.emotionContainer}
-                  onPress={() => setSelectedEmotion(emotion.id)}
-                >
-                  <View style={[
-                    styles.emotionOption, 
-                    { backgroundColor: emotion.color }, 
-                    selectedEmotion === emotion.id && styles.selectedEmotion
-                  ]}>
-                    {/* Try PNG first, fallback to emoji */}
+            <View style={styles.weekdayHeader}>
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => (
+                <Text key={day} style={styles.weekdayText}>{day}</Text>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {getDaysInMonth(currentMonth).map((dayData, index) => (
+                <View key={index} style={styles.dayCell}>
+                  {dayData && (
+                    <>
+                      {dayData.emotion && (
+                        <View style={[styles.emotionDot, { backgroundColor: dayData.emotion.color }]} />
+                      )}
+                      <Text style={[
+                        styles.dayNumber,
+                        dayData.emotion && { color: '#fff', fontWeight: 'bold' }
+                      ]}>
+                        {dayData.day}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              ))}
+            </View>
+            <View style={styles.bottomSpacing} />
+          </ScrollView>
+        ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {!showRecommendations ? (
+            <>
+              {/* Question and Description */}
+              <Text style={styles.title} numberOfLines={2}>
+                How do you feel today?
+              </Text>
+              <Text style={styles.subtitle} numberOfLines={4}>
+                Our Mood Checker AI helps identify your current emotional state and offers gentle, personalised suggestions to support your mental wellbeing.
+              </Text>
+
+              {/* Mood Selection Grid - 2x3 */}
+              <View style={styles.moodGrid}>
+                {emotions.map((emotion) => (
+                  <TouchableOpacity
+                    key={emotion.id}
+                    style={[
+                      styles.moodCard,
+                      selectedEmotion === emotion.id && styles.selectedMoodCard,
+                      pressedEmotion === emotion.id && styles.pressedMoodCard
+                    ]}
+                    onPressIn={() => setPressedEmotion(emotion.id)}
+                    onPressOut={() => setPressedEmotion(null)}
+                    onPress={() => {
+                      setSelectedEmotion(emotion.id);
+                      setPressedEmotion(null);
+                    }}
+                    activeOpacity={1}
+                  >
                     {emotion.icon ? (
                       <Image 
                         source={emotion.icon} 
-                        style={styles.emotionIcon}
-                        onError={() => console.log(`PNG load failed for ${emotion.id}, using emoji fallback`)}
+                        style={styles.moodIcon}
+                        resizeMode="contain"
                       />
                     ) : (
-                      <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
+                      <Text style={styles.moodEmoji}>{emotion.emoji}</Text>
                     )}
-                  </View>
-                  <Text style={styles.emotionLabel}>{emotion.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <TouchableOpacity style={styles.recommendButton} onPress={saveEmotion}>
-              <Text style={styles.recommendButtonText}>Get Recommendations</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <View style={styles.emotionHeader}>
-              <View style={[styles.emotionCircle, { backgroundColor: currentEmotion.color }]}>
-                {/* Try PNG first, fallback to emoji */}
-                {currentEmotion.icon ? (
-                  <Image 
-                    source={currentEmotion.icon} 
-                    style={styles.emotionCircleIcon}
-                    onError={() => console.log('PNG load failed, using emoji fallback')}
-                  />
-                ) : (
-                  <Text style={styles.emotionEmoji}>{currentEmotion.emoji}</Text>
-                )}
-              </View>
-            </View>
-
-            <Text style={styles.sorryText}>
-              {['happy', 'confident', 'calm'].includes(selectedEmotion) 
-                ? "That's wonderful!" 
-                : "I understand how you're feeling"
-              }
-            </Text>
-            <Text style={styles.helpText}>Here are some personalized suggestions to help you today</Text>
-
-            <View style={styles.recommendationsContainer}>
-              {emotionRecommendations.map((rec, index) => (
-                <TouchableOpacity key={index} style={styles.recommendationItem}>
-                  <View style={styles.recommendationIcon}>
-                    <Ionicons name="checkmark-circle" size={20} color="#8B5CF6" />
-                  </View>
-                  <Text style={styles.recommendationText}>{rec.text}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.readsSection}>
-              <View style={styles.readsHeader}>
-                <Text style={styles.readsTitle}>Recommended Reads</Text>
-                <Ionicons name="chevron-forward" size={24} color="#333" />
-              </View>
-
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.readsScroll}>
-                {displayBlogPosts.map((post) => (
-                  <TouchableOpacity key={post.id} style={styles.readCard}>
-                    <Image 
-                      source={post.image} 
-                      style={styles.readImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.readInfo}>
-                      <View style={styles.readTag}>
-                        <Text style={styles.readTagText}>{post.tag}</Text>
-                      </View>
-                      <Text style={styles.readTime}>{post.readTime}</Text>
-                      <Text style={styles.readTitle}>{post.title}</Text>
-                    </View>
+                    <Text style={styles.moodLabel}>{emotion.label}</Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            </View>
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Results Screen */}
+              <View style={styles.resultsContainer}>
+                {/* Mood Display */}
+                <View style={styles.moodDisplayContainer}>
+                  <View style={styles.moodDisplayCircle}>
+                    {currentEmotion.icon ? (
+                      <Image 
+                        source={currentEmotion.icon} 
+                        style={styles.moodDisplayIcon}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={styles.moodDisplayEmoji}>{currentEmotion.emoji}</Text>
+                    )}
+                  </View>
+                  <Text style={styles.moodDisplayTitle}>Feeling {currentEmotion.label}!</Text>
+                  <Text style={styles.moodDisplayDescription}>
+                    Personalized recommendations designed for how you're feeling right now.
+                  </Text>
+                </View>
 
-            <TouchableOpacity 
-              style={[styles.recommendButton, { backgroundColor: '#34D399', marginTop: 20 }]} 
-              onPress={() => setShowRecommendations(false)}
-            >
-              <Text style={styles.recommendButtonText}>Back to Mood Check</Text>
-            </TouchableOpacity>
-          </>
+                {/* Recommendations List */}
+                <View style={styles.recommendationsList}>
+                  {emotionRecommendations.map((rec, index) => (
+                    <View key={index} style={styles.recommendationCard}>
+                      <View style={styles.recommendationIcon}>
+                        <Ionicons name="checkmark-circle" size={24} color="#FFD93D" />
+                      </View>
+                      <Text style={styles.recommendationText}>{rec}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Recommended Blogs */}
+                <View style={styles.blogsSection}>
+                  <Text style={styles.blogsTitle}>Recommended Blogs</Text>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.blogsScroll}
+                  >
+                    {blogPosts.map((blog) => (
+                      <TouchableOpacity key={blog.id} style={styles.blogCard}>
+                        <View style={styles.blogIcon}>
+                          <Ionicons name="document-text-outline" size={20} color="#FFD93D" />
+                        </View>
+                        <Text style={styles.blogTitle}>{blog.title}</Text>
+                        <Text style={styles.blogDescription}>{blog.description}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </>
+          )}
+          
+          {/* Get Recommendation Button - Fixed at bottom */}
+          {!showRecommendations && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={[
+                  styles.recommendButton,
+                  (!selectedEmotion || buttonClicked) && styles.recommendButtonDisabled
+                ]} 
+                onPress={handleGetRecommendations}
+                disabled={!selectedEmotion || buttonClicked}
+                activeOpacity={0.8}
+              >
+                <Text style={[
+                  styles.recommendButtonText,
+                  (!selectedEmotion || buttonClicked) && styles.recommendButtonTextDisabled
+                ]}>Get Recommendation</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
         )}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
-// Enhanced styles for 10 emotions grid layout
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { 
+  gradientContainer: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
     marginTop: StatusBar.currentHeight || 0,
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6"
-  },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
-  
-  content: { flex: 1, paddingHorizontal: 20 },
-  title: { 
-    fontSize: 24, 
-    fontWeight: '600', 
-    color: '#6869B3', 
-    textAlign: 'center', 
-    marginTop: 20, 
-    marginBottom: 8,
-    fontFamily: "Poppins_400Regular",
-  },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#666', 
-    textAlign: 'center', 
-    lineHeight: 22, 
-    marginBottom: 100,
-    fontFamily: "Poppins_400Regular"
-  },
-  largeEmotionContainer: { alignItems: 'center', marginBottom: 120 },
-  largeEmotion: { 
-    width: 120, 
-    height: 120, 
-    borderRadius: 60, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-  },
-  largeEmoji: { fontSize: 48 },
-  
-  // Horizontal scrollable emotions styles
-  emotionScroll: { 
-    marginBottom: 40
-  },
-  emotionScrollContainer: { 
-    paddingHorizontal: 20,
-    alignItems: 'center'
-  },
-  emotionContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
-    minWidth: 70,
-    justifyContent: 'center'
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
   },
-  emotionOption: { 
-    width: 60, 
-    height: 60, 
-    borderRadius: 30, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 4, 
-    elevation: 2,
-    marginBottom: 8,
-    overflow: 'hidden'
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
-  selectedEmotion: { 
-    transform: [{ scale: 1.15 }], 
-    shadowOpacity: 0.3, 
-    shadowRadius: 8, 
-    elevation: 6 
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    fontFamily: 'Poppins_400Regular',
   },
-  emotionEmoji: { fontSize: 24 },
-  
-  // PNG Icon Styles
-  largeEmotionIcon: {
-    width: 232,
-    height: 232,
-    resizeMode: 'contain'
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
-  emotionIcon: {
-    width: 85,
-    height: 85,
-    resizeMode: 'contain'
+  title: {
+    fontSize: 50,
+    fontWeight: '300',
+    color: '#111827',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+    fontFamily: 'Inter_300Light',
+    paddingHorizontal: 20,
   },
-  emotionCircleIcon: {
-    width: 85,
-    height: 85,
-    resizeMode: 'contain'
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 32,
+    fontFamily: 'Inter_400Regular',
+    paddingHorizontal: 20,
   },
-  emotionLabel: { 
-    fontSize: 12, 
-    color: '#666', 
-    textAlign: 'center', 
-    fontWeight: '500',
-    maxWidth: 70,
-    marginTop: 4,
-    lineHeight: 14
-  },
-  
-  recommendButton: { 
-    backgroundColor: '#7475B4', 
-    paddingVertical: 16, 
-    borderRadius: 12, 
-    alignItems: 'center', 
-    marginHorizontal: 20, 
-    shadowColor: '#8B5CF6', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 8, 
-    elevation: 4 
-  },
-  recommendButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  emotionHeader: { alignItems: 'center', marginTop: 20, marginBottom: 20 },
-  emotionCircle: { 
-    width: 80, 
-    height: 80, 
-    borderRadius: 40, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 4, 
-    elevation: 2 
-  },
-  sorryText: { 
-    fontSize: 20, 
-    fontWeight: '600', 
-    color: '#8B5CF6', 
-    textAlign: 'center', 
-    marginBottom: 8 
-  },
-  helpText: { 
-    fontSize: 16, 
-    color: '#666', 
-    textAlign: 'center', 
-    lineHeight: 22, 
-    marginBottom: 30 
-  },
-  recommendationsContainer: { marginBottom: 30 },
-  recommendationItem: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#F8F9FA', 
-    padding: 16, 
-    borderRadius: 12, 
-    marginBottom: 12, 
-    borderLeftWidth: 4, 
-    borderLeftColor: '#8B5CF6' 
-  },
-  recommendationIcon: { marginRight: 12 },
-  recommendationText: { fontSize: 16, color: '#333', flex: 1, fontWeight: '500' },
-  readsSection: {
+  moodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 40,
     paddingHorizontal: 0,
-    marginBottom: 30,
-    alignItems: "center",
   },
-  readsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 15,
-    width: "100%",
+  moodCard: {
+    width: (width - 60) / 3,
+    height: 110,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 50,
+    marginHorizontal: 0,
+    backgroundColor: 'transparent',
   },
-  readsTitle: {
+  selectedMoodCard: {
+    // No border, just visual feedback if needed
+  },
+  pressedMoodCard: {
+    backgroundColor: 'rgba(233, 233, 233, 0.5)',
+    borderRadius: 24,
+    transform: [{ scale: 0.95 }],
+  },
+  moodEmoji: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  moodIcon: {
+    width: 119.73705291748047,
+    height: 110.5265121459961,
+    marginTop: 50,
+    marginBottom: 6,
+  },
+  moodLabel: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: '400',
+    color: '#111827',
+    fontFamily: 'Inter_400Regular',
+    marginTop: 4,
   },
-  readsScroll: {
+  buttonContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  recommendButton: {
+    backgroundColor: 'rgba(7, 122, 255, 1)',
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  recommendButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  recommendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Poppins_400Regular',
+  },
+  recommendButtonTextDisabled: {
+    color: '#666666',
+  },
+  // Results Screen Styles
+  resultsContainer: {
+    paddingTop: 20,
+  },
+  moodDisplayContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  moodDisplayCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  moodDisplayEmoji: {
+    fontSize: 64,
+  },
+  moodDisplayIcon: {
+    width: 119,
+    height: 110,
+  },
+  moodDisplayTitle: {
+    fontSize: 50,
+    fontWeight: '300',
+    color: '#111827',
+    marginBottom: 8,
+    fontFamily: 'Inter_300Light',
+  },
+  moodDisplayDescription: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+    fontFamily: 'Inter_400Regular',
+  },
+  recommendationsList: {
+    marginBottom: 32,
+  },
+  recommendationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    padding: 16,
+    borderRadius: 30,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(233, 233, 233, 1)',
+  },
+  recommendationIcon: {
+    marginRight: 12,
+  },
+  recommendationText: {
+    fontSize: 15,
+    color: '#111827',
+    flex: 1,
+    fontFamily: 'Poppins_400Regular',
+  },
+  blogsSection: {
+    marginBottom: 20,
+  },
+  blogsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+    fontFamily: 'Poppins_400Regular',
+  },
+  blogsScroll: {
     paddingLeft: 0,
   },
-  readCard: {
-    width: Math.min(280, width * 0.7),
-    marginRight: 15,
-    backgroundColor: "#fff",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+  blogCard: {
+    width: 200,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 16,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(233, 233, 233, 1)',
   },
-  readImage: {
-    width: "100%",
-    height: 140,
-    backgroundColor: "#39A6A3",
-  },
-  readInfo: {
-    padding: 15,
-  },
-  readTag: {
-    backgroundColor: "#E8F5F3",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    alignSelf: "flex-start",
+  blogIcon: {
     marginBottom: 8,
   },
-  readTagText: {
-    fontSize: 12,
-    color: "#39A6A3",
-    fontWeight: "500",
+  blogTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+    fontFamily: 'Poppins_400Regular',
   },
-  readTime: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 8,
-    textAlign: "right",
-    position: "absolute",
-    top: 15,
-    right: 15,
+  blogDescription: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: 'Poppins_400Regular',
   },
-  readTitle: {
+  bottomSpacing: {
+    height: 30,
+  },
+  // Calendar Styles
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+  },
+  monthText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Poppins_400Regular',
+  },
+  weekdayHeader: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  weekdayText: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
-    lineHeight: 18,
+    fontWeight: '500',
+    color: '#6B7280',
+    fontFamily: 'Poppins_400Regular',
   },
-  bottomSpacing: { height: 30 },
-  
-  // Fixed Calendar styles
-  calendarHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingVertical: 20 
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 10,
   },
-  monthText: { fontSize: 20, fontWeight: '600', color: '#333' },
-  weekdayHeader: { flexDirection: 'row', marginBottom: 10 },
-  weekdayText: { 
-    flex: 1, 
-    textAlign: 'center', 
-    fontSize: 14, 
-    fontWeight: '500', 
-    color: '#666' 
-  },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { 
-    width: `${100/7}%`, 
+  dayCell: {
+    width: `${100/7}%`,
     height: 60,
-    alignItems: 'center', 
-    justifyContent: 'center', 
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
-    paddingVertical: 5
+    paddingVertical: 5,
   },
-  dayNumber: { 
-    fontSize: 16, 
-    color: '#333',
+  dayNumber: {
+    fontSize: 16,
+    color: '#111827',
     fontWeight: '600',
     textAlign: 'center',
     zIndex: 2,
-    backgroundColor: 'transparent'
+    backgroundColor: 'transparent',
+    fontFamily: 'Poppins_400Regular',
   },
-  emotionDot: { 
-    width: 35, 
-    height: 35, 
-    borderRadius: 17.5, 
+  emotionDot: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
     position: 'absolute',
     zIndex: 1,
-    opacity: 0.8
+    opacity: 0.8,
   },
 });

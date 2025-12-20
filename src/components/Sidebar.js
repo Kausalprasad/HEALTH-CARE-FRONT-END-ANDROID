@@ -9,6 +9,9 @@ import {
   Alert,
   Image,
   Easing,
+  Switch,
+  ScrollView,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
@@ -21,6 +24,9 @@ const { width: screenWidth } = Dimensions.get('window');
 const Sidebar = ({ visible, onClose, navigation }) => {
   const { logout, user } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
+  const [settingsExpanded, setSettingsExpanded] = useState(true);
+  const [appNotifications, setAppNotifications] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handlePress = () => {
     navigation.navigate('ProfileViewScreen');
@@ -120,20 +126,26 @@ const Sidebar = ({ visible, onClose, navigation }) => {
   }, [visible]);
 
   const menuItems = [
-    { icon: 'calendar-outline', title: 'Book Appointment', route: 'Doctors' },
-    { icon: 'flask-outline', title: 'Book Lab Tests', route: 'UserProfileScreen' },
-    { icon: 'medical-outline', title: 'Order Medicines', route: 'OrderMedicines' },
-    { icon: 'settings-outline', title: 'Settings', route: 'AboutScreen' },
-    { icon: 'newspaper-outline', title: 'Blogs', route: 'Blogs' },
+    { 
+      icon: 'medical-outline', 
+      title: 'Book Appointment', 
+      route: 'Doctors',
+      iconColor: '#8B5CF6', // Purple for stethoscope
+    },
+    { 
+      icon: 'document-text-outline', 
+      title: 'Health Blogs', 
+      route: 'Blogs',
+      iconColor: '#F97316', // Orange for documents
+    },
   ];
 
-  const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { 
-        text: "Logout", 
-        style: "destructive", 
-        onPress: async () => {
+  const handleLogout = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowLogoutDialog(false);
           try {
             if (logout) {
               await logout();
@@ -152,9 +164,10 @@ const Sidebar = ({ visible, onClose, navigation }) => {
             console.error('Logout error:', error);
             Alert.alert('Error', 'Failed to logout');
           }
-        }
-      },
-    ]);
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -241,6 +254,11 @@ const Sidebar = ({ visible, onClose, navigation }) => {
           }
         ]}
       >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={onClose}>
+            <Ionicons name="arrow-back" size={24} color="#000000" />
+          </TouchableOpacity>
         
         {/* User Profile */}
         <TouchableOpacity style={styles.profileSection} onPress={handlePress}>
@@ -256,73 +274,164 @@ const Sidebar = ({ visible, onClose, navigation }) => {
               </Text>
             )}
           </View>
-          <View>
             <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.userEmail}>{displayEmail}</Text>
-          </View>
         </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.divider} />
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          {menuItems.slice(0, 3).map((item, index) => (
+            {menuItems.map((item, index) => (
+              <View key={index}>
             <TouchableOpacity
-              key={index}
               style={styles.menuItem}
               onPress={() => {
                 onClose();
                 navigation.navigate(item.route);
               }}
             >
-              <Ionicons name={item.icon} size={24} color="#6B6FA3" style={styles.menuIcon} />
+                  <Ionicons name={item.icon} size={24} color={item.iconColor} style={styles.menuIcon} />
               <Text style={styles.menuText}>{item.title}</Text>
             </TouchableOpacity>
-          ))}
+                <View style={styles.divider} />
         </View>
+            ))}
 
-        {/* Divider */}
-        <View style={styles.divider} />
+            {/* Settings with Expandable Sub-menu */}
+            <View>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => setSettingsExpanded(!settingsExpanded)}
+              >
+                <Ionicons name="settings-outline" size={24} color="#22C55E" style={styles.menuIcon} />
+                <Text style={styles.menuText}>Settings</Text>
+                <Ionicons 
+                  name={settingsExpanded ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#000000" 
+                  style={styles.chevronIcon}
+                />
+              </TouchableOpacity>
+              
+              {settingsExpanded && (
+                <View style={styles.settingsSubMenu}>
+                  <TouchableOpacity
+                    style={styles.subMenuItem}
+                    onPress={() => {
+                      onClose();
+                      // Navigate to languages screen if exists
+                      // navigation.navigate('Languages');
+                    }}
+                  >
+                    <Text style={styles.subMenuText}>Languages</Text>
+                  </TouchableOpacity>
+                  <View style={styles.subMenuItem}>
+                    <Text style={styles.subMenuText}>App Notifications</Text>
+                    <Switch
+                      value={appNotifications}
+                      onValueChange={setAppNotifications}
+                      trackColor={{ false: '#E5E7EB', true: '#22C55E' }}
+                      thumbColor={appNotifications ? '#FFFFFF' : '#FFFFFF'}
+                      ios_backgroundColor="#E5E7EB"
+                    />
+                  </View>
+                </View>
+              )}
+              <View style={styles.divider} />
+            </View>
 
-        {/* Second Menu Section */}
-        <View style={styles.menuSection}>
-          {menuItems.slice(3).map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => {
-                onClose();
-                navigation.navigate(item.route);
-              }}
-            >
-              <Ionicons name={item.icon} size={24} color="#6B6FA3" style={styles.menuIcon} />
-              <Text style={styles.menuText}>{item.title}</Text>
+            {/* About */}
+            <View>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  onClose();
+                  navigation.navigate('AboutScreen');
+                }}
+              >
+                <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={styles.menuIcon} />
+                <Text style={styles.menuText}>About</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+            </View>
+
+            {/* Disclaimer */}
+            <View>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  onClose();
+                  navigation.navigate('MedicalDisclaimerScreen');
+                }}
+              >
+                <Ionicons name="warning-outline" size={24} color="#FBBF24" style={styles.menuIcon} />
+                <Text style={styles.menuText}>Disclaimer</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+            </View>
+
+            {/* Privacy Policies */}
+            <View>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  onClose();
+                  navigation.navigate('PrivacyPolicyScreen');
+                }}
+              >
+                <Ionicons name="people-outline" size={24} color="#EC4899" style={styles.menuIcon} />
+                <Text style={styles.menuText}>Privacy Policies</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Logout at Bottom */}
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity style={styles.logoutItem} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color="#EF4444" style={styles.menuIcon} />
+            <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
-          ))}
         </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Delete Account */}
-        <TouchableOpacity 
-          style={styles.deleteAccountItem} 
-          onPress={handleDeleteAccount}
-        >
-          <Ionicons name="trash-outline" size={24} color="#FF3B30" style={styles.menuIcon} />
-          <Text style={[styles.menuText, { color: '#FF3B30' }]}>Delete Account</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutItem} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color="#6B6FA3" style={styles.menuIcon} />
-          <Text style={styles.menuText}>Logout</Text>
-        </TouchableOpacity>
       </Animated.View>
+
+      {/* Logout Confirmation Dialog */}
+      <Modal
+        visible={showLogoutDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleLogoutCancel}
+      >
+        <View style={styles.dialogOverlay}>
+          <View style={styles.dialogContainer}>
+            {/* Logout Icon */}
+            <View style={styles.logoutIconContainer}>
+              <Ionicons name="log-out-outline" size={48} color="#EF4444" />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.dialogTitle}>Logout?</Text>
+
+            {/* Message */}
+            <Text style={styles.dialogMessage}>You're about to end your session.</Text>
+
+            {/* Buttons */}
+            <View style={styles.dialogButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleLogoutCancel}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogoutConfirm}
+              >
+                <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -359,23 +468,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     zIndex: 2001,
+    flexDirection: 'column',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  scrollView: {
+    flex: 1,
+  },
+  backButton: {
     paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 5,
-  },
-  closeButton: {
-    padding: 5,
+    paddingTop: 50,
+    paddingBottom: 10,
+    alignSelf: 'flex-start',
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 25,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-    paddingTop: 60,
   },
   profilePic: {
     width: 60,
@@ -400,29 +508,24 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#000000',
-    marginBottom: 2,
-    fontFamily: 'Poppins_400Regular',
-  },
-  userEmail: {
-    fontSize: 13,
-    color: '#999999',
     fontFamily: 'Poppins_400Regular',
   },
   divider: {
     height: 1,
-    backgroundColor: '#EBEBEB',
-    marginVertical: 10,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 20,
   },
   menuSection: {
-    paddingVertical: 5,
+    paddingTop: 10,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 18,
-    paddingHorizontal: 25,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
   },
   menuIcon: {
     marginRight: 18,
@@ -430,21 +533,119 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: 16,
-    color: '#2D2D2D',
+    color: '#000000',
     fontFamily: 'Poppins_400Regular',
+    fontWeight: '500',
+    flex: 1,
   },
-  deleteAccountItem: {
+  chevronIcon: {
+    marginLeft: 'auto',
+  },
+  settingsSubMenu: {
+    paddingLeft: 62, // Align with menu items (icon width + margin)
+    paddingRight: 20,
+  },
+  subMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 25,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  subMenuText: {
+    fontSize: 15,
+    color: '#6B7280',
+    fontFamily: 'Poppins_400Regular',
+  },
+  logoutContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingBottom: 20,
   },
   logoutItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 18,
-    paddingHorizontal: 25,
-    marginTop: 0,
+    paddingHorizontal: 20,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: '#EF4444',
+    fontFamily: 'Poppins_400Regular',
+    fontWeight: '500',
+  },
+  dialogOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dialogContainer: {
+    width: screenWidth * 0.85,
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  logoutIconContainer: {
+    marginBottom: 16,
+  },
+  dialogTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 8,
+    fontFamily: 'Poppins_400Regular',
+  },
+  dialogMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 32,
+    fontFamily: 'Poppins_400Regular',
+  },
+  dialogButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#8B5CF6',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins_400Regular',
+  },
+  logoutButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#8B5CF6',
+    marginLeft: 6,
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8B5CF6',
+    fontFamily: 'Poppins_400Regular',
   },
 });
 

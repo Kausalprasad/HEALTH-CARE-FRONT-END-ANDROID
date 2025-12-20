@@ -11,23 +11,104 @@ import {
   StatusBar,
   FlatList,
   SafeAreaView,
+  Modal,
+  Dimensions,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '../../config/config';
+
+const { width } = Dimensions.get('window');
+
+const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const getLabel = () => {
+    const selected = items.find(item => item.value === selectedValue);
+    return selected ? selected.label : placeholder;
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={styles.customPickerButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={[styles.customPickerText, !selectedValue && styles.placeholderText]}>
+          {getLabel()}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color="#666" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <ScrollView style={styles.modalScroll}>
+              {items.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.modalItem,
+                    selectedValue === item.value && styles.modalItemSelected
+                  ]}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.modalItemText,
+                    selectedValue === item.value && styles.modalItemTextSelected
+                  ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+};
 
 const PregnancyScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
+    name: '',
     age: '',
     pregnancyMonth: '',
     height: '',
     weight: '',
-    dietType: 'Vegetarian',
-    activityLevel: 'Moderate',
+    dietType: '',
+    activityLevel: '',
     healthCondition: '',
     symptoms: '',
   });
+
+  const dietOptions = [
+    { label: 'Vegetarian', value: 'Vegetarian' },
+    { label: 'Non-Vegetarian', value: 'Non-Vegetarian' },
+    { label: 'Vegan', value: 'Vegan' },
+    { label: 'Pescatarian', value: 'Pescatarian' },
+  ];
+
+  const activityOptions = [
+    { label: 'Sedentary', value: 'Sedentary' },
+    { label: 'Light', value: 'Light' },
+    { label: 'Moderate', value: 'Moderate' },
+    { label: 'Active', value: 'Active' },
+    { label: 'Very Active', value: 'Very Active' },
+  ];
 
   const [loading, setLoading] = useState(false);
   const [savedRecommendations, setSavedRecommendations] = useState([]);
@@ -36,6 +117,8 @@ const PregnancyScreen = ({ navigation }) => {
   const [userToken, setUserToken] = useState(null);
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [detailTab, setDetailTab] = useState('health');
+  const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [selectedItemForAction, setSelectedItemForAction] = useState(null);
 
   useEffect(() => {
     fetchUserToken();
@@ -352,27 +435,92 @@ const PregnancyScreen = ({ navigation }) => {
   };
 
   const renderHistoryTab = () => (
-    <View style={styles.container}>
+    <View style={styles.historyContainer}>
       {loadingSavedRecommendations ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#7B8DBD" />
-          <Text style={styles.loadingText}>Loading your recommendations...</Text>
+          <ActivityIndicator size="large" color="#9C27B0" />
         </View>
       ) : savedRecommendations.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>👶</Text>
-          <Text style={styles.emptyTitle}>No Recommendations Yet</Text>
-          <Text style={styles.emptyText}>Generate your first pregnancy recommendation to see it here</Text>
+          <Text style={styles.emptyText}>No reports found</Text>
         </View>
       ) : (
-        <FlatList
-          data={savedRecommendations}
-          renderItem={({ item }) => <SavedRecommendationItem item={item} />}
-          keyExtractor={item => item._id}
-          contentContainerStyle={styles.historyListContent}
-          scrollEnabled={true}
-        />
+        <ScrollView style={styles.reportsScroll} showsVerticalScrollIndicator={false}>
+          {savedRecommendations.map((item, index) => {
+            const inputData = item.inputData || item.input_data || {};
+            return (
+              <TouchableOpacity
+                key={item._id || index}
+                style={styles.reportCard}
+                onPress={() => viewSavedRecommendation(item)}
+                onLongPress={() => {
+                  setSelectedItemForAction(item);
+                  setActionModalVisible(true);
+                }}
+              >
+                <View style={styles.reportLeft}>
+                  <View style={styles.reportIcon}>
+                    <Ionicons name="document-text" size={24} color="#9C27B0" />
+                  </View>
+                  <View>
+                    <Text style={styles.reportTitle}>Pregnancy Care</Text>
+                    <Text style={styles.reportSize}>
+                      {new Date(item.createdAt).toLocaleDateString('en-GB')}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.reportRight}>
+                  <Text style={styles.reportRisk}>
+                    {inputData.pregnancy_month || inputData.pregnancyMonth || 'N/A'}
+                  </Text>
+                  <Text style={styles.reportRiskLabel}>Month</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       )}
+
+      {/* Action Modal */}
+      <Modal
+        visible={actionModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setActionModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.actionModalOverlay}
+          activeOpacity={1}
+          onPress={() => setActionModalVisible(false)}
+        >
+          <View style={styles.actionModalContent}>
+            <TouchableOpacity
+              style={styles.actionModalButton}
+              onPress={() => {
+                setActionModalVisible(false);
+                if (selectedItemForAction) {
+                  viewSavedRecommendation(selectedItemForAction);
+                }
+              }}
+            >
+              <Text style={styles.actionModalButtonText}>View</Text>
+            </TouchableOpacity>
+            <View style={styles.actionModalDivider} />
+            <TouchableOpacity
+              style={styles.actionModalButton}
+              onPress={() => {
+                setActionModalVisible(false);
+                if (selectedItemForAction) {
+                  deleteSavedRecommendation(selectedItemForAction._id);
+                  setSelectedItemForAction(null);
+                }
+              }}
+            >
+              <Text style={styles.actionModalDeleteText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 
@@ -382,19 +530,26 @@ const PregnancyScreen = ({ navigation }) => {
     const inputData = selectedRecommendation.inputData || selectedRecommendation.input_data || {};
     
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
-        
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => setSelectedRecommendation(null)}
-          >
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Pregnancy Care</Text>
-          <View style={styles.headerPlaceholder} />
-        </View>
+      <LinearGradient
+        colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+        locations={[0, 0.3, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+          
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setSelectedRecommendation(null)}
+            >
+              <Ionicons name="chevron-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Pregnancy Care</Text>
+            <View style={styles.headerPlaceholder} />
+          </View>
 
         <ScrollView style={styles.detailContainer}>
           <View style={styles.monthCircleContainer}>
@@ -408,36 +563,36 @@ const PregnancyScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={styles.tabContainer}>
+          <View style={styles.detailTabContainer}>
             <TouchableOpacity 
-              style={detailTab === 'health' ? styles.tabActive : styles.tab}
+              style={detailTab === 'health' ? styles.detailTabActive : styles.detailTab}
               onPress={() => setDetailTab('health')}
             >
-              <Text style={detailTab === 'health' ? styles.tabTextActive : styles.tabText}>
+              <Text style={detailTab === 'health' ? styles.detailTabTextActive : styles.detailTabText}>
                 Health
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={detailTab === 'nutrition' ? styles.tabActive : styles.tab}
+              style={detailTab === 'nutrition' ? styles.detailTabActive : styles.detailTab}
               onPress={() => setDetailTab('nutrition')}
             >
-              <Text style={detailTab === 'nutrition' ? styles.tabTextActive : styles.tabText}>
+              <Text style={detailTab === 'nutrition' ? styles.detailTabTextActive : styles.detailTabText}>
                 Nutrition
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={detailTab === 'activity' ? styles.tabActive : styles.tab}
+              style={detailTab === 'activity' ? styles.detailTabActive : styles.detailTab}
               onPress={() => setDetailTab('activity')}
             >
-              <Text style={detailTab === 'activity' ? styles.tabTextActive : styles.tabText}>
+              <Text style={detailTab === 'activity' ? styles.detailTabTextActive : styles.detailTabText}>
                 Activity
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={detailTab === 'fetalDev' ? styles.tabActive : styles.tab}
+              style={detailTab === 'fetalDev' ? styles.detailTabActive : styles.detailTab}
               onPress={() => setDetailTab('fetalDev')}
             >
-              <Text style={detailTab === 'fetalDev' ? styles.tabTextActive : styles.tabText}>
+              <Text style={detailTab === 'fetalDev' ? styles.detailTabTextActive : styles.detailTabText}>
                 Fetal Dev
               </Text>
             </TouchableOpacity>
@@ -516,424 +671,515 @@ const PregnancyScreen = ({ navigation }) => {
           </View>
         </ScrollView>
       </SafeAreaView>
+    </LinearGradient>
     );
   }
 
   // Main View (900-line functionality with 600-line UI style)
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
-      
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pregnancy Care</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      <View style={styles.tabButtonContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'generate' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('generate')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'generate' && styles.tabButtonTextActive]}>
-            Generate
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('history')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'history' && styles.tabButtonTextActive]}>
-            My Plans
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {activeTab === 'generate' ? (
-        <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Your Age"
-                placeholderTextColor="#B0B0B0"
-                keyboardType="numeric"
-                value={formData.age}
-                onChangeText={(value) => handleInputChange('age', value)}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Pregnancy Month"
-                placeholderTextColor="#B0B0B0"
-                keyboardType="numeric"
-                value={formData.pregnancyMonth}
-                onChangeText={(value) => handleInputChange('pregnancyMonth', value)}
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputRow}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Height (cm)"
-                placeholderTextColor="#B0B0B0"
-                keyboardType="numeric"
-                value={formData.height}
-                onChangeText={(value) => handleInputChange('height', value)}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.inputHalf}
-                placeholder="Weight (kg)"
-                placeholderTextColor="#B0B0B0"
-                keyboardType="numeric"
-                value={formData.weight}
-                onChangeText={(value) => handleInputChange('weight', value)}
-              />
-            </View>
-          </View>
-
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.dietType}
-              onValueChange={(value) => handleInputChange('dietType', value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Diet Type" value="" color="#B0B0B0" />
-              <Picker.Item label="Vegetarian" value="Vegetarian" />
-              <Picker.Item label="Non-Vegetarian" value="Non-Vegetarian" />
-              <Picker.Item label="Vegan" value="Vegan" />
-              <Picker.Item label="Pescatarian" value="Pescatarian" />
-            </Picker>
-          </View>
-
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.activityLevel}
-              onValueChange={(value) => handleInputChange('activityLevel', value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Activity Level" value="" color="#B0B0B0" />
-              <Picker.Item label="Sedentary" value="Sedentary" />
-              <Picker.Item label="Light" value="Light" />
-              <Picker.Item label="Moderate" value="Moderate" />
-              <Picker.Item label="Active" value="Active" />
-              <Picker.Item label="Very Active" value="Very Active" />
-            </Picker>
-          </View>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Health Condition (if any)"
-            placeholderTextColor="#B0B0B0"
-            value={formData.healthCondition}
-            onChangeText={(value) => handleInputChange('healthCondition', value)}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Symptoms (if any)"
-            placeholderTextColor="#B0B0B0"
-            value={formData.symptoms}
-            onChangeText={(value) => handleInputChange('symptoms', value)}
-          />
-
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={generateRecommendation}
-            disabled={loading}
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>Get Recommendations</Text>
-            )}
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-        </ScrollView>
-      ) : (
-        renderHistoryTab()
-      )}
-    </SafeAreaView>
+          <Text style={styles.headerTitle}>Pregnancy Care</Text>
+          <View style={styles.headerPlaceholder} />
+        </View>
+
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('generate')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'generate' ? styles.tabTextGenerateActive : styles.tabTextGenerateInactive
+            ]}>
+              Generate
+            </Text>
+            {activeTab === 'generate' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('history')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'history' ? styles.tabTextReportsActive : styles.tabTextReportsInactive
+            ]}>
+              My Reports
+            </Text>
+            {activeTab === 'history' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === 'generate' ? (
+          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            {/* White Card Container */}
+            <View style={styles.formCard}>
+              <View style={styles.formCardGradient}>
+                {/* Add Details Section */}
+                <Text style={styles.sectionTitle}>Add Details</Text>
+
+                <View style={styles.fullInput}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Name"
+                    placeholderTextColor="#999"
+                    value={formData.name}
+                    onChangeText={(value) => handleInputChange('name', value)}
+                  />
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Age"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.age}
+                      onChangeText={(value) => handleInputChange('age', value)}
+                    />
+                  </View>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Pregnancy Month"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.pregnancyMonth}
+                      onChangeText={(value) => handleInputChange('pregnancyMonth', value)}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Weight"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.weight}
+                      onChangeText={(value) => handleInputChange('weight', value)}
+                    />
+                  </View>
+                  <View style={styles.inputHalf}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Height"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      value={formData.height}
+                      onChangeText={(value) => handleInputChange('height', value)}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fullInput}>
+                  <CustomPicker
+                    selectedValue={formData.dietType}
+                    onValueChange={(value) => handleInputChange('dietType', value)}
+                    items={dietOptions}
+                    placeholder="Preference"
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <CustomPicker
+                    selectedValue={formData.activityLevel}
+                    onValueChange={(value) => handleInputChange('activityLevel', value)}
+                    items={activityOptions}
+                    placeholder="Activity Level"
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Health Condition (if any)"
+                    placeholderTextColor="#999"
+                    value={formData.healthCondition}
+                    onChangeText={(value) => handleInputChange('healthCondition', value)}
+                  />
+                </View>
+
+                <View style={styles.fullInput}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Symptoms (if any)"
+                    placeholderTextColor="#999"
+                    value={formData.symptoms}
+                    onChangeText={(value) => handleInputChange('symptoms', value)}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Generate Report Button */}
+            <TouchableOpacity
+              style={styles.analyzeButton}
+              onPress={generateRecommendation}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.analyzeButtonText}>Generate report</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          renderHistoryTab()
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
-  header: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between",
+  header: {
+    marginTop: StatusBar.currentHeight || 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6"
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backButtonText: {
-    fontSize: 26,
-    color: '#000000',
-    fontWeight: '300',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    letterSpacing: 0.3,
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
-    width: 50,
+    width: 40,
   },
-  tabButtonContainer: {
+  tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 24,
+  },
+  tab: {
+    paddingBottom: 8,
+  },
+  tabText: {
+    fontFamily: 'Inter',
+  },
+  tabTextGenerateActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabTextGenerateInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabTextReportsActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabTextReportsInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabUnderline: {
+    height: 2,
+    backgroundColor: '#9C27B0',
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  formCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 8,
-    borderRadius: 25,
-    padding: 4,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    marginBottom: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
   },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 22,
+  formCardGradient: {
+    padding: 20,
   },
-  tabButtonActive: {
-    backgroundColor: '#7B8DBD',
-    elevation: 2,
-    shadowColor: '#7B8DBD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  tabButtonText: {
-    fontSize: 15,
-    color: '#666666',
-    fontWeight: '500',
-  },
-  tabButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
   },
   inputRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 16,
     marginBottom: 16,
-  },
-  inputWrapper: {
-    flex: 1,
-    marginHorizontal: 4,
   },
   inputHalf: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 14,
-    color: '#333333',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
+    flex: 1,
+  },
+  fullInput: {
+    marginBottom: 16,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
+    backgroundColor: '#FFF',
+    borderWidth: 0.86,
+    borderColor: 'rgba(233, 233, 233, 1)',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     fontSize: 14,
-    color: '#333333',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
+    color: '#000',
   },
-  pickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 52,
-    color: '#333333',
-  },
-  submitButton: {
-    backgroundColor: '#7B8DBD',
-    padding: 16,
-    borderRadius: 10,
+  customPickerButton: {
+    backgroundColor: '#FFF',
+    borderWidth: 0.86,
+    borderColor: 'rgba(233, 233, 233, 1)',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
+  },
+  customPickerText: {
+    fontSize: 14,
+    color: '#000',
+  },
+  placeholderText: {
+    color: '#999',
+  },
+  analyzeButton: {
+    backgroundColor: '#2196F3',
+    marginHorizontal: 16,
     marginBottom: 40,
-    elevation: 3,
-    shadowColor: '#7B8DBD',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  analyzeButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    width: '80%',
+    maxHeight: '60%',
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  modalItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalItemSelected: {
+    backgroundColor: '#F3E5F5',
+  },
+  modalItemText: {
+    fontSize: 14,
+    color: '#000',
+  },
+  modalItemTextSelected: {
+    color: '#9C27B0',
+    fontWeight: '600',
+  },
+  actionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionModalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 200,
+    maxWidth: 300,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
     shadowRadius: 4,
   },
-  submitButtonText: {
-    color: '#FFFFFF',
+  actionModalButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'flex-start',
+  },
+  actionModalButtonText: {
     fontSize: 16,
+    color: '#000',
+    fontWeight: '400',
+  },
+  actionModalDeleteText: {
+    fontSize: 16,
+    color: '#F44336',
+    fontWeight: '400',
+  },
+  actionModalDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  historyContainer: {
+    flex: 1,
+  },
+  reportsScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  reportCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  reportLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  reportIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F3E5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  reportTitle: {
+    fontSize: 14,
     fontWeight: '600',
-    letterSpacing: 0.5,
+    color: '#000',
+  },
+  reportSize: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  reportRight: {
+    alignItems: 'flex-end',
+  },
+  reportRisk: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  reportRiskLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
   },
   emptyText: {
     fontSize: 14,
     color: '#999',
-    textAlign: 'center',
-  },
-  historyListContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  savedRecommendationCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 18,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  savedRecommendationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  savedRecommendationLeft: {
-    flex: 1,
-  },
-  savedRecommendationTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#7B8DBD',
-    letterSpacing: 0.5,
-  },
-  savedRecommendationDate: {
-    fontSize: 12,
-    color: '#888888',
-    marginTop: 4,
-    fontWeight: '400',
-  },
-  savedRecommendationRight: {
-    alignItems: 'flex-end',
-  },
-  savedRecommendationMonth: {
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'right',
-    color: '#333333',
-    lineHeight: 20,
-  },
-  savedRecommendationMonthText: {
-    fontSize: 11,
-    color: '#888888',
-    marginTop: 2,
-  },
-  savedRecommendationActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  savedViewButton: {
-    backgroundColor: '#008080',
-    paddingVertical: 10,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#008080',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  savedViewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  savedDeleteButton: {
-    backgroundColor: '#E53935',
-    paddingVertical: 10,
-    paddingHorizontal: 28,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#E53935',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  savedDeleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   detailContainer: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    paddingHorizontal: 16,
+  },
+  detailTabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    gap: 8,
+  },
+  detailTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  detailTabActive: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#9C27B0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#9C27B0',
+  },
+  detailTabText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  detailTabTextActive: {
+    fontSize: 12,
+    color: '#FFF',
+    fontWeight: '600',
   },
   monthCircleContainer: {
     alignItems: 'center',
-    marginVertical: 28,
+    marginVertical: 32,
   },
   monthCircle: {
     width: 140,
@@ -943,7 +1189,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 8,
-    borderColor: '#7B8DBD',
+    borderColor: '#9C27B0',
     borderTopColor: '#EEF0F8',
     borderLeftColor: '#EEF0F8',
   },
@@ -961,83 +1207,61 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 3,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  tabActive: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: '#7B8DBD',
-    marginHorizontal: 3,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#7B8DBD',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#888888',
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   infoCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
+    padding: 20,
     marginBottom: 16,
-    padding: 18,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
   },
-  sectionTitle: {
-    fontSize: 17,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#7B8DBD',
-    marginBottom: 14,
+    color: '#333',
+    marginLeft: 8,
+  },
+  listItem: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  bullet: {
+    fontSize: 16,
+    color: '#333',
+    marginRight: 8,
+    fontWeight: 'bold',
+  },
+  listText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   cardText: {
     fontSize: 14,
-    color: '#444444',
-    lineHeight: 22,
-    fontWeight: '400',
+    color: '#666',
+    lineHeight: 20,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
-    paddingVertical: 6,
+    marginBottom: 8,
   },
   infoLabel: {
     fontSize: 14,
-    color: '#777777',
-    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
   },
   infoValue: {
     fontSize: 14,
-    color: '#333333',
-    fontWeight: '600',
+    color: '#000',
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
   },
 });
 
