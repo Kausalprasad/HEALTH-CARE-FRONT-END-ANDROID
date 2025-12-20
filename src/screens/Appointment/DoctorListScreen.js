@@ -16,6 +16,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../../config/config";
 
 export default function BookAppointmentScreen({ navigation }) {
@@ -134,8 +135,11 @@ export default function BookAppointmentScreen({ navigation }) {
           onPress={() => setShowDropdown(field)}
           activeOpacity={0.7}
         >
-          <Text style={styles.filterDropdownButtonText}>
-            {selectedOption?.label || 'Select'}
+          <Text style={[
+            styles.filterDropdownButtonText,
+            !selectedOption?.label || selectedOption.label === 'Select' ? styles.filterDropdownButtonTextPlaceholder : null
+          ]}>
+            {selectedOption?.label || label}
           </Text>
           <Ionicons name="chevron-down" size={20} color="#666" />
         </TouchableOpacity>
@@ -195,27 +199,15 @@ export default function BookAppointmentScreen({ navigation }) {
   // Star rating component
   const StarRating = ({ rating, totalReviews }) => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
+    // Always show 5 full stars (as per image)
     for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<Ionicons key={i} name="star" size={14} color="#FFD700" />);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(
-          <Ionicons key={i} name="star-half" size={14} color="#FFD700" />
-        );
-      } else {
-        stars.push(
-          <Ionicons key={i} name="star-outline" size={14} color="#E0E0E0" />
-        );
-      }
+      stars.push(<Ionicons key={i} name="star" size={16} color="#FFD700" />);
     }
 
     return (
       <View style={styles.ratingContainer}>
         <View style={styles.starsContainer}>{stars}</View>
-        <Text style={styles.reviewCount}>({totalReviews || 0})</Text>
+        <Text style={styles.reviewCount}>({totalReviews || 127})</Text>
       </View>
     );
   };
@@ -228,21 +220,18 @@ export default function BookAppointmentScreen({ navigation }) {
     >
       <View style={styles.doctorInfo}>
         <View style={styles.avatarContainer}>
-          {item.profileImage ? (
-            <Image source={{ uri: item.profileImage }} style={styles.avatar} />
-          ) : (
-            <View style={styles.defaultAvatar}>
-              <Ionicons name="person" size={30} color="#666" />
-            </View>
-          )}
+          <Image 
+            source={require("../../../assets/doctor.png")} 
+            style={styles.avatar} 
+          />
         </View>
         <View style={styles.doctorDetails}>
           <Text style={styles.doctorName}>{item.name}</Text>
           <Text style={styles.specialization}>
-            {item.specialization} | {item.hospitalName || "Hospital Name"}
+            {item.specialization || "General Practitioner"} | {item.location || "Location"}
           </Text>
           <StarRating
-            rating={item.rating || 4.2}
+            rating={item.rating || 5}
             totalReviews={item.totalReviews || 127}
           />
         </View>
@@ -274,67 +263,81 @@ export default function BookAppointmentScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <LinearGradient
+      colors={[
+        'rgba(254, 215, 112, 0.9)',
+        'rgba(235, 177, 180, 0.8)',
+        'rgba(145, 230, 251, 0.7)',
+        'rgba(217, 213, 250, 0.6)',
+        'rgba(255, 255, 255, 0.95)'
+      ]}
+      locations={[0, 0.2, 0.4, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Book Appointment</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#999"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or speciality"
-            placeholderTextColor="#999"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Book Appointment</Text>
+          <View style={styles.placeholder} />
         </View>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            (selectedSpecialization || selectedLocation || minRating) &&
-              styles.filterButtonActive,
-          ]}
-          onPress={() => setShowFilters(true)}
-        >
-          <Ionicons
-            name="options-outline"
-            size={20}
-            color={
-              selectedSpecialization || selectedLocation || minRating
-                ? "#007AFF"
-                : "#666"
-            }
-          />
-        </TouchableOpacity>
-      </View>
 
-      {/* Doctors List */}
-      <FlatList
-        data={filteredDoctors.slice(0, 3)}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <DoctorCard item={item} />}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons
+              name="search"
+              size={20}
+              color="#999"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search files here"
+              placeholderTextColor="#999"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            <TouchableOpacity
+              onPress={() => setShowFilters(true)}
+              style={styles.filterIconContainer}
+            >
+              <Ionicons
+                name="options-outline"
+                size={20}
+                color={
+                  selectedSpecialization || selectedLocation || minRating
+                    ? "#8B5CF6"
+                    : "#8B5CF6"
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Section Heading */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Doctors associated with us</Text>
+        </View>
+
+        {/* Doctors List */}
+        <FlatList
+          data={filteredDoctors}
+          keyExtractor={(item) => item._id || item.id}
+          renderItem={({ item }) => <DoctorCard item={item} />}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
 
       {/* Filter Modal */}
       <Modal
@@ -345,12 +348,7 @@ export default function BookAppointmentScreen({ navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <View style={styles.modalHeaderBar}>
-              <Text style={styles.modalTitle}>Filter Doctors</Text>
-              <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.modalTitle}>Filters</Text>
 
             <ScrollView style={styles.filterScrollView}>
               {/* Specialization Dropdown */}
@@ -374,7 +372,7 @@ export default function BookAppointmentScreen({ navigation }) {
               {/* Rating Dropdown */}
               <CustomFilterDropdown
                 field="rating"
-                label="Minimum Rating"
+                label="Rating"
                 options={ratingOptions}
                 value={tempMinRating}
                 onValueChange={setTempMinRating}
@@ -384,103 +382,113 @@ export default function BookAppointmentScreen({ navigation }) {
             {/* Buttons */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.clearButton]}
-                onPress={clearFilters}
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowFilters(false)}
               >
-                <Text style={styles.clearButtonText}>Clear All</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.applyButton]}
                 onPress={applyFilters}
               >
-                <Text style={styles.applyButtonText}>Apply Filters</Text>
+                <Text style={styles.applyButtonText}>Apply</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  gradientContainer: {
+    flex: 1,
+  },
+  container: { flex: 1, backgroundColor: "transparent" },
   header: {
     marginTop: StatusBar.currentHeight || 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    paddingVertical: 16,
+    backgroundColor: "transparent",
   },
-  backButton: { padding: 8 },
-  headerTitle: { fontSize: 18, fontWeight: "600", color: "#000" },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+  },
   placeholder: { width: 40 },
   searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 12,
   },
   searchBar: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
-    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+    borderRadius: 30,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "rgba(233, 233, 233, 1)",
   },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 16, color: "#000" },
-  filterButton: {
-    position: "relative",
-    padding: 12,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+  filterIconContainer: {
+    marginLeft: 8,
+    padding: 4,
   },
-  filterButtonActive: {
-    backgroundColor: "#E3F2FD",
-    borderColor: "#007AFF",
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    color: "#6B7280",
   },
   listContainer: { paddingHorizontal: 16, paddingBottom: 20 },
   doctorCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+    borderRadius: 30,
     padding: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: "rgba(233, 233, 233, 1)",
   },
   doctorInfo: { flexDirection: "row", alignItems: "center" },
-  avatarContainer: { marginRight: 12 },
-  avatar: { width: 60, height: 60, borderRadius: 30 },
+  avatarContainer: { marginRight: 16 },
+  avatar: { width: 70, height: 70, borderRadius: 35 },
   defaultAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: "#f0f0f0",
     justifyContent: "center",
     alignItems: "center",
   },
   doctorDetails: { flex: 1 },
   doctorName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     color: "#000",
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  specialization: { fontSize: 14, color: "#666", marginBottom: 8 },
+  specialization: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 8,
+  },
   ratingContainer: { flexDirection: "row", alignItems: "center" },
   starsContainer: { flexDirection: "row", marginRight: 6 },
   reviewCount: { fontSize: 12, color: "#666" },
@@ -491,28 +499,23 @@ const styles = StyleSheet.create({
   // Filter Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
   },
   modalContainer: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
     paddingBottom: 30,
     paddingHorizontal: 20,
-    maxHeight: "80%",
-  },
-  modalHeaderBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    maxHeight: "70%",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#000",
+    marginBottom: 20,
   },
   filterScrollView: {
     maxHeight: 400,
@@ -527,9 +530,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   filterDropdownButton: {
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "rgba(233, 233, 233, 1)",
     borderRadius: 12,
     padding: 14,
     flexDirection: "row",
@@ -540,6 +543,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
     flex: 1,
+  },
+  filterDropdownButtonTextPlaceholder: {
+    color: "#999",
   },
   
   // Dropdown Modal styles
@@ -610,14 +616,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
-  clearButton: {
-    backgroundColor: "#f0f0f0",
+  cancelButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#8B5CF6",
   },
   applyButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#8B5CF6",
   },
-  clearButtonText: {
-    color: "#666",
+  cancelButtonText: {
+    color: "#8B5CF6",
     fontSize: 16,
     fontWeight: "600", 
   },

@@ -26,6 +26,7 @@ import Dsdashboard from "../screens/Appointment/Dashboard";
 import DoctorListScreen from "../screens/Appointment/DoctorListScreen";
 import AppointmentBooking from "../screens/Appointment/AppointmentBooking";
 import MyAppointments from "../screens/Appointment/MyAppointments";
+import DoctorProfileScreen from "../screens/Appointment/DoctorProfileScreen";
 import CaregiverDashboard from "../screens/CaregiverDashboard/CaregiverDashboardScreen";
 import AiHealthCheckupScreen from "../screens/Dashboard/AiHealthCheckupScreen";
 import DoctorCard from "../screens/Appointment/DoctorCard";
@@ -210,6 +211,7 @@ export default function AppNavigator() {
   <Stack.Screen name="CaregiverDashboard" component={CaregiverDashboard} />
   <Stack.Screen name="AiHealthCheckupScreen" component={AiHealthCheckupScreen} />
   <Stack.Screen name="DoctorCard" component={DoctorCard} />
+  <Stack.Screen name="DoctorProfile" component={DoctorProfileScreen} />
   <Stack.Screen name="MelanomaScreen" component={MelanomaScreen} />
   <Stack.Screen name="MentalHealthScreen" component={MentalHealthScreen} />
   <Stack.Screen name="Sidebar" component={Sidebar}/>

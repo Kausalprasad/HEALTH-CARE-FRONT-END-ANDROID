@@ -7,8 +7,10 @@ import {
   StatusBar,
   Image,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const MotherBabyCareScreen = ({ navigation }) => {
   const handlePregnancyClick = () => {
@@ -20,95 +22,122 @@ const MotherBabyCareScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <LinearGradient
+      colors={[
+        'rgba(254, 215, 112, 0.9)',
+        'rgba(235, 177, 180, 0.8)',
+        'rgba(145, 230, 251, 0.7)',
+        'rgba(217, 213, 250, 0.6)',
+        'rgba(255, 255, 255, 0.95)'
+      ]}
+      locations={[0, 0.2, 0.4, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mother Baby Care</Text>
+          <View style={styles.headerPlaceholder} />
+        </View>
+
+        {/* Main Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mother & Baby Care</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      {/* Main Content */}
-      <View style={styles.content}>
-        {/* Illustration Area - No padding bottom */}
-        <View style={styles.illustrationContainer}>
-          <Image
-            source={require('../../../assets/Dashoabdicons/Motherbaby.png')}
-            style={styles.illustrationImage}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Cards Container - Starts immediately after illustration */}
-        <View style={styles.cardsContainer}>
-          {/* Pregnancy Care Card */}
-          <TouchableOpacity 
-            style={[styles.card, styles.firstCard]}
-            onPress={handlePregnancyClick}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.iconContainer, styles.pregnancyIconBg]}>
+          {/* Illustration Area */}
+          <View style={styles.illustrationContainer}>
+            <View style={styles.circleContainer}>
               <Image
-                source={require('../../../assets/Dashoabdicons/p.png')}
-                style={styles.iconImage}
+                source={require('../../../assets/icons/babymother.png')}
+                style={styles.illustrationImage}
                 resizeMode="contain"
               />
             </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Pregnancy Care</Text>
-              <Text style={styles.cardDescription}>
-                Get personalized recommendations for your pregnancy journey
-              </Text>
-            </View>
-          </TouchableOpacity>
+          </View>
 
-          {/* Baby Care Card */}
-          <TouchableOpacity 
-            style={styles.card}
-            onPress={handleBabyCareClick}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.iconContainer, styles.babyIconBg]}>
-              <Image
-                source={require('../../../assets/Dashoabdicons/Baby.png')}
-                style={styles.iconImage}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Baby Care</Text>
-              <Text style={styles.cardDescription}>
-                Expert guidance for your baby's development and health
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
+          {/* Descriptive Text */}
+          <Text style={styles.descriptionText}>
+            Personalized wellness support for mother and child, from pregnancy to post-care.
+          </Text>
+
+          {/* Cards Container */}
+          <View style={styles.cardsContainer}>
+            {/* Pregnancy Care Card */}
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={handlePregnancyClick}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconContainer, styles.pregnancyIconBg]}>
+                <Image
+                  source={require('../../../assets/icons/pergnacy.png')}
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Pregnancy Care</Text>
+                <Text style={styles.cardDescription}>
+                  Get personalized tips for your pregnancy.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Baby Care Card */}
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={handleBabyCareClick}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconContainer, styles.babyIconBg]}>
+                <Image
+                  source={require('../../../assets/icons/baby.png')}
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Baby Care</Text>
+                <Text style={styles.cardDescription}>
+                  Expert advice for your baby's growth and health.
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E8E8E8',
+    paddingTop: (StatusBar.currentHeight || 0) + 10,
+    paddingBottom: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 50,
@@ -125,59 +154,70 @@ const styles = StyleSheet.create({
   headerPlaceholder: {
     width: 50,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   illustrationContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 5,
-    paddingBottom: 0,
-    marginBottom: -20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  circleContainer: {
+    width: 340,
+    height: 360,
+    borderRadius: 170,
+    backgroundColor: 'rgba(145, 230, 251, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   illustrationImage: {
-    width: 320,
-    height: 250,
+    width: 311,
+    height: 335,
+  },
+  descriptionText: {
+    fontSize: 15,
+    color: '#666666',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    marginBottom: 30,
+    lineHeight: 22,
   },
   cardsContainer: {
-    flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 0,
     paddingBottom: 20,
-    marginTop: 0,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
     padding: 18,
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    minHeight: 120,
-  },
-  firstCard: {
-    marginTop: 0,
+    borderWidth: 0.86,
+    borderColor: 'rgba(233, 233, 233, 1)',
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   pregnancyIconBg: {
-    backgroundColor: '#E8EAF6',
+    backgroundColor: 'transparent',
   },
   babyIconBg: {
-    backgroundColor: '#E8EAF6',
+    backgroundColor: 'transparent',
   },
   iconImage: {
-    width: 44,
-    height: 44,
+    width: 50,
+    height: 50,
   },
   cardContent: {
     flex: 1,
@@ -185,7 +225,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#000000',
     marginBottom: 6,
     letterSpacing: 0.2,
