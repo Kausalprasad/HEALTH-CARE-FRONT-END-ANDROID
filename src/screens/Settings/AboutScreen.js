@@ -13,9 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { useTranslation } from 'react-i18next';
 
 export default function AboutScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -67,9 +69,9 @@ export default function AboutScreen() {
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.aboutTitle}>About</Text>
-          <Text style={styles.appTagline}>AI powered health and wellness platform</Text>
-          <Text style={styles.version}>Version 1.0.0</Text>
+          <Text style={styles.aboutTitle}>{t('about.title')}</Text>
+          <Text style={styles.appTagline}>{t('about.tagline')}</Text>
+          <Text style={styles.version}>{t('about.version')}</Text>
         </View>
 
         {/* Content Card */}
@@ -82,84 +84,84 @@ export default function AboutScreen() {
 
             {/* What HealNova Offers */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>What HealNova Offers?</Text>
+              <Text style={styles.sectionTitle}>{t('about.whatHealNovaOffers')}</Text>
               <Text style={styles.bulletPoint}>
-                AI-based wellness image screening (tongue, nails, scalp, skin, eyes, teeth, posture, and X-ray image analysis)
+                {t('about.offers.aiScreening')}
               </Text>
               <Text style={styles.bulletPoint}>
-                24/7 AI Health Information Assistant For general health queries and wellness guidance
+                {t('about.offers.aiAssistant')}
               </Text>
               <Text style={styles.bulletPoint}>
-                Personalized wellness insights Including PCOS screening, breast health awareness, and lifestyle health factors
+                {t('about.offers.wellnessInsights')}
               </Text>
               <Text style={styles.bulletPoint}>
-                Pregnancy and maternal wellness support Through Baby Rama
+                {t('about.offers.pregnancySupport')}
               </Text>
               <Text style={styles.bulletPoint}>
-                Mental wellness support Via an AI-powered Wellness Assistant
+                {t('about.offers.mentalWellness')}
               </Text>
               <Text style={styles.bulletPoint}>
-                Nutrition and lifestyle tools Diet planning, calorie tracking, and wellness habits
+                {t('about.offers.nutritionTools')}
               </Text>
               <Text style={styles.bulletPoint}>
-                Health management utilities
+                {t('about.offers.healthManagement')}
               </Text>
             </View>
 
             {/* General Wellness Application */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>General Wellness Application</Text>
+              <Text style={styles.sectionTitle}>{t('about.generalWellness')}</Text>
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>✓ What HealNova IS:</Text>
-                <Text style={styles.cardText}>• A wellness screening and health tracking tool</Text>
-                <Text style={styles.cardText}>• An educational health information resource</Text>
-                <Text style={styles.cardText}>• A lifestyle and wellness support application</Text>
+                <Text style={styles.cardTitle}>{t('about.whatIs')}</Text>
+                <Text style={styles.cardText}>• {t('about.isWellnessTool')}</Text>
+                <Text style={styles.cardText}>• {t('about.isEducational')}</Text>
+                <Text style={styles.cardText}>• {t('about.isLifestyleSupport')}</Text>
               </View>
               <View style={[styles.card, styles.cardWarning]}>
-                <Text style={[styles.cardTitle, styles.cardTitleWarning]}>✗ What HealNova IS NOT:</Text>
-                <Text style={styles.cardText}>• NOT a medical device (not FDA-cleared or approved)</Text>
-                <Text style={styles.cardText}>• NOT for medical diagnosis or disease detection</Text>
-                <Text style={styles.cardText}>• NOT a substitute for professional medical advice, diagnosis, or treatment</Text>
-                <Text style={styles.cardText}>• NOT for use in medical emergencies</Text>
-                <Text style={styles.cardText}>• NOT intended to replace doctor visits or clinical evaluations</Text>
+                <Text style={[styles.cardTitle, styles.cardTitleWarning]}>{t('about.whatIsNot')}</Text>
+                <Text style={styles.cardText}>• {t('about.notMedicalDevice')}</Text>
+                <Text style={styles.cardText}>• {t('about.notForDiagnosis')}</Text>
+                <Text style={styles.cardText}>• {t('about.notSubstitute')}</Text>
+                <Text style={styles.cardText}>• {t('about.notForEmergencies')}</Text>
+                <Text style={styles.cardText}>• {t('about.notReplaceDoctor')}</Text>
               </View>
             </View>
 
             {/* FDA Disclaimer */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>FDA Disclaimer</Text>
+              <Text style={styles.sectionTitle}>{t('about.fdaDisclaimer')}</Text>
               <View style={styles.disclaimerCard}>
                 <Text style={styles.disclaimerText}>
-                  "HealNova is a health information and wellness screening tool and is not intended to diagnose, treat, cure, or prevent any disease. It does not provide medical advice and is not a substitute for professional medical judgment."
+                  "{t('about.fdaText1')}"
                 </Text>
                 <Text style={styles.disclaimerText}>
-                  "The FDA has issued guidance indicating that it does not intend to actively regulate certain low‑risk general wellness and mobile app software functions (often referred to as 'enforcement discretion'). HealNova is designed to fit within this low‑risk, informational category. For more information, see the FDA's 'General Wellness: Policy for Low Risk Devices' and 'Policy for Device Software Functions and Mobile Medical Applications' guidance documents."
+                  "{t('about.fdaText2')}"
                 </Text>
               </View>
             </View>
 
             {/* Company Info */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Company Information</Text>
+              <Text style={styles.sectionTitle}>{t('about.companyInfo')}</Text>
               <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>Company:</Text>
-                <Text style={styles.infoValue}>MatchBestSoftwares Pvt. Ltd.</Text>
+                <Text style={styles.infoLabel}>{t('about.company')}</Text>
+                <Text style={styles.infoValue}>{t('about.companyName')}</Text>
               </View>
               <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>Address:</Text>
-                <Text style={styles.infoValue}>Spaze iTech Park, Sector 49{'\n'}Gurugram, Haryana 122018, India</Text>
+                <Text style={styles.infoLabel}>{t('about.address')}</Text>
+                <Text style={styles.infoValue}>{t('about.addressValue')}</Text>
               </View>
               <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>Email:</Text>
-                <Text style={styles.infoValue}>contact@matchbestsoftware.com</Text>
+                <Text style={styles.infoLabel}>{t('about.email')}</Text>
+                <Text style={styles.infoValue}>{t('about.emailValue')}</Text>
               </View>
               <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>Phone:</Text>
-                <Text style={styles.infoValue}>+91 97737 73629</Text>
+                <Text style={styles.infoLabel}>{t('about.phone')}</Text>
+                <Text style={styles.infoValue}>{t('about.phoneValue')}</Text>
               </View>
               <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>Website:</Text>
-                <Text style={styles.infoValue}>https://healnova.ai</Text>
+                <Text style={styles.infoLabel}>{t('about.website')}</Text>
+                <Text style={styles.infoValue}>{t('about.websiteValue')}</Text>
               </View>
             </View>
 
@@ -169,7 +171,7 @@ export default function AboutScreen() {
               onPress={() => navigation.navigate('MedicalDisclaimerScreen')}
             >
               <Ionicons name="document-text-outline" size={20} color="#fff" />
-              <Text style={styles.buttonText}>View Medical Disclaimer</Text>
+              <Text style={styles.buttonText}>{t('about.viewMedicalDisclaimer')}</Text>
               <Ionicons name="chevron-forward" size={20} color="#fff" />
             </TouchableOpacity>
 
@@ -179,7 +181,7 @@ export default function AboutScreen() {
               onPress={() => navigation.navigate('PrivacyPolicyScreen')}
             >
               <Ionicons name="shield-checkmark-outline" size={20} color="#4A90E2" />
-              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>View Privacy Policy</Text>
+              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>{t('about.viewPrivacyPolicy')}</Text>
               <Ionicons name="chevron-forward" size={20} color="#4A90E2" />
             </TouchableOpacity>
           </ScrollView>

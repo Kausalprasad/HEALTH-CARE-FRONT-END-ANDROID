@@ -8,10 +8,74 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
-  Alert
+  Alert,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from "../../config/config"
+
+const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const getLabel = () => {
+    const selected = items.find(item => item.value === selectedValue);
+    return selected ? selected.label : placeholder;
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={styles.customPickerButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={[styles.customPickerText, !selectedValue && styles.placeholderText]}>
+          {getLabel()}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color="#666" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.pickerModalContent}>
+            <ScrollView style={styles.modalScroll}>
+              {items.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.modalItem,
+                    selectedValue === item.value && styles.modalItemSelected
+                  ]}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.modalItemText,
+                    selectedValue === item.value && styles.modalItemTextSelected
+                  ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+};
 
  const InsuranceScreen = ({navigation}) => {
   const [activeTab, setActiveTab] = useState('predict');
@@ -23,11 +87,11 @@ import { BASE_URL } from "../../config/config"
   const [predictionForm, setPredictionForm] = useState({
     operation_name: '',
     operation_cost: '',
-    insurance_company: 'MediCare',
-    policy_type: 'Platinum',
+    insurance_company: '',
+    policy_type: '',
     patient_age: '',
-    pre_existing_conditions: 'None',
-    emergency_case: 'Yes'
+    pre_existing_conditions: '',
+    emergency_case: ''
   });
 
   // Bill Form State
@@ -36,7 +100,7 @@ import { BASE_URL } from "../../config/config"
     operation_name: '',
     operation_cost: '',
     claim_amount: '',
-    insurance_company: 'MediCare'
+    insurance_company: ''
   });
 
   const handlePrediction = async () => {
@@ -77,7 +141,8 @@ import { BASE_URL } from "../../config/config"
   };
 
   const handleBill = async () => {
-    if (!billForm.patient_name || !billForm.operation_name || !billForm.operation_cost || !billForm.claim_amount) {
+    if (!billForm.patient_name || !billForm.operation_name || !billForm.operation_cost || !billForm.claim_amount || 
+        !billForm.insurance_company) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
@@ -104,381 +169,236 @@ import { BASE_URL } from "../../config/config"
     }
   };
 
-  const renderPredictionForm = () => (
-    <View style={styles.formContainer}>
-      <TextInput
-        style={styles.input}
-        placeholder="Operation Name"
-        placeholderTextColor="#C4C4C4"
-        value={predictionForm.operation_name}
-        onChangeText={(text) => setPredictionForm({...predictionForm, operation_name: text})}
-      />
+  const renderPredictionForm = () => {
+    const insuranceCompanyOptions = [
+      { label: 'HealthPlus', value: 'HealthPlus' },
+      { label: 'MediCare', value: 'MediCare' },
+      { label: 'LifeCare', value: 'LifeCare' },
+      { label: 'StarHealth', value: 'StarHealth' },
+    ];
 
-      <TextInput
-        style={styles.input}
-        placeholder="Operation Cost (₹)"
-        placeholderTextColor="#C4C4C4"
-        keyboardType="numeric"
-        value={predictionForm.operation_cost}
-        onChangeText={(text) => setPredictionForm({...predictionForm, operation_cost: text})}
-      />
+    const policyTypeOptions = [
+      { label: 'Gold', value: 'Gold' },
+      { label: 'Silver', value: 'Silver' },
+      { label: 'Platinum', value: 'Platinum' },
+    ];
 
-      <TextInput
-        style={styles.input}
-        placeholder="Patient Age"
-        placeholderTextColor="#C4C4C4"
-        keyboardType="numeric"
-        value={predictionForm.patient_age}
-        onChangeText={(text) => setPredictionForm({...predictionForm, patient_age: text})}
-      />
+    const preExistingOptions = [
+      { label: 'None', value: 'None' },
+      { label: 'One', value: 'One' },
+      { label: 'Two', value: 'Two' },
+      { label: 'Three +', value: 'Three +' },
+    ];
 
-      <Text style={styles.label}>Insurance Company</Text>
-      <View style={styles.buttonGroup}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.insurance_company === 'HealthPlus' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, insurance_company: 'HealthPlus'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.insurance_company === 'HealthPlus' && styles.optionBtnTextActive
-            ]}>HealthPlus</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.insurance_company === 'MediCare' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, insurance_company: 'MediCare'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.insurance_company === 'MediCare' && styles.optionBtnTextActive
-            ]}>MediCare</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.insurance_company === 'LifeCare' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, insurance_company: 'LifeCare'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.insurance_company === 'LifeCare' && styles.optionBtnTextActive
-            ]}>LifeCare</Text>
-          </TouchableOpacity>
-        </View>
+    const emergencyOptions = [
+      { label: 'Yes', value: 'Yes' },
+      { label: 'No', value: 'No' },
+    ];
+
+    return (
+      <View style={styles.formCard}>
+        <Text style={styles.detailsHeading}>Details</Text>
         
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.insurance_company === 'StarHealth' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, insurance_company: 'StarHealth'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.insurance_company === 'StarHealth' && styles.optionBtnTextActive
-            ]}>StarHealth</Text>
-          </TouchableOpacity>
+        <TextInput
+          style={styles.input}
+          placeholder="Operation Name"
+          placeholderTextColor="#999"
+          value={predictionForm.operation_name}
+          onChangeText={(text) => setPredictionForm({...predictionForm, operation_name: text})}
+        />
+
+        <View style={styles.inputRow}>
+          <View style={styles.inputHalf}>
+            <TextInput
+              style={styles.input}
+              placeholder="Operation Cost"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={predictionForm.operation_cost}
+              onChangeText={(text) => setPredictionForm({...predictionForm, operation_cost: text})}
+            />
+          </View>
+          <View style={styles.inputHalf}>
+            <TextInput
+              style={styles.input}
+              placeholder="Patient Age"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={predictionForm.patient_age}
+              onChangeText={(text) => setPredictionForm({...predictionForm, patient_age: text})}
+            />
+          </View>
         </View>
+
+        <CustomPicker
+          selectedValue={predictionForm.insurance_company}
+          onValueChange={(value) => setPredictionForm({...predictionForm, insurance_company: value})}
+          items={insuranceCompanyOptions}
+          placeholder="Insurance Company"
+        />
+
+        <CustomPicker
+          selectedValue={predictionForm.policy_type}
+          onValueChange={(value) => setPredictionForm({...predictionForm, policy_type: value})}
+          items={policyTypeOptions}
+          placeholder="Policy Type"
+        />
+
+        <CustomPicker
+          selectedValue={predictionForm.pre_existing_conditions}
+          onValueChange={(value) => setPredictionForm({...predictionForm, pre_existing_conditions: value})}
+          items={preExistingOptions}
+          placeholder="Any Pre-Existing Condition"
+        />
+
+        <CustomPicker
+          selectedValue={predictionForm.emergency_case}
+          onValueChange={(value) => setPredictionForm({...predictionForm, emergency_case: value})}
+          items={emergencyOptions}
+          placeholder="Is this an Emergency?"
+        />
       </View>
+    );
+  };
 
-      <Text style={styles.label}>Policy Type</Text>
-      <View style={styles.buttonGroup}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.policy_type === 'Gold' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, policy_type: 'Gold'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.policy_type === 'Gold' && styles.optionBtnTextActive
-            ]}>Gold</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.policy_type === 'Silver' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, policy_type: 'Silver'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.policy_type === 'Silver' && styles.optionBtnTextActive
-            ]}>Silver</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.policy_type === 'Platinum' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, policy_type: 'Platinum'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.policy_type === 'Platinum' && styles.optionBtnTextActive
-            ]}>Platinum</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+  const renderBillForm = () => {
+    const insuranceCompanyOptions = [
+      { label: 'HealthPlus', value: 'HealthPlus' },
+      { label: 'MediCare', value: 'MediCare' },
+      { label: 'LifeCare', value: 'LifeCare' },
+      { label: 'StarHealth', value: 'StarHealth' },
+    ];
 
-      <Text style={styles.label}>Any Pre-existing Condition</Text>
-      <View style={styles.buttonGroup}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.pre_existing_conditions === 'None' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, pre_existing_conditions: 'None'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.pre_existing_conditions === 'None' && styles.optionBtnTextActive
-            ]}>None</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.pre_existing_conditions === 'One' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, pre_existing_conditions: 'One'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.pre_existing_conditions === 'One' && styles.optionBtnTextActive
-            ]}>One</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.pre_existing_conditions === 'Two' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, pre_existing_conditions: 'Two'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.pre_existing_conditions === 'Two' && styles.optionBtnTextActive
-            ]}>Two</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.pre_existing_conditions === 'Three +' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, pre_existing_conditions: 'Three +'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.pre_existing_conditions === 'Three +' && styles.optionBtnTextActive
-            ]}>Three +</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <Text style={styles.label}>Is this an emergency</Text>
-      <View style={styles.buttonGroup}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.emergency_case === 'Yes' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, emergency_case: 'Yes'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.emergency_case === 'Yes' && styles.optionBtnTextActive
-            ]}>Yes</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              predictionForm.emergency_case === 'No' && styles.optionBtnActive
-            ]}
-            onPress={() => setPredictionForm({...predictionForm, emergency_case: 'No'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              predictionForm.emergency_case === 'No' && styles.optionBtnTextActive
-            ]}>No</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.submitButton} 
-        onPress={handlePrediction} 
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Get Claim Prediction</Text>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderBillForm = () => (
-    <View style={styles.formContainer}>
-      <TextInput
-        style={styles.input}
-        placeholder="Patient Name"
-        placeholderTextColor="#C4C4C4"
-        value={billForm.patient_name}
-        onChangeText={(text) => setBillForm({...billForm, patient_name: text})}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Operation Name"
-        placeholderTextColor="#C4C4C4"
-        value={billForm.operation_name}
-        onChangeText={(text) => setBillForm({...billForm, operation_name: text})}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Operation Cost (₹)"
-        placeholderTextColor="#C4C4C4"
-        keyboardType="numeric"
-        value={billForm.operation_cost}
-        onChangeText={(text) => setBillForm({...billForm, operation_cost: text})}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Claim Amount (₹)"
-        placeholderTextColor="#C4C4C4"
-        keyboardType="numeric"
-        value={billForm.claim_amount}
-        onChangeText={(text) => setBillForm({...billForm, claim_amount: text})}
-      />
-
-      <Text style={styles.label}>Insurance Company</Text>
-      <View style={styles.buttonGroup}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              billForm.insurance_company === 'HealthPlus' && styles.optionBtnActive
-            ]}
-            onPress={() => setBillForm({...billForm, insurance_company: 'HealthPlus'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              billForm.insurance_company === 'HealthPlus' && styles.optionBtnTextActive
-            ]}>HealthPlus</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              billForm.insurance_company === 'MediCare' && styles.optionBtnActive
-            ]}
-            onPress={() => setBillForm({...billForm, insurance_company: 'MediCare'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              billForm.insurance_company === 'MediCare' && styles.optionBtnTextActive
-            ]}>MediCare</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              billForm.insurance_company === 'LifeCare' && styles.optionBtnActive
-            ]}
-            onPress={() => setBillForm({...billForm, insurance_company: 'LifeCare'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              billForm.insurance_company === 'LifeCare' && styles.optionBtnTextActive
-            ]}>LifeCare</Text>
-          </TouchableOpacity>
-        </View>
+    return (
+      <View style={styles.formCard}>
+        <Text style={styles.detailsHeading}>Details</Text>
         
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionBtn,
-              billForm.insurance_company === 'StarHealth' && styles.optionBtnActive
-            ]}
-            onPress={() => setBillForm({...billForm, insurance_company: 'StarHealth'})}
-          >
-            <Text style={[
-              styles.optionBtnText,
-              billForm.insurance_company === 'StarHealth' && styles.optionBtnTextActive
-            ]}>StarHealth</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Patient Name"
+          placeholderTextColor="#999"
+          value={billForm.patient_name}
+          onChangeText={(text) => setBillForm({...billForm, patient_name: text})}
+        />
 
-      <TouchableOpacity 
-        style={styles.submitButton} 
-        onPress={handleBill} 
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Generate Bill</Text>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
+        <TextInput
+          style={styles.input}
+          placeholder="Operation Name"
+          placeholderTextColor="#999"
+          value={billForm.operation_name}
+          onChangeText={(text) => setBillForm({...billForm, operation_name: text})}
+        />
+
+        <View style={styles.inputRow}>
+          <View style={styles.inputHalf}>
+            <TextInput
+              style={styles.input}
+              placeholder="Operation Cost"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={billForm.operation_cost}
+              onChangeText={(text) => setBillForm({...billForm, operation_cost: text})}
+            />
+          </View>
+          <View style={styles.inputHalf}>
+            <TextInput
+              style={styles.input}
+              placeholder="Claim Amount"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={billForm.claim_amount}
+              onChangeText={(text) => setBillForm({...billForm, claim_amount: text})}
+            />
+          </View>
+        </View>
+
+        <CustomPicker
+          selectedValue={billForm.insurance_company}
+          onValueChange={(value) => setBillForm({...billForm, insurance_company: value})}
+          items={insuranceCompanyOptions}
+          placeholder="Insurance Company"
+        />
+      </View>
+    );
+  };
 
   const renderPredictionResult = () => (
     <Modal visible={!!predictionResult} animationType="slide" transparent={true}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Prediction Result</Text>
-          
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>Operation</Text>
-            <Text style={styles.resultValue}>{predictionResult?.operation_name}</Text>
+      <View style={styles.resultModalOverlay}>
+        <View style={styles.resultModalContent}>
+          {/* Header */}
+          <View style={styles.resultModalHeader}>
+            <TouchableOpacity 
+              style={styles.resultModalCloseButton}
+              onPress={() => setPredictionResult(null)}
+              activeOpacity={1}
+            >
+              <Ionicons name="close" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.resultModalHeaderSpacer} />
+            <TouchableOpacity 
+              style={styles.resultModalInfoButton}
+              activeOpacity={1}
+            >
+              <Ionicons name="information-circle" size={20} color="#FFF" />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>Total Cost</Text>
-            <Text style={styles.resultValue}>₹{predictionResult?.operation_cost?.toLocaleString()}</Text>
-          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Operation Card */}
+            <View style={styles.resultInfoCard}>
+              <View style={styles.resultInfoCardHeader}>
+                <Text style={styles.resultInfoLabel}>Operation</Text>
+                <Ionicons name="medical" size={20} color="#42A5F5" />
+              </View>
+              <Text style={styles.resultInfoValue}>{predictionResult?.operation_name || 'N/A'}</Text>
+            </View>
 
-          <View style={styles.highlightCard}>
-            <Text style={styles.highlightLabel}>Claim Approved</Text>
-            <Text style={styles.highlightValue}>₹{predictionResult?.claim_approved?.toLocaleString()}</Text>
-            <Text style={styles.percentageText}>{predictionResult?.approval_percentage}% Coverage</Text>
-          </View>
+            {/* Total Cost Card */}
+            <View style={styles.resultInfoCard}>
+              <View style={styles.resultInfoCardHeader}>
+                <Text style={styles.resultInfoLabel}>Total Cost</Text>
+              </View>
+              <View style={styles.resultValueWithIcon}>
+                <Text style={styles.rupeeIcon}>₹</Text>
+                <Text style={styles.resultInfoValue}>{predictionResult?.operation_cost?.toLocaleString() || '0'}</Text>
+              </View>
+            </View>
 
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>Patient Payment</Text>
-            <Text style={styles.resultValueWarning}>₹{predictionResult?.patient_payment?.toLocaleString()}</Text>
-          </View>
+            {/* Claim Approved Card - Purple Highlight */}
+            <View style={styles.claimApprovedCard}>
+              <Text style={styles.claimApprovedLabel}>Claim Approved</Text>
+              <Text style={styles.claimApprovedValue}>
+                ₹{predictionResult?.claim_approved?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0.00'}
+              </Text>
+              <Text style={styles.claimApprovedPercentage}>
+                {predictionResult?.approval_percentage || 0}% Coverage
+              </Text>
+            </View>
 
-          <TouchableOpacity 
-            style={styles.closeButton}
-            onPress={() => setPredictionResult(null)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+            {/* Patient Payment Card */}
+            <View style={styles.resultInfoCard}>
+              <View style={styles.resultInfoCardHeader}>
+                <Text style={styles.resultInfoLabel}>Patient Payment</Text>
+              </View>
+              <View style={styles.resultValueWithIcon}>
+                <Text style={styles.rupeeIconRed}>₹</Text>
+                <Text style={styles.resultInfoValueRed}>
+                  {predictionResult?.patient_payment?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0'}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.resultActionButtons}>
+            <TouchableOpacity style={styles.downloadButton}>
+              <Text style={styles.downloadButtonText}>Download</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareButton}>
+              <Text style={styles.shareButtonText}>Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -486,331 +406,667 @@ import { BASE_URL } from "../../config/config"
 
   const renderBillResult = () => (
     <Modal visible={!!billResult} animationType="slide" transparent={true}>
-      <View style={styles.modalOverlay}>
-        <ScrollView style={styles.modalScrollContent}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Medical Bill</Text>
-            
-            <View style={styles.billHeader}>
-              <Text style={styles.billNumber}>Bill #{billResult?.bill_number}</Text>
-              <Text style={styles.billDate}>{billResult?.bill_date}</Text>
-            </View>
-
-            <View style={styles.patientInfo}>
-              <Text style={styles.patientName}>{billResult?.patient_info?.name}</Text>
-              <Text style={styles.patientDetail}>Hospital: {billResult?.patient_info?.hospital}</Text>
-              <Text style={styles.patientDetail}>Operation: {billResult?.patient_info?.operation}</Text>
-            </View>
-
-            <Text style={styles.sectionHeader}>Cost Breakdown</Text>
-            {billResult?.cost_breakdown && Object.entries(billResult.cost_breakdown).map(([key, value]) => (
-              <View key={key} style={styles.billRow}>
-                <Text style={styles.billLabel}>{key.replace(/_/g, ' ').toUpperCase()}</Text>
-                <Text style={styles.billValue}>₹{value?.toLocaleString()}</Text>
-              </View>
-            ))}
-
-            <Text style={styles.sectionHeader}>Insurance Claim</Text>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CLAIM APPROVED</Text>
-              <Text style={styles.billValueSuccess}>₹{billResult?.insurance_claim?.claim_approved?.toLocaleString()}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CLAIM REJECTED</Text>
-              <Text style={styles.billValueWarning}>₹{billResult?.insurance_claim?.claim_rejected?.toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.totalSection}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total Bill</Text>
-                <Text style={styles.totalValue}>₹{billResult?.payment_summary?.total_bill_amount?.toLocaleString()}</Text>
-              </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Insurance Covers</Text>
-                <Text style={styles.totalValueSuccess}>-₹{billResult?.payment_summary?.insurance_covers?.toLocaleString()}</Text>
-              </View>
-              <View style={styles.finalTotal}>
-                <Text style={styles.finalLabel}>Patient Must Pay</Text>
-                <Text style={styles.finalValue}>₹{billResult?.payment_summary?.patient_must_pay?.toLocaleString()}</Text>
-              </View>
-            </View>
-
+      <View style={styles.resultModalOverlay}>
+        <View style={styles.resultModalContent}>
+          {/* Header */}
+          <View style={styles.resultModalHeader}>
             <TouchableOpacity 
-              style={styles.closeButton}
+              style={styles.resultModalCloseButton}
               onPress={() => setBillResult(null)}
+              activeOpacity={1}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Ionicons name="close" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.resultModalTitle}>Medical Bill</Text>
+            <TouchableOpacity 
+              style={styles.resultModalInfoButton}
+              activeOpacity={1}
+            >
+              <Ionicons name="information-circle" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.resultScrollView}>
+            {/* Bill Info Card */}
+            <View style={styles.billInfoCard}>
+              <Text style={styles.billNumberText}>Bill #{billResult?.bill_number || 'N/A'}</Text>
+              <Text style={styles.billDateText}>{billResult?.bill_date || 'N/A'}</Text>
+            </View>
+
+            {/* Patient Info Card */}
+            <View style={styles.billPatientInfoCard}>
+              <Text style={styles.billPatientName}>{billResult?.patient_info?.name || 'N/A'}</Text>
+              <Text style={styles.billPatientDetail}>Hospital: {billResult?.patient_info?.hospital || 'N/A'}</Text>
+              <Text style={styles.billPatientDetail}>Operation: {billResult?.patient_info?.operation || 'N/A'}</Text>
+            </View>
+
+            {/* Cost Breakdown */}
+            <View style={styles.billSectionCard}>
+              <Text style={styles.billSectionTitle}>Cost Breakdown</Text>
+              {billResult?.cost_breakdown && Object.entries(billResult.cost_breakdown).map(([key, value]) => (
+                <View key={key} style={styles.billCostRow}>
+                  <Text style={styles.billCostLabel}>{key.replace(/_/g, ' ').toUpperCase()}</Text>
+                  <Text style={styles.billCostValue}>₹{value?.toLocaleString() || '0'}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Insurance Claim */}
+            <View style={styles.billSectionCard}>
+              <Text style={styles.billSectionTitle}>Insurance Claim</Text>
+              <View style={styles.billCostRow}>
+                <Text style={styles.billCostLabel}>CLAIM APPROVED</Text>
+                <Text style={styles.billCostValueSuccess}>₹{billResult?.insurance_claim?.claim_approved?.toLocaleString() || '0'}</Text>
+              </View>
+              <View style={styles.billCostRow}>
+                <Text style={styles.billCostLabel}>CLAIM REJECTED</Text>
+                <Text style={styles.billCostValueWarning}>₹{billResult?.insurance_claim?.claim_rejected?.toLocaleString() || '0'}</Text>
+              </View>
+            </View>
+
+            {/* Final Summary - Purple Gradient Card */}
+            <LinearGradient
+              colors={['#9C27B0', '#7B1FA2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.billFinalSummary}
+            >
+              <View style={styles.billSummaryRow}>
+                <Text style={styles.billSummaryLabel}>Total Bill</Text>
+                <Text style={styles.billSummaryValue}>₹{billResult?.payment_summary?.total_bill_amount?.toLocaleString() || '0'}</Text>
+              </View>
+              <View style={styles.billSummaryRow}>
+                <Text style={styles.billSummaryLabel}>Insurance Covers</Text>
+                <Text style={styles.billSummaryValueCovers}>
+                  -₹{billResult?.payment_summary?.insurance_covers?.toLocaleString() || '0'}
+                </Text>
+              </View>
+              <View style={styles.billSummaryFinalRow}>
+                <Text style={styles.billSummaryFinalLabel}>Patient Must Pay</Text>
+                <Text style={styles.billSummaryFinalValue}>
+                  ₹{billResult?.payment_summary?.patient_must_pay?.toLocaleString() || '0'}
+                </Text>
+              </View>
+            </LinearGradient>
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.resultActionButtons}>
+            <TouchableOpacity style={styles.downloadButton}>
+              <Text style={styles.downloadButtonText}>Download</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareButton}>
+              <Text style={styles.shareButtonText}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </Modal>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-    <View style={styles.header}>
-  <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-    <Ionicons name="chevron-back" size={24} color="#000" />
-  </TouchableOpacity>
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Insurance</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
-  <Text style={styles.headerTitle}>Insurance</Text>
-
-  {/* Spacer for alignment */}
-  <View style={styles.headerSpacer} />
-</View>
-
-      {/* Tabs */}
-      <View style={styles.tabsWrapper}>
-        <View style={styles.tabs}>
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'predict' && styles.tabActive]}
+            style={styles.tab}
             onPress={() => setActiveTab('predict')}
           >
-            <Text style={[styles.tabText, activeTab === 'predict' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, activeTab === 'predict' && styles.activeTabText]}>
               Prediction
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'bill' && styles.tabActive]}
+            style={styles.tab}
             onPress={() => setActiveTab('bill')}
           >
-            <Text style={[styles.tabText, activeTab === 'bill' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, activeTab === 'bill' && styles.activeTabText]}>
               Generate Bill
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Content */}
-      <ScrollView 
-        style={styles.scrollContent} 
-        contentContainerStyle={styles.scrollContentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {activeTab === 'predict' ? renderPredictionForm() : renderBillForm()}
-      </ScrollView>
+        {/* Content */}
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {activeTab === 'predict' ? renderPredictionForm() : renderBillForm()}
+        </ScrollView>
 
-      {renderPredictionResult()}
-      {renderBillResult()}
-    </View>
+        {/* Submit Button */}
+        {activeTab === 'predict' && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.submitButton} 
+              onPress={handlePrediction} 
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Generate Claim Prediction</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {activeTab === 'bill' && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.submitButton} 
+              onPress={handleBill} 
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Generate Bill</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {renderPredictionResult()}
+        {renderBillResult()}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
+    marginTop: StatusBar.currentHeight || 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
-  },
-  backIcon: {
-    fontSize: 22,
-    color: '#000',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
     color: '#000',
+    fontFamily: 'Inter',
   },
   headerSpacer: {
-    width: 32,
+    width: 40,
   },
-  tabsWrapper: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
-  },
-  tabs: {
+  tabsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    gap: 24,
   },
   tab: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  tabActive: {
-    backgroundColor: '#7475B4',
+    paddingBottom: 8,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    color: '#666',
+  },
+  activeTabText: {
+    fontSize: 27,
+    fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#000',
+    color: '#9C27B0',
+    textDecorationLine: 'underline',
   },
-  tabTextActive: {
-    color: '#fff',
-  },
-  scrollContent: {
+  scrollView: {
     flex: 1,
   },
   scrollContentContainer: {
-    paddingTop: 20,
-  },
-  formContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingTop: 16,
+    paddingBottom: 100,
   },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: '#000',
-    backgroundColor: '#fff',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
-  },
-  buttonGroup: {
+  formCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 24,
+    padding: 20,
     marginBottom: 20,
   },
-  buttonRow: {
+  detailsHeading: {
+    fontSize: 18,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
+  },
+  input: {
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    fontSize: 14,
+    fontFamily: 'Inter',
+    color: '#000',
+    marginBottom: 16,
+    borderWidth: 0,
+  },
+  inputRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 16,
   },
-  optionBtn: {
+  inputHalf: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+  },
+  customPickerButton: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EAEAF8',
+    marginBottom: 16,
   },
-  optionBtnActive: {
-    backgroundColor: '#7475B4',
-  },
-  optionBtnText: {
-    fontSize: 13,
-    fontWeight: '500',
+  customPickerText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
     color: '#000',
   },
-  optionBtnTextActive: {
-    color: '#fff',
+  placeholderText: {
+    color: '#999',
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
   },
   submitButton: {
-    backgroundColor: '#7475B4',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-  modalScrollContent: {
-    flex: 1,
-    width: '100%',
+  pickerModalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    width: '80%',
+    maxHeight: '60%',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 16,
-    padding: 24,
-    maxWidth: 400,
-    width: '90%',
-    alignSelf: 'center',
+  modalScroll: {
+    maxHeight: 400,
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  modalItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalItemSelected: {
+    backgroundColor: '#F3E5F5',
+  },
+  modalItemText: {
+    fontSize: 14,
+    fontFamily: 'Inter',
     color: '#000',
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  resultCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+  modalItemTextSelected: {
+    color: '#9C27B0',
+    fontWeight: '600',
+  },
+  // Result Modal Styles
+  resultModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultModalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '85%',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  resultModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  resultModalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultModalInfoButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultModalHeaderSpacer: {
+    flex: 1,
+  },
+  resultModalTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#000',
+  },
+  resultScrollView: {
+    maxHeight: 400,
+  },
+  resultInfoCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
   },
-  resultLabel: {
+  resultInfoCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  resultInfoLabel: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-    textTransform: 'uppercase',
+    fontFamily: 'Inter',
     fontWeight: '600',
+    color: '#666',
+    textTransform: 'uppercase',
   },
-  resultValue: {
+  resultInfoValue: {
     fontSize: 18,
+    fontFamily: 'Inter',
+    fontWeight: '700',
     color: '#000',
-    fontWeight: 'bold',
   },
-  resultValueWarning: {
+  resultInfoValueRed: {
     fontSize: 18,
-    color: '#e74c3c',
-    fontWeight: 'bold',
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#E74C3C',
   },
-  highlightCard: {
-    backgroundColor: '#7475B4',
-    borderRadius: 8,
-    padding: 16,
+  resultValueWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  rupeeIcon: {
+    fontSize: 18,
+    color: '#9C27B0',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  rupeeIconRed: {
+    fontSize: 18,
+    color: '#E74C3C',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  claimApprovedCard: {
+    backgroundColor: '#9C27B0',
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 12,
     alignItems: 'center',
   },
-  highlightLabel: {
+  claimApprovedLabel: {
     fontSize: 12,
-    color: '#fff',
-    marginBottom: 4,
-    textTransform: 'uppercase',
+    fontFamily: 'Inter',
     fontWeight: '600',
+    color: '#FFF',
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
-  highlightValue: {
-    fontSize: 28,
-    color: '#fff',
-    fontWeight: 'bold',
+  claimApprovedValue: {
+    fontSize: 32,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 4,
   },
-  percentageText: {
+  claimApprovedPercentage: {
     fontSize: 14,
-    color: '#fff',
-    marginTop: 4,
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    color: '#FFF',
     opacity: 0.9,
   },
-  closeButton: {
-    backgroundColor: '#000',
-    borderRadius: 8,
+  resultActionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  downloadButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 10,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 15,
+  downloadButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
     fontWeight: '600',
+    color: '#FFF',
+  },
+  shareButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  shareButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#2196F3',
+  },
+  // Bill Result Styles
+  billInfoCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  billNumberText: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 4,
+  },
+  billDateText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    color: '#666',
+  },
+  billPatientInfoCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  billPatientName: {
+    fontSize: 18,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
+  },
+  billPatientDetail: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    color: '#666',
+    marginBottom: 4,
+  },
+  billSectionCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  billSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 12,
+  },
+  billCostRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  billCostLabel: {
+    fontSize: 13,
+    fontFamily: 'Inter',
+    fontWeight: '500',
+    color: '#666',
+  },
+  billCostValue: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#000',
+  },
+  billCostValueSuccess: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#27AE60',
+  },
+  billCostValueWarning: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#E74C3C',
+  },
+  billFinalSummary: {
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 12,
+  },
+  billSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  billSummaryLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter',
+    fontWeight: '500',
+    color: '#FFF',
+  },
+  billSummaryValue: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  billSummaryValueCovers: {
+    fontSize: 16,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  billSummaryFinalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    marginTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  billSummaryFinalLabel: {
+    fontSize: 18,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  billSummaryFinalValue: {
+    fontSize: 24,
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    color: '#FFF',
   },
   billHeader: {
     borderBottomWidth: 1,

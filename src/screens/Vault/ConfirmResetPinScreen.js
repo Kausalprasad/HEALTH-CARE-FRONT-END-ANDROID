@@ -18,8 +18,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { resetPin } from '../../api/vaultApi';
 import { useFonts, Inter_400Regular, Inter_300Light } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function ConfirmResetPinScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -92,7 +94,7 @@ export default function ConfirmResetPinScreen({ navigation, route }) {
     }
 
     if (!resetToken) {
-      Alert.alert('Error', 'Reset token is missing. Please try again.');
+      Alert.alert(t('alerts.error'), t('vault.resetTokenMissing'));
       navigation.goBack();
       return;
     }
@@ -105,12 +107,12 @@ export default function ConfirmResetPinScreen({ navigation, route }) {
         setLoading(false);
         setShowSuccess(true);
       } else {
-        Alert.alert('Error', result.message || 'Failed to reset PIN');
+        Alert.alert(t('alerts.error'), result.message || t('vault.failedToResetPin'));
         setLoading(false);
         setHasSubmitted(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to reset PIN. Please try again.');
+      Alert.alert(t('alerts.error'), t('vault.failedToResetPin'));
       setLoading(false);
       setHasSubmitted(false);
     }
@@ -161,7 +163,7 @@ export default function ConfirmResetPinScreen({ navigation, route }) {
             </View>
 
             {/* Success Title */}
-            <Text style={styles.successTitle}>PIN Generated!</Text>
+            <Text style={styles.successTitle}>{t('vault.pinCreated')}!</Text>
             <Text style={styles.successMessage}>
               You're all set. You can now enter your new PIN to access your documents securely.
             </Text>
@@ -172,7 +174,7 @@ export default function ConfirmResetPinScreen({ navigation, route }) {
               onPress={() => navigation.replace('VaultEnterPin')}
               activeOpacity={0.8}
             >
-              <Text style={styles.doneButtonText}>Done</Text>
+              <Text style={styles.doneButtonText}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -213,18 +215,18 @@ export default function ConfirmResetPinScreen({ navigation, route }) {
                   style={styles.vaultLogo}
                   resizeMode="contain"
                 />
-                <Text style={styles.brandName}>Health Vault</Text>
+                <Text style={styles.brandName}>{t('vault.title')}</Text>
               </View>
 
               {/* Title */}
-              <Text style={styles.title}>Confirm PIN</Text>
+              <Text style={styles.title}>{t('vault.confirmPin')}</Text>
               <Text style={styles.subtitle}>
-                A single, protected space for prescriptions, reports, and bills, instantly analyzed by AI when you need it.
+                {t('vault.vaultDescription2')}
               </Text>
 
               {/* PIN Input */}
               <View style={styles.pinSection}>
-                <Text style={styles.label}>Confirm your new PIN</Text>
+                <Text style={styles.label}>{t('vault.confirmPin')}</Text>
                 <View style={styles.pinContainer}>
                   {confirmPin.map((digit, index) => (
                     <TextInput

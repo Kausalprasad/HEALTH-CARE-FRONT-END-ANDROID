@@ -12,16 +12,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2; // 2 columns with padding
 
 const HealthCheckupApp = ({ navigation }) => {
+  const { t } = useTranslation();
   const healthItems = [
     { 
       id: 1,
-      title: 'Skin Cancer Detection', 
-      subtitle: 'Get skin health analysis', 
+      title: t('healthCheckup.skinCancer'), 
+      subtitle: t('healthCheckup.getAnalysis'), 
       icon: require('../../../assets/AiHealthCheckUp/skinCancerDectection.png'),
       iconBg: '#FBBF24',
       cardBg: '#1F2937', // Dark gray for first card
@@ -31,8 +33,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 2,
-      title: 'Eye Health', 
-      subtitle: 'Eye health recommendation', 
+      title: t('healthCheckup.eyeHealth'), 
+      subtitle: t('healthCheckup.eyeRecommendation'), 
       icon: require('../../../assets/AiHealthCheckUp/eye.png'),
       iconBg: '#FF9800',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -42,8 +44,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 3,
-      title: 'Nail Health', 
-      subtitle: 'Get insights with nail health', 
+      title: t('healthCheckup.nailHealth'), 
+      subtitle: t('healthCheckup.nailInsights'), 
       icon: require('../../../assets/AiHealthCheckUp/nail1.png'),
       iconBg: '#9C27B0',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -53,8 +55,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 4,
-      title: 'Tongue Health', 
-      subtitle: 'Analyze your tongue condition', 
+      title: t('healthCheckup.tongueHealth'), 
+      subtitle: t('healthCheckup.analyzeTongue'), 
       icon: require('../../../assets/AiHealthCheckUp/tough1.png'),
       iconBg: '#2196F3',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -64,8 +66,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 5,
-      title: 'Scalp Health', 
-      subtitle: 'Get scalp health analysis', 
+      title: t('healthCheckup.scalpHealth'), 
+      subtitle: t('healthCheckup.scalpAnalysis'), 
       icon: require('../../../assets/AiHealthCheckUp/Hair.png'),
       iconBg: '#4CAF50',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -75,8 +77,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 6,
-      title: 'Posture Analysis', 
-      subtitle: 'Live posture risk detection', 
+      title: t('healthCheckup.postureAnalysis'), 
+      subtitle: t('healthCheckup.livePosture'), 
       icon: require('../../../assets/AiHealthCheckUp/PostureAnalysis.png'),
       iconBg: '#00BCD4',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -86,8 +88,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 7,
-      title: 'Genomic Insights',
-      subtitle: 'AI-based health risk analysis', 
+      title: t('healthCheckup.genomicInsights'),
+      subtitle: t('healthCheckup.aiRiskAnalysis'), 
       icon: require('../../../assets/AiHealthCheckUp/Genomic.png'),
       iconBg: '#607D8B',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -97,8 +99,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     { 
       id: 8,
-      title: 'Dental Analysis', 
-      subtitle: 'AI-powered dental health detection', 
+      title: t('healthCheckup.dentalAnalysis'), 
+      subtitle: t('healthCheckup.dentalDetection'), 
       icon: require('../../../assets/AiHealthCheckUp/theet.png'),
       iconBg: '#009688',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -108,8 +110,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     {
       id: 9,
-      title: 'Breast Cancer Analysis',
-      subtitle: 'AI-powered breast cancer detection',
+      title: t('healthCheckup.breastCancer'),
+      subtitle: t('healthCheckup.breastDetection'),
       icon: require('../../../assets/AiHealthCheckUp/BresastCancer.png'),
       iconBg: '#E91E63',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -119,8 +121,8 @@ const HealthCheckupApp = ({ navigation }) => {
     },
     {
       id: 10,
-      title: 'PCOS Test',
-      subtitle: 'AI-powered PCOSS detection',
+      title: t('healthCheckup.pcossTest'),
+      subtitle: t('healthCheckup.pcossDetection'),
       icon: require('../../../assets/AiHealthCheckUp/PcossTest.png'),
       iconBg: '#FF5722',
       cardBg: 'rgba(255, 255, 255, 0.75)',
@@ -187,7 +189,7 @@ const HealthCheckupApp = ({ navigation }) => {
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>AI Health Checkup</Text>
+          <Text style={styles.headerTitle}>{t('healthCheckup.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
 

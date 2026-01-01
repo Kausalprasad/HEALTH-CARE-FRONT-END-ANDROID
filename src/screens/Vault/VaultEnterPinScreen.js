@@ -18,8 +18,10 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { validatePin } from '../../api/vaultApi';
 import ForgotPinScreen from './ForgotPinScreen';
 import { useFonts, Inter_400Regular, Inter_300Light } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function VaultEnterPinScreen({ navigation }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -83,7 +85,7 @@ export default function VaultEnterPinScreen({ navigation }) {
     const pinString = pin.join('');
     
     if (pinString.length !== 4) {
-      Alert.alert('Error', 'Please enter a 4-digit PIN');
+      Alert.alert(t('alerts.error'), t('vault.enter4DigitPin'));
       return;
     }
 
@@ -98,25 +100,25 @@ export default function VaultEnterPinScreen({ navigation }) {
         // Check if vault doesn't exist
         if (result.message?.includes('not found') || result.message?.includes('Vault not found')) {
           Alert.alert(
-            'Vault Not Found',
-            'No vault exists for this account. Would you like to create one?',
+            t('vault.title'),
+            t('vault.vaultNotFound'),
             [
-              { text: 'Cancel', style: 'cancel' },
+              { text: t('vault.cancel'), style: 'cancel' },
               {
-                text: 'Create Vault',
+                text: t('vault.createVault'),
                 onPress: () => navigation.replace('VaultCreate'),
               },
             ]
           );
         } else {
-          Alert.alert('Invalid PIN', result.message || 'The PIN you entered is incorrect');
+          Alert.alert(t('vault.invalidPin'), result.message || t('vault.pinIncorrect'));
         }
         // Clear PIN
         setPin(['', '', '', '']);
         inputRefs.current[0]?.focus();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to validate PIN. Please try again.');
+      Alert.alert(t('alerts.error'), t('common.tryAgain'));
       setPin(['', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -128,7 +130,7 @@ export default function VaultEnterPinScreen({ navigation }) {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync();
       if (!compatible) {
-        Alert.alert('Error', 'Biometric authentication not supported on this device');
+        Alert.alert(t('alerts.error'), t('camera.noBiometric'));
         return;
       }
 
@@ -139,7 +141,7 @@ export default function VaultEnterPinScreen({ navigation }) {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to unlock vault',
+        promptMessage: t('vault.authenticateToUnlock'),
         fallbackLabel: 'Use PIN',
         disableDeviceFallback: false,
       });
@@ -190,11 +192,11 @@ export default function VaultEnterPinScreen({ navigation }) {
               style={styles.vaultLogo}
               resizeMode="contain"
             />
-            <Text style={brandNameStyle}>Health Vault</Text>
+            <Text style={brandNameStyle}>{t('vault.title')}</Text>
           </View>
 
           {/* Title */}
-          <Text style={titleStyle}>Enter PIN</Text>
+          <Text style={titleStyle}>{t('vault.enterPin')}</Text>
 
           {/* PIN Input Fields */}
           <View style={styles.pinContainer}>
@@ -229,7 +231,7 @@ export default function VaultEnterPinScreen({ navigation }) {
               onPress={handleForgotPin}
               disabled={loading}
             >
-              <Text style={styles.forgotText}>Forgot PIN?</Text>
+              <Text style={styles.forgotText}>{t('vault.forgotPin')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -246,7 +248,7 @@ export default function VaultEnterPinScreen({ navigation }) {
             onPress={() => navigation.replace('VaultCreate')}
             disabled={loading}
           >
-            <Text style={styles.createButtonText}>Create New Vault</Text>
+            <Text style={styles.createButtonText}>{t('vault.createNewVault')}</Text>
           </TouchableOpacity>
 
         </View>

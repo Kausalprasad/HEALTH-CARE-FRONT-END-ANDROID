@@ -2291,6 +2291,7 @@ import { BASE_URL } from '../../config/config';
 import Sidebar from "../../components/Sidebar";
 import ErrorBoundary from '../../components/ErrorBoundary';
 import BottomNavigation from '../../components/BottomNavigation';
+import { useTranslation } from 'react-i18next';
 // Don't import useHealthData - will cause crash if Health Connect not available
 // Use safe defaults instead
 
@@ -2338,10 +2339,11 @@ function VoiceOrbButton({ onPress }) {
 }
 
 function DashboardScreenContent({ navigation }) {
+  const { t } = useTranslation();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [appointment, setAppointment] = useState(null);
+  const [appointments, setAppointments] = useState([]);
   const [loadingAppointment, setLoadingAppointment] = useState(true);
   const [selectedHealthCheckId, setSelectedHealthCheckId] = useState(1); // Default first item selected
   const [eyeHealthModalVisible, setEyeHealthModalVisible] = useState(false);
@@ -2402,8 +2404,8 @@ function DashboardScreenContent({ navigation }) {
   const aiHealthChecks = [
     { 
       id: 1, 
-      title: "Skin Cancer Detection", 
-      subtitle: "Get skin health analysis", 
+      title: t('healthCheckup.skinCancer'), 
+      subtitle: t('healthCheckup.getAnalysis'), 
       bgColor: "#1F2937", // Dark gray for first item
       textColor: "#FFFFFF", // White text for first item
       subtitleColor: "#E5E7EB", // Light gray subtitle for first item
@@ -2413,8 +2415,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 2, 
-      title: "Eye Health", 
-      subtitle: "Eye health recommendation", 
+      title: t('healthCheckup.eyeHealth'), 
+      subtitle: t('healthCheckup.eyeRecommendation'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2424,8 +2426,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 3, 
-      title: "Nail Health", 
-      subtitle: "Get insights with nail health", 
+      title: t('healthCheckup.nailHealth'), 
+      subtitle: t('healthCheckup.nailInsights'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2435,8 +2437,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 4, 
-      title: "Tongue Health", 
-      subtitle: "Analyze your tongue condition", 
+      title: t('healthCheckup.tongueHealth'), 
+      subtitle: t('healthCheckup.analyzeTongue'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2446,8 +2448,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 5, 
-      title: "Scalp Health", 
-      subtitle: "Get scalp health analysis", 
+      title: t('healthCheckup.scalpHealth'), 
+      subtitle: t('healthCheckup.scalpAnalysis'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2457,8 +2459,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 6, 
-      title: "Posture Analysis", 
-      subtitle: "Live posture risk detection", 
+      title: t('healthCheckup.postureAnalysis'), 
+      subtitle: t('healthCheckup.livePosture'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2468,8 +2470,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 7, 
-      title: "Genomic Insights", 
-      subtitle: "AI-based health risk analysis", 
+      title: t('healthCheckup.genomicInsights'), 
+      subtitle: t('healthCheckup.aiRiskAnalysis'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2479,8 +2481,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 8, 
-      title: "Dental Analysis", 
-      subtitle: "AI-powered dental health detection", 
+      title: t('healthCheckup.dentalAnalysis'), 
+      subtitle: t('healthCheckup.dentalDetection'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2490,8 +2492,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 9, 
-      title: "Breast Cancer Analysis", 
-      subtitle: "AI-powered breast cancer detection", 
+      title: t('healthCheckup.breastCancer'), 
+      subtitle: t('healthCheckup.breastDetection'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2501,8 +2503,8 @@ function DashboardScreenContent({ navigation }) {
     },
     { 
       id: 10, 
-      title: "PCOSS Test", 
-      subtitle: "AI-powered PCOSS detection", 
+      title: t('healthCheckup.pcossTest'), 
+      subtitle: t('healthCheckup.pcossDetection'), 
       bgColor: "#FFFFFF",
       textColor: "#1F2937",
       subtitleColor: "#6B7280",
@@ -2514,17 +2516,17 @@ function DashboardScreenContent({ navigation }) {
 
   // All Features items - 11 items, 4 per row
   const allFeatures = [
-    { id: 1, title: "Cosmetic\nAnalysis", color: "#FF9800", route: "CosmeticScreen" }, // Orange
-    { id: 2, title: "X-Ray\nAnalysis", color: "#9C27B0", route: "XrayScreen" }, // Purple
-    { id: 3, title: "Reports\nReader", color: "#2196F3", route: "SymptomChecker" }, // Blue
-    { id: 4, title: "Mental\nHealth", color: "#E91E63", route: "MentalHealthScreen" }, // Red
-    { id: 5, title: "Preventive\nHealth", color: "#00BCD4", route: "PreventiveHealthScreen" }, // Light Blue
-    { id: 6, title: "24/7 AI\nDoctor", color: "#FF9800", route: "AIDoctor" }, // Orange
-    { id: 7, title: "Mother &\nBaby Care", color: "#009688", route: "MotherBabyCareScreen" }, // Teal/Cyan
-    { id: 8, title: "Insurance\nChecker", color: "#4CAF50", route: "InsuranceScreen" }, // Green
-    { id: 9, title: "Diet Plan\nGenerator", color: "#2196F3", route: "DietScreen" }, // Blue
-    { id: 10, title: "Calorie\nCalculator", color: "#4CAF50", route: "CalorieCalculator" }, // Green
-    { id: 11, title: "Health\nGames", color: "#E91E63", route: "HealthGames" } // Red
+    { id: 1, title: t('features.cosmeticAnalysis').replace(' ', '\n'), color: "#FF9800", route: "CosmeticScreen" }, // Orange
+    { id: 2, title: t('features.xrayAnalysis').replace(' ', '\n'), color: "#9C27B0", route: "XrayScreen" }, // Purple
+    { id: 3, title: t('features.reportsReader').replace(' ', '\n'), color: "#2196F3", route: "SymptomChecker" }, // Blue
+    { id: 4, title: t('features.mentalHealth').replace(' ', '\n'), color: "#E91E63", route: "MentalHealthScreen" }, // Red
+    { id: 5, title: t('features.preventiveHealth').replace(' ', '\n'), color: "#00BCD4", route: "PreventiveHealthScreen" }, // Light Blue
+    { id: 6, title: t('features.aiDoctor247').replace(' ', '\n'), color: "#FF9800", route: "AIDoctor" }, // Orange
+    { id: 7, title: t('features.motherBabyCare').replace(' ', '\n'), color: "#009688", route: "MotherBabyCareScreen" }, // Teal/Cyan
+    { id: 8, title: t('features.insuranceChecker').replace(' ', '\n'), color: "#4CAF50", route: "InsuranceScreen" }, // Green
+    { id: 9, title: t('features.dietPlanGenerator').replace(' ', '\n'), color: "#2196F3", route: "DietScreen" }, // Blue
+    { id: 10, title: t('features.calorieCalculator').replace(' ', '\n'), color: "#4CAF50", route: "CalorieCalculator" }, // Green
+    { id: 11, title: t('features.healthGames').replace(' ', '\n'), color: "#E91E63", route: "HealthGames" } // Red
   ];
   
   // Fetch profile data
@@ -2566,12 +2568,13 @@ function DashboardScreenContent({ navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        // Get the next upcoming appointment
+        // Get all appointments sorted by date
         if (data && data.length > 0) {
-          const upcoming = data
-            .filter(apt => new Date(apt.date) >= new Date())
-            .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-          setAppointment(upcoming || null);
+          const sortedAppointments = data
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          setAppointments(sortedAppointments);
+        } else {
+          setAppointments([]);
         }
       }
     } catch (err) {
@@ -2591,10 +2594,10 @@ function DashboardScreenContent({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  // Reset image error when appointment changes
+  // Reset image error when appointments change
   useEffect(() => {
     setDoctorImageError(false);
-  }, [appointment?.doctor?.profilePicture, appointment?.doctorId?.profilePicture]);
+  }, [appointments]);
 
   // Refresh data when screen is focused
   useEffect(() => {
@@ -2625,7 +2628,11 @@ function DashboardScreenContent({ navigation }) {
     };
   };
 
-  const appointmentDate = appointment ? formatAppointmentDate(appointment.date) : null;
+  // Format all appointment dates
+  const formattedAppointments = appointments.map(apt => ({
+    ...apt,
+    formattedDate: formatAppointmentDate(apt.date)
+  }));
   
   return (
     <SafeAreaView style={styles.container}>
@@ -2681,8 +2688,8 @@ function DashboardScreenContent({ navigation }) {
               );
             })()}
             <View style={styles.greetingContainer}>
-              <Text style={styles.greetingText}>Hello {userName}!</Text>
-              <Text style={styles.greetingSubtext}>Let's start your day</Text>
+              <Text style={styles.greetingText}>{t('dashboard.greeting')} {userName}!</Text>
+              <Text style={styles.greetingSubtext}>{t('dashboard.welcomeBack')}</Text>
             </View>
           </TouchableOpacity>
           {/* bell + green dot */}
@@ -2692,70 +2699,80 @@ function DashboardScreenContent({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Appointment Card */}
-        <View style={styles.appointmentCard}>
-          {/* Top Section */}
-          <View style={styles.appointmentTopSection}>
-            <Image
-              source={
-                (appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture) && !doctorImageError
-                  ? { uri: appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture }
-                  : require("../../../assets/doctor.png")
-              }
-              style={styles.doctorAvatarImage}
-              onError={() => {
-                setDoctorImageError(true);
-              }}
-              onLoadStart={() => {
-                setDoctorImageError(false);
-              }}
-              resizeMode="cover"
-            />
-            <View style={styles.appointmentDetails}>
-              <Text style={styles.appointmentLabel}>Appointment:</Text>
-              <Text style={styles.appointmentDateTime}>
-                {appointmentDate
-                  ? `${appointmentDate.month} ${appointmentDate.day}, ${appointmentDate.weekday}`
-                  : "Nov 25, Tuesday"}{" "}
-                | {appointment?.time || appointment?.startTime || "12 noon"}
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.infoIconButton}>
-              <Ionicons name="information-circle-outline" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+        {/* Appointments List */}
+        {formattedAppointments.length > 0 ? (
+          formattedAppointments.map((appointment, index) => {
+            const appointmentDate = appointment.formattedDate;
+            return (
+              <View key={appointment._id || index} style={styles.appointmentCard}>
+                {/* Top Section */}
+                <View style={styles.appointmentTopSection}>
+                  <Image
+                    source={
+                      (appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture) && !doctorImageError
+                        ? { uri: appointment?.doctor?.profilePicture || appointment?.doctorId?.profilePicture }
+                        : require("../../../assets/doctor.png")
+                    }
+                    style={styles.doctorAvatarImage}
+                    onError={() => {
+                      setDoctorImageError(true);
+                    }}
+                    onLoadStart={() => {
+                      setDoctorImageError(false);
+                    }}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.appointmentDetails}>
+                    <Text style={styles.appointmentLabel}>{t('appointment.title')}:</Text>
+                    <Text style={styles.appointmentDateTime}>
+                      {appointmentDate
+                        ? `${appointmentDate.month} ${appointmentDate.day}, ${appointmentDate.weekday}`
+                        : "Nov 25, Tuesday"}{" "}
+                      | {appointment?.time || appointment?.startTime || "12 noon"}
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={styles.infoIconButton}>
+                    <Ionicons name="information-circle-outline" size={18} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
 
-          {/* Bottom Section */}
-          <View style={styles.appointmentBottomSection}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.doctorName}>
-                {appointment?.doctor?.name || appointment?.doctorId?.name || "Dr. Sahil Mehta"}
-              </Text>
-              <Text style={styles.doctorSpecialty}>
-                {appointment?.doctor?.specialization || appointment?.doctorId?.specialization || "Specialist"}
-              </Text>
+                {/* Bottom Section */}
+                <View style={styles.appointmentBottomSection}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.doctorName}>
+                      {appointment?.doctor?.name || appointment?.doctorId?.name || "Dr. Sahil Mehta"}
+                    </Text>
+                    <Text style={styles.doctorSpecialty}>
+                      {appointment?.doctor?.specialization || appointment?.doctorId?.specialization || "Specialist"}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.seeProfileButton}
+                    onPress={() => {
+                      navigation.navigate("MyAppointments");
+                    }}
+                  >
+                    <Text style={styles.seeProfileButtonText}>See All</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          !loadingAppointment && (
+            <View style={styles.appointmentCard}>
+              <Text style={styles.noAppointmentsText}>No appointments scheduled</Text>
             </View>
-            <TouchableOpacity
-              style={styles.seeProfileButton}
-              onPress={() => {
-                const doctor = appointment?.doctor || appointment?.doctorId;
-                if (doctor) {
-                  navigation.navigate("DoctorCard", { doctor });
-                }
-              }}
-            >
-              <Text style={styles.seeProfileButtonText}>See Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          )
+        )}
 
         {/* Daily Metrics */}
         <View style={styles.metricsCard}>
           {/* Header */}
           <View style={styles.metricsHeader}>
-            <Text style={styles.metricsTitle}>Daily Metrics</Text>
+            <Text style={styles.metricsTitle}>{t('vitals.dailyMetrics')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('VitalsScreen')}>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t('vitals.seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -2763,26 +2780,26 @@ function DashboardScreenContent({ navigation }) {
             {/* LEFT SIDE DATA */}
             <View style={styles.metricsLeft}>
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Heartbeat</Text>
+                <Text style={styles.metricLabel}>{t('vitals.heartbeat')}</Text>
                 <View style={styles.metricValueRow}>
                   <Text style={[styles.metricValue, { color: '#10B981' }]}>{vitals?.heartRate || 55}</Text>
-                  <Text style={styles.metricUnit}> /72 bpm</Text>
+                  <Text style={styles.metricUnit}> /72 {t('vitals.bpm')}</Text>
                 </View>
               </View>
 
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Blood Pressure</Text>
+                <Text style={styles.metricLabel}>{t('vitals.bloodPressure')}</Text>
                 <View style={styles.metricValueRow}>
                   <Text style={[styles.metricValue, { color: '#EF4444' }]}>{vitals?.bloodPressure || 120}</Text>
-                  <Text style={styles.metricUnit}> mmHg</Text>
+                  <Text style={styles.metricUnit}> {t('vitals.mmHg')}</Text>
                 </View>
               </View>
 
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Sleep Duration</Text>
+                <Text style={styles.metricLabel}>{t('vitals.sleepDuration')}</Text>
                 <View style={styles.metricValueRow}>
-                  <Text style={[styles.metricValue, { color: '#3B82F6' }]}>{vitals?.sleepHours || 6}h</Text>
-                  <Text style={[styles.metricValue, { color: '#3B82F6' }]}> {vitals?.sleepMinutes || 32}m</Text>
+                  <Text style={[styles.metricValue, { color: '#3B82F6' }]}>{vitals?.sleepHours || 6}{t('vitals.h')}</Text>
+                  <Text style={[styles.metricValue, { color: '#3B82F6' }]}> {vitals?.sleepMinutes || 32}{t('vitals.min')}</Text>
                 </View>
               </View>
             </View>
@@ -2844,13 +2861,13 @@ function DashboardScreenContent({ navigation }) {
           <View style={styles.moodCheckerContent}>
             <View style={styles.moodCheckerLeft}>
               <Text style={styles.moodCheckerEmoji}>😊</Text>
-              <Text style={styles.moodCheckerTitle}>Mood Checker</Text>
+              <Text style={styles.moodCheckerTitle}>{t('mood.title')}</Text>
             </View>
             <TouchableOpacity 
               style={styles.moodCheckerButton}
               onPress={() => navigation.navigate('MoodCheckupApp')}
             >
-              <Text style={styles.moodCheckerButtonText}>Start Now</Text>
+              <Text style={styles.moodCheckerButtonText}>{t('common.start')} {t('common.now')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -2858,9 +2875,9 @@ function DashboardScreenContent({ navigation }) {
         {/* AI Health Checkup */}
         <View style={styles.aiHealthCheckupSection}>
           <View style={styles.aiHealthCheckupHeader}>
-            <Text style={styles.aiHealthCheckupTitle}>AI Health Checkup</Text>
+            <Text style={styles.aiHealthCheckupTitle}>{t('dashboard.aiHealthCheckup')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('AiHealthCheckupScreen')}>
-              <Text style={styles.aiHealthCheckupSeeAll}>See all</Text>
+              <Text style={styles.aiHealthCheckupSeeAll}>{t('common.view')} {t('common.all')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView 
@@ -2925,9 +2942,9 @@ function DashboardScreenContent({ navigation }) {
         {/* All Features */}
         <View style={styles.allFeaturesSection}>
           <View style={styles.allFeaturesHeader}>
-            <Text style={styles.allFeaturesTitle}>All Features</Text>
+            <Text style={styles.allFeaturesTitle}>{t('dashboard.allFeatures')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('FeaturesScreen')}>
-              <Text style={styles.allFeaturesSeeAll}>See all</Text>
+              <Text style={styles.allFeaturesSeeAll}>{t('common.view')} {t('common.all')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.featuresGrid}>
@@ -3008,7 +3025,13 @@ function DashboardScreenContent({ navigation }) {
                     <Ionicons name="apps" size={24} color="#FFFFFF" />
                   )}
                 </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text 
+                  style={styles.featureTitle}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {feature.title}
+                </Text>
               </TouchableOpacity>
             ))}
             {/* Placeholder items to fill the last row to have 4 items */}
@@ -3255,12 +3278,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#FFFFFFBF",
-    borderRadius: 26,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 12,
+    borderRadius: Math.min(26, screenWidth * 0.065),
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(10, screenWidth * 0.025),
+    marginBottom: Math.min(12, screenWidth * 0.03),
     borderWidth: 1,
     borderColor: "#E9E9E9",
   },
@@ -3269,16 +3292,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   greetingAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 14,
+    width: Math.min(56, screenWidth * 0.14),
+    height: Math.min(56, screenWidth * 0.14),
+    borderRadius: Math.min(28, screenWidth * 0.07),
+    marginRight: Math.min(14, screenWidth * 0.035),
   },
   greetingAvatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 14,
+    width: Math.min(56, screenWidth * 0.14),
+    height: Math.min(56, screenWidth * 0.14),
+    borderRadius: Math.min(28, screenWidth * 0.07),
+    marginRight: Math.min(14, screenWidth * 0.035),
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -3289,19 +3312,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   greetingText: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontWeight: "700",
     color: "#111827",
-    marginBottom: 2,
+    marginBottom: Math.min(2, screenWidth * 0.005),
   },
   greetingSubtext: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#9CA3AF",
   },
   notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: Math.min(44, screenWidth * 0.11),
+    height: Math.min(44, screenWidth * 0.11),
+    borderRadius: Math.min(22, screenWidth * 0.055),
     backgroundColor: "#111827",
     justifyContent: "center",
     alignItems: "center",
@@ -3309,11 +3332,11 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: "absolute",
-    top: 6,
-    left: 6,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    top: Math.min(6, screenWidth * 0.015),
+    left: Math.min(6, screenWidth * 0.015),
+    width: Math.min(10, screenWidth * 0.025),
+    height: Math.min(10, screenWidth * 0.025),
+    borderRadius: Math.min(5, screenWidth * 0.0125),
     backgroundColor: "#22C55E",
     borderWidth: 2,
     borderColor: "#111827",
@@ -3324,15 +3347,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#FFFFFFBF",
     marginHorizontal: Math.max(15, screenWidth * 0.04),
-    marginVertical: 8,
-    borderRadius: 50,
+    marginVertical: Math.min(8, screenWidth * 0.02),
+    borderRadius: Math.min(50, screenWidth * 0.125),
     paddingHorizontal: Math.max(20, screenWidth * 0.05),
-    paddingVertical: 12,
+    paddingVertical: Math.min(12, screenWidth * 0.03),
     maxWidth: screenWidth - (Math.max(15, screenWidth * 0.04) * 2),
   },
   cardTextContainer: {
     flex: 1,
-    marginRight:10,
+    marginRight: Math.min(10, screenWidth * 0.025),
   },
   cardSubtext: {
     fontSize: Math.min(13, screenWidth * 0.035),
@@ -3352,9 +3375,9 @@ const styles = StyleSheet.create({
   startButton: {
     backgroundColor: "#7475B4",
     paddingHorizontal: Math.max(18, screenWidth * 0.045),
-    paddingVertical: 6,
-    borderRadius: 25,
-    minWidth: 60,
+    paddingVertical: Math.min(6, screenWidth * 0.015),
+    borderRadius: Math.min(25, screenWidth * 0.0625),
+    minWidth: Math.min(60, screenWidth * 0.15),
   },
   startButtonText: {
     color: "#fff",
@@ -3366,11 +3389,11 @@ const styles = StyleSheet.create({
   whiteContent: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 20,
+    paddingTop: Math.min(20, screenWidth * 0.05),
   },
   featuresSection: {
     paddingHorizontal: Math.max(20, screenWidth * 0.05),
-    marginBottom: 10,
+    marginBottom: Math.min(10, screenWidth * 0.025),
     alignItems: "center",
   },
   sectionTitleContainer: {
@@ -3378,23 +3401,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 20,
+    marginBottom: Math.min(20, screenWidth * 0.05),
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontFamily: "Inter",
     fontWeight: "bold",
     color: "#333",
   },
   featuresGrid: {
-    gap: 15,
+    gap: Math.min(15, screenWidth * 0.0375),
     width: "100%",
     alignItems: "center",
   },
   featureRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    marginBottom: Math.min(20, screenWidth * 0.05),
     width: "100%",
   },
   featureItem: {
@@ -3413,7 +3436,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 15,
+    marginBottom: Math.min(15, screenWidth * 0.0375),
   },
   vitalsMainTitle: {
     fontSize: Math.min(22, screenWidth * 0.055),
@@ -3424,63 +3447,63 @@ const styles = StyleSheet.create({
   vitalsCardsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: Math.min(12, screenWidth * 0.03),
   },
   vitalCard: {
     flex: 1,
     backgroundColor: "#FFFFFFBF",
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: Math.min(8, screenWidth * 0.02),
+    padding: Math.min(16, screenWidth * 0.04),
     borderWidth: 1,
     borderColor: "#E9E9E9",
   },
   vitalCardTitle: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontFamily: "Inter",
     fontWeight: "600",
     color: "#333",
-    marginBottom: 2,
+    marginBottom: Math.min(2, screenWidth * 0.005),
   },
   vitalCardTime: {
-    fontSize: 13,
+    fontSize: Math.min(13, screenWidth * 0.033),
     fontFamily: "Inter",
     color: "#999",
-    marginBottom: 15,
+    marginBottom: Math.min(15, screenWidth * 0.0375),
   },
   heartRateGraph: {
-    height: 50,
-    marginBottom: 12,
+    height: Math.min(50, screenWidth * 0.125),
+    marginBottom: Math.min(12, screenWidth * 0.03),
     justifyContent: 'center',
     alignItems: 'center',
   },
   bpGraph: {
-    height: 50,
-    marginBottom: 12,
+    height: Math.min(50, screenWidth * 0.125),
+    marginBottom: Math.min(12, screenWidth * 0.03),
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 3,
+    paddingHorizontal: Math.min(3, screenWidth * 0.0075),
   },
   bpBar: {
-    width: 7,
-    borderRadius: 3.5,
+    width: Math.min(7, screenWidth * 0.0175),
+    borderRadius: Math.min(3.5, screenWidth * 0.00875),
   },
   vitalCardBottom: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   vitalMainValue: {
-    fontSize: 28,
+    fontSize: Math.min(28, screenWidth * 0.07),
     fontFamily: "Inter",
     fontWeight: "bold",
     color: "#333",
-    marginRight: 5,
+    marginRight: Math.min(5, screenWidth * 0.0125),
   },
   vitalUnit: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontFamily: "Inter",
     color: "#999",
-    marginBottom: 3,
+    marginBottom: Math.min(3, screenWidth * 0.0075),
   },
   appointmentSection: {
     paddingHorizontal: Math.max(20, screenWidth * 0.05),
@@ -3746,48 +3769,49 @@ const styles = StyleSheet.create({
   },
   orbButton: {
     position: 'absolute',
-    bottom: 30,
-    right: 20,
+    bottom: Math.min(30, screenWidth * 0.075),
+    right: Math.min(20, screenWidth * 0.05),
   },
   // ===== Appointment Card =====
   appointmentCard: {
     backgroundColor: "#FFFFFFBF",
-    borderRadius: 26,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginTop: 10,
+    borderRadius: Math.min(26, screenWidth * 0.065),
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(10, screenWidth * 0.025),
+    marginBottom: Math.min(10, screenWidth * 0.025),
     borderWidth: 1,
     borderColor: "#E9E9E9",
   },
   appointmentTopSection: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: Math.min(12, screenWidth * 0.03),
   },
   doctorAvatarImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
+    width: Math.min(48, screenWidth * 0.12),
+    height: Math.min(48, screenWidth * 0.12),
+    borderRadius: Math.min(24, screenWidth * 0.06),
+    marginRight: Math.min(12, screenWidth * 0.03),
   },
   appointmentDetails: {
     flex: 1,
   },
   appointmentLabel: {
-    fontSize: 13,
+    fontSize: Math.min(13, screenWidth * 0.033),
     color: "#9CA3AF",
-    marginBottom: 2,
+    marginBottom: Math.min(2, screenWidth * 0.005),
   },
   appointmentDateTime: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: "600",
     color: "#6B7280",
   },
   infoIconButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: Math.min(30, screenWidth * 0.075),
+    height: Math.min(30, screenWidth * 0.075),
+    borderRadius: Math.min(15, screenWidth * 0.0375),
     backgroundColor: "#111827",
     justifyContent: "center",
     alignItems: "center",
@@ -3796,38 +3820,44 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: Math.min(4, screenWidth * 0.01),
   },
   doctorName: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontWeight: "700",
     color: "#111827",
     flexShrink: 1,
-    marginBottom: 4,
+    marginBottom: Math.min(4, screenWidth * 0.01),
   },
   doctorSpecialty: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#6B7280",
     fontWeight: "500",
   },
   seeProfileButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(8, screenWidth * 0.02),
     borderRadius: 999,
     backgroundColor: "#A855F7", // purple pill
   },
   seeProfileButtonText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: "600",
+  },
+  noAppointmentsText: {
+    fontSize: Math.min(14, screenWidth * 0.035),
+    color: "#6B7280",
+    textAlign: "center",
+    paddingVertical: Math.min(20, screenWidth * 0.05),
   },
   metricsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    marginHorizontal: 20,
-    marginTop: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderRadius: 22,
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(20, screenWidth * 0.05),
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
+    borderRadius: Math.min(22, screenWidth * 0.055),
     borderWidth: 1,
     borderColor: '#E9E9E9',
   },
@@ -3836,15 +3866,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: Math.min(14, screenWidth * 0.035),
   },
   metricsTitle: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontWeight: '600',
     color: '#111827',
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: '600',
     color: '#000',
   },
@@ -3859,23 +3889,23 @@ const styles = StyleSheet.create({
     width: '55%',                  // same proportion as design
   },
   metricItem: {
-    marginBottom: 10,
+    marginBottom: Math.min(10, screenWidth * 0.025),
   },
   metricLabel: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#6B7280',
-    marginBottom: 2,
+    marginBottom: Math.min(2, screenWidth * 0.005),
   },
   metricValueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   metricValue: {
-    fontSize: 22,
+    fontSize: Math.min(22, screenWidth * 0.055),
     fontWeight: '700',
   },
   metricUnit: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#6B7280',
     fontWeight: '500',
   },
@@ -3890,18 +3920,18 @@ const styles = StyleSheet.create({
   },
   chartPercentage: {
     position: 'absolute',
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: '700',
     color: '#111827',
   },
   // ===== Mood Checker Card =====
   moodCheckerCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderRadius: 26,
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-    marginHorizontal: 20,
-    marginTop: 16,
+    borderRadius: Math.min(26, screenWidth * 0.065),
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(20, screenWidth * 0.05),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(16, screenWidth * 0.04),
     borderWidth: 1,
     borderColor: '#E9E9E9',
   },
@@ -3916,48 +3946,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   moodCheckerEmoji: {
-    fontSize: 32,
-    marginRight: 12,
+    fontSize: Math.min(32, screenWidth * 0.08),
+    marginRight: Math.min(12, screenWidth * 0.03),
   },
   moodCheckerTitle: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: '600',
     color: '#111827',
   },
   moodCheckerButton: {
     backgroundColor: '#8B5CF6',
     borderRadius: 99,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: Math.min(20, screenWidth * 0.05),
+    paddingVertical: Math.min(10, screenWidth * 0.025),
   },
   moodCheckerButtonText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: '600',
     color: '#FFFFFF',
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 20,
+    marginTop: Math.min(24, screenWidth * 0.06),
+    paddingHorizontal: Math.min(20, screenWidth * 0.05),
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Math.min(12, screenWidth * 0.03),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: '600',
     color: '#1F2937',
   },
   // ===== AI Health Checkup main card =====
   aiHealthCheckupSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderRadius: 26,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginTop: 16,
+    borderRadius: Math.min(26, screenWidth * 0.065),
+    paddingHorizontal: Math.min(18, screenWidth * 0.045),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(16, screenWidth * 0.04),
     borderWidth: 1,
     borderColor: '#E9E9E9',
   },
@@ -3965,67 +3995,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: Math.min(10, screenWidth * 0.025),
   },
   aiHealthCheckupTitle: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: '600',
     color: '#111827',
   },
   aiHealthCheckupSeeAll: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: '600',
     color: '#000',
   },
   // ===== Scroll area =====
   aiHealthCheckupScrollContainer: {
-    maxHeight: 260,         // jitna screenshot me visible hai
+    maxHeight: Math.min(260, screenWidth * 0.65),
   },
   healthChecksContainer: {
-    paddingVertical: 4,
+    paddingVertical: Math.min(4, screenWidth * 0.01),
   },
   // ===== Individual health check pill =====
   healthCheckItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: Math.min(12, screenWidth * 0.03),
+    paddingHorizontal: Math.min(16, screenWidth * 0.04),
     borderRadius: 999,      // poora pill shape
-    marginBottom: 10,
+    marginBottom: Math.min(10, screenWidth * 0.025),
   },
   healthCheckIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: Math.min(40, screenWidth * 0.1),
+    height: Math.min(40, screenWidth * 0.1),
+    borderRadius: Math.min(20, screenWidth * 0.05),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: Math.min(12, screenWidth * 0.03),
   },
   healthCheckIconImage: {
-    width: 24,
-    height: 24,
+    width: Math.min(24, screenWidth * 0.06),
+    height: Math.min(24, screenWidth * 0.06),
   },
   healthCheckContent: {
     flex: 1,
     justifyContent: 'center',
   },
   healthCheckTitle: {
-    fontSize: 15,
+    fontSize: Math.min(15, screenWidth * 0.0375),
     fontWeight: '700',
   },
   healthCheckSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: Math.min(13, screenWidth * 0.033),
+    marginTop: Math.min(2, screenWidth * 0.005),
   },
   healthCheckArrow: {
     marginLeft: 8,
   },
   allFeaturesSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderRadius: 20,
-    marginHorizontal: 20,
-    marginTop: 24,
-    padding: 20,
+    borderRadius: Math.min(20, screenWidth * 0.05),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
+    marginTop: Math.min(24, screenWidth * 0.06),
+    padding: Math.min(20, screenWidth * 0.05),
     borderWidth: 1,
     borderColor: '#E9E9E9',
   },
@@ -4033,15 +4063,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: Math.min(16, screenWidth * 0.04),
   },
   allFeaturesTitle: {
-    fontSize: 21,
+    fontSize: Math.min(21, screenWidth * 0.0525),
     fontWeight: '400',
     color: '#1F2937',
   },
   allFeaturesSeeAll: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#1F2937',
     fontWeight: '500',
   },
@@ -4054,26 +4084,29 @@ const styles = StyleSheet.create({
   featureItem: {
     width: '23%', // 4 items per row with spacing
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: Math.min(20, screenWidth * 0.05),
+    minHeight: Math.min(100, screenWidth * 0.25),
   },
   featureIconImage: {
-    width: 48.04189682006836,
-    height: 48.04189682006836,
+    width: Math.min(48, screenWidth * 0.12),
+    height: Math.min(48, screenWidth * 0.12),
   },
   featureIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: Math.min(64, screenWidth * 0.16),
+    height: Math.min(64, screenWidth * 0.16),
+    borderRadius: Math.min(32, screenWidth * 0.08),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Math.min(8, screenWidth * 0.02),
   },
   featureTitle: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.038),
     color: '#1F2937',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: Math.min(20, screenWidth * 0.048),
     fontWeight: '400',
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
   // ===== Eye Health Modal Styles =====
   modalOverlay: {
@@ -4086,8 +4119,8 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 400,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: Math.min(24, screenWidth * 0.06),
+    padding: Math.min(24, screenWidth * 0.06),
     alignItems: 'center',
   },
   modalHeader: {
@@ -4095,69 +4128,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: Math.min(20, screenWidth * 0.05),
   },
   modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: Math.min(32, screenWidth * 0.08),
+    height: Math.min(32, screenWidth * 0.08),
+    borderRadius: Math.min(16, screenWidth * 0.04),
     backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalInfoButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: Math.min(32, screenWidth * 0.08),
+    height: Math.min(32, screenWidth * 0.08),
+    borderRadius: Math.min(16, screenWidth * 0.04),
     backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalIconContainer: {
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
     alignItems: 'center',
   },
   eyeIconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: Math.min(120, screenWidth * 0.3),
+    height: Math.min(120, screenWidth * 0.3),
+    borderRadius: Math.min(60, screenWidth * 0.15),
     backgroundColor: '#E8E0F5',
     borderWidth: 2,
     borderColor: '#9C27B0',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Math.min(20, screenWidth * 0.05),
   },
   eyeIcon: {
-    width: 80,
-    height: 80,
+    width: Math.min(80, screenWidth * 0.2),
+    height: Math.min(80, screenWidth * 0.2),
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: Math.min(24, screenWidth * 0.06),
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 12,
+    marginBottom: Math.min(12, screenWidth * 0.03),
     textAlign: 'center',
   },
   modalDescription: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
-    paddingHorizontal: 8,
+    lineHeight: Math.min(20, screenWidth * 0.05),
+    marginBottom: Math.min(32, screenWidth * 0.08),
+    paddingHorizontal: Math.min(8, screenWidth * 0.02),
   },
   modalButtonsContainer: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: Math.min(16, screenWidth * 0.04),
   },
   modalButtonGallery: {
     flex: 1,
-    height: 60,
-    borderRadius: 16,
+    height: Math.min(60, screenWidth * 0.15),
+    borderRadius: Math.min(16, screenWidth * 0.04),
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#FF4444',
@@ -4166,8 +4199,8 @@ const styles = StyleSheet.create({
   },
   modalButtonCamera: {
     flex: 1,
-    height: 60,
-    borderRadius: 16,
+    height: Math.min(60, screenWidth * 0.15),
+    borderRadius: Math.min(16, screenWidth * 0.04),
     backgroundColor: '#2196F3',
     justifyContent: 'center',
     alignItems: 'center',
@@ -4178,23 +4211,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E1EE5',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Math.min(20, screenWidth * 0.05),
   },
   guidelinesModalContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: Math.min(24, screenWidth * 0.06),
+    padding: Math.min(24, screenWidth * 0.06),
     width: '100%',
     maxWidth: 400,
     position: 'relative',
   },
   guidelinesBackButton: {
     position: 'absolute',
-    top: 20,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    top: Math.min(20, screenWidth * 0.05),
+    left: Math.min(20, screenWidth * 0.05),
+    width: Math.min(40, screenWidth * 0.1),
+    height: Math.min(40, screenWidth * 0.1),
+    borderRadius: Math.min(20, screenWidth * 0.05),
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
@@ -4202,45 +4235,45 @@ const styles = StyleSheet.create({
   },
   guidelinesIconContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: Math.min(20, screenWidth * 0.05),
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   guidelinesIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: Math.min(80, screenWidth * 0.2),
+    height: Math.min(80, screenWidth * 0.2),
+    borderRadius: Math.min(40, screenWidth * 0.1),
     backgroundColor: '#FF9800',
     justifyContent: 'center',
     alignItems: 'center',
   },
   guidelinesQuestionMark: {
-    fontSize: 48,
+    fontSize: Math.min(48, screenWidth * 0.12),
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   guidelinesTitle: {
-    fontSize: 24,
+    fontSize: Math.min(24, screenWidth * 0.06),
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   guidelinesInstructions: {
-    gap: 16,
+    gap: Math.min(16, screenWidth * 0.04),
   },
   guidelinesInstructionItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 8,
+    paddingHorizontal: Math.min(8, screenWidth * 0.02),
   },
   guidelinesBullet: {
-    marginTop: 6,
-    marginRight: 12,
+    marginTop: Math.min(6, screenWidth * 0.015),
+    marginRight: Math.min(12, screenWidth * 0.03),
   },
   guidelinesInstructionText: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#374151',
-    lineHeight: 24,
+    lineHeight: Math.min(24, screenWidth * 0.06),
     flex: 1,
   },
 });

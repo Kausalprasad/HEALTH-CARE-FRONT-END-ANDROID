@@ -20,8 +20,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { createVault } from '../../api/vaultApi';
 import { auth } from '../../api/firebaseConfig';
 import { useFonts, Inter_400Regular, Inter_300Light } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function VaultCreateScreen({ navigation }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -137,7 +139,7 @@ export default function VaultCreateScreen({ navigation }) {
 
   const validateForm = () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Please enter your full name');
+      Alert.alert(t('alerts.error'), t('vault.fullName'));
       return false;
     }
 
@@ -145,23 +147,23 @@ export default function VaultCreateScreen({ navigation }) {
     const confirmPinString = confirmPin.join('');
 
     if (pinString.length !== 4) {
-      Alert.alert('Error', 'PIN must be exactly 4 digits');
+      Alert.alert(t('alerts.error'), t('vault.pinTooShort'));
       return false;
     }
 
     if (pinString !== confirmPinString) {
-      Alert.alert('Error', 'PINs do not match');
+      Alert.alert(t('alerts.error'), t('vault.pinMismatch'));
       return false;
     }
 
     if (!recoveryEmail.trim()) {
-      Alert.alert('Error', 'Please enter a recovery email');
+      Alert.alert(t('alerts.error'), t('vault.recoveryEmail'));
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(recoveryEmail)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      Alert.alert(t('alerts.error'), t('validation.invalidEmail'));
       return false;
     }
 
@@ -191,17 +193,17 @@ export default function VaultCreateScreen({ navigation }) {
         navigation.replace('VaultCreated');
       } else {
         Alert.alert(
-          'Error Creating Vault', 
-          result.message || 'Failed to create vault. Please try again.',
-          [{ text: 'OK' }]
+          t('alerts.error'), 
+          result.message || t('alerts.failedToSave'),
+          [{ text: t('common.ok') }]
         );
       }
     } catch (error) {
       console.error('Create vault error:', error);
       Alert.alert(
-        'Error', 
-        error.message || 'An unexpected error occurred. Please check your internet connection and try again.',
-        [{ text: 'OK' }]
+        t('alerts.error'), 
+        error.message || t('alerts.somethingWentWrong'),
+        [{ text: t('common.ok') }]
       );
     } finally {
       setLoading(false);
@@ -233,20 +235,20 @@ export default function VaultCreateScreen({ navigation }) {
                   style={styles.vaultLogo}
                   resizeMode="contain"
                 />
-                <Text style={styles.brandName}>Health Vault</Text>
+                <Text style={styles.brandName}>{t('vault.title')}</Text>
               </View>
 
               {/* Title */}
-              <Text style={styles.title}>Create your vault</Text>
+              <Text style={styles.title}>{t('vault.createNewVault')}</Text>
               <Text style={styles.subtitle}>
-                Secure your health documents with a private space designed just for you.
+                {t('vault.vaultDescription2')}
               </Text>
 
               {/* Full Name Input */}
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Full name"
+                  placeholder={t('vault.fullName')}
                   value={fullName}
                   onChangeText={setFullName}
                   placeholderTextColor="#999999"
@@ -264,7 +266,7 @@ export default function VaultCreateScreen({ navigation }) {
                 ]}
               >
                 <Text style={styles.label}>
-                  {isConfirmMode ? 'Confirm vault PIN' : 'Create vault PIN'}
+                  {isConfirmMode ? t('vault.confirmPin') : t('vault.createPin')}
                 </Text>
                 <View style={styles.pinContainer}>
                   {(isConfirmMode ? confirmPin : pin).map((digit, index) => (
@@ -295,7 +297,7 @@ export default function VaultCreateScreen({ navigation }) {
                       }, 100);
                     }}
                   >
-                    <Text style={styles.editButtonText}>Edit PIN</Text>
+                    <Text style={styles.editButtonText}>{t('common.edit')} PIN</Text>
                   </TouchableOpacity>
                 )}
               </Animated.View>
@@ -304,7 +306,7 @@ export default function VaultCreateScreen({ navigation }) {
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Recovery email"
+                  placeholder={t('vault.recoveryEmail')}
                   value={recoveryEmail}
                   onChangeText={setRecoveryEmail}
                   keyboardType="email-address"
@@ -326,7 +328,7 @@ export default function VaultCreateScreen({ navigation }) {
                     <Ionicons name="checkmark" size={16} color="#2196F3" />
                   )}
                 </View>
-                <Text style={styles.checkboxLabel}>Use same as main</Text>
+                <Text style={styles.checkboxLabel}>{t('vault.useSameAsMain')}</Text>
               </TouchableOpacity>
 
               {/* Create Button */}
@@ -337,7 +339,7 @@ export default function VaultCreateScreen({ navigation }) {
                 activeOpacity={0.8}
               >
                 <Text style={styles.createButtonText}>
-                  {loading ? 'Creating...' : 'Create'}
+                  {loading ? t('common.loading') : t('vault.create')}
                 </Text>
               </TouchableOpacity>
             </View>

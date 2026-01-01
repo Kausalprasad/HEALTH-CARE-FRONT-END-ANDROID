@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
   Alert,
   ActivityIndicator,
   StatusBar,
-  Platform
+  Platform,
+  SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../../config/config';
 
@@ -19,6 +22,8 @@ export default function PrescriptionRemindersScreen({ navigation }) {
   const [completedDosages, setCompletedDosages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
+  const [activeTab, setActiveTab] = useState('Scheduled');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchUserToken();
@@ -152,171 +157,271 @@ export default function PrescriptionRemindersScreen({ navigation }) {
     );
   };
 
-  const DosageCard = ({ item, isCompleted }) => (
-    <View style={styles.card}>
-      <TouchableOpacity
-        style={[styles.checkbox, isCompleted && styles.checkboxChecked]}
-        onPress={() => toggleDosage(item.id, isCompleted)}
-      >
-        {isCompleted && <Ionicons name="checkmark" size={16} color="#fff" />}
-      </TouchableOpacity>
-      
-      <View style={styles.cardContent}>
-        <View style={styles.cardLeft}>
+  const calculateDaysLeft = (endDate) => {
+    if (!endDate) return 0;
+    const end = new Date(endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    const diffTime = end - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const filterDosages = (dosages) => {
+    if (!searchQuery) return dosages;
+    return dosages.filter(item => 
+      item.prescriptionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.prescriptionType.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  const DosageCard = ({ item, isCompleted }) => {
+    const daysLeft = calculateDaysLeft(item.endDate);
+    
+    return (
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={[styles.checkbox, isCompleted && styles.checkboxChecked]}
+          onPress={() => toggleDosage(item.id, isCompleted)}
+        >
+          {isCompleted && <Ionicons name="checkmark" size={16} color="#fff" />}
+        </TouchableOpacity>
+        
+        <View style={styles.cardContent}>
           <Text style={styles.prescriptionName}>
-            {item.prescriptionName} - Dose {item.dosageNumber}
+            {item.prescriptionName} - {item.dosageNumber} Dose
           </Text>
-          <Text style={styles.prescriptionType}>{item.prescriptionType}</Text>
-          <View style={styles.dosageInfo}>
-            <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={14} color="#666" />
-              <Text style={styles.infoText}>{item.time}</Text>
-            </View>
-            <View style={styles.separator}>
-              <Text style={styles.separatorText}>|</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="medical-outline" size={14} color="#666" />
-              <Text style={styles.infoText}>{item.dose}</Text>
-            </View>
-          </View>
+          <Text style={styles.prescriptionInfo}>
+            {item.prescriptionType} | {daysLeft} days left
+          </Text>
         </View>
       </View>
-
-      <TouchableOpacity
-        style={styles.deleteIcon}
-        onPress={() => deletePrescription(item.prescriptionId)}
-      >
-        <Ionicons name="trash-outline" size={20} color="#FF5252" />
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7C6FDC" />
-        <Text style={styles.loadingText}>Loading prescriptions...</Text>
-      </View>
+      <LinearGradient
+        colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+        locations={[0, 0.3, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7C6FDC" />
+          <Text style={styles.loadingText}>Loading prescriptions...</Text>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
+  const displayDosages = activeTab === 'Scheduled' ? filterDosages(upcomingDosages) : filterDosages(completedDosages);
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      <View style={styles.headerSafeArea}>
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Prescription Reminders</Text>
+          <Text style={styles.headerTitle}>My Medication Reminder</Text>
           <View style={styles.headerPlaceholder} />
         </View>
-      </View>
 
-      <ScrollView style={styles.content}>
-        <Text style={styles.sectionTitle}>Upcoming</Text>
-        
-        {upcomingDosages.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>💊</Text>
-            <Text style={styles.emptyText}>No upcoming dosages</Text>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#BDBDBD" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search"
+              placeholderTextColor="#BDBDBD"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
           </View>
-        ) : (
-          upcomingDosages.map(item => (
-            <DosageCard key={item.id} item={item} isCompleted={false} />
-          ))
-        )}
+        </View>
 
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('Scheduled')}
+          >
+            <Text style={[styles.tabText, activeTab === 'Scheduled' && styles.tabTextActive]}>
+              Scheduled
+            </Text>
+            {activeTab === 'Scheduled' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('Completed')}
+          >
+            <Text style={[styles.tabText, activeTab === 'Completed' && styles.tabTextActive]}>
+              Completed
+            </Text>
+            {activeTab === 'Completed' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+        </View>
+
+        {/* Medication List */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {displayDosages.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>💊</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'Scheduled' ? 'No scheduled medications' : 'No completed medications'}
+              </Text>
+            </View>
+          ) : (
+            displayDosages.map(item => (
+              <DosageCard 
+                key={item.id} 
+                item={item} 
+                isCompleted={activeTab === 'Completed'} 
+              />
+            ))
+          )}
+        </ScrollView>
+
+        {/* Set New Reminder Button */}
         <TouchableOpacity
-          style={styles.addButton}
+          style={styles.setNewReminderButton}
           onPress={() => navigation.navigate('AddPrescriptionScreen', { 
             userToken, 
             onRefresh: fetchPrescriptions 
           })}
         >
-          <View style={styles.addButtonIcon}>
-            <Ionicons name="add" size={20} color="#fff" />
-          </View>
-          <Text style={styles.addButtonText}>Add Prescription</Text>
+          <Text style={styles.setNewReminderText}>Set New Reminder</Text>
         </TouchableOpacity>
-
-        {completedDosages.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Completed</Text>
-            {completedDosages.map(item => (
-              <DosageCard key={item.id} item={item} isCompleted={true} />
-            ))}
-          </>
-        )}
-      </ScrollView>
-    </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
   },
-  headerSafeArea: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
+    marginTop: StatusBar.currentHeight || 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 28,
-    color: '#000000',
-    fontWeight: '300',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
-    width: 50,
+    width: 40,
   },
-  content: {
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(233, 233, 233, 1)',
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
     flex: 1,
-    padding: 20,
+    fontSize: 14,
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  sectionTitle: {
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 24,
+  },
+  tab: {
+    paddingBottom: 8,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabTextActive: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000000',
-    marginBottom: 15,
-    marginTop: 10,
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabUnderline: {
+    height: 2,
+    backgroundColor: '#9C27B0',
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(233, 233, 233, 1)',
   },
   checkbox: {
     width: 24,
@@ -329,13 +434,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#7C6FDC',
-    borderColor: '#7C6FDC',
+    backgroundColor: '#9C27B0',
+    borderColor: '#9C27B0',
   },
   cardContent: {
-    flex: 1,
-  },
-  cardLeft: {
     flex: 1,
   },
   prescriptionName: {
@@ -343,69 +445,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
     marginBottom: 4,
+    fontFamily: 'Inter',
   },
-  prescriptionType: {
-    fontSize: 13,
-    color: '#7C6FDC',
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  dosageInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
+  prescriptionInfo: {
     fontSize: 13,
     color: '#666',
-    marginLeft: 4,
-  },
-  separator: {
-    marginHorizontal: 8,
-  },
-  separatorText: {
-    fontSize: 13,
-    color: '#E0E0E0',
-  },
-  deleteIcon: {
-    padding: 8,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  addButtonIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#7C6FDC',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  addButtonText: {
-    fontSize: 16,
-    color: '#7C6FDC',
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
+    fontFamily: 'Inter',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -418,5 +463,27 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#999',
+    fontFamily: 'Inter',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+    fontFamily: 'Inter',
+  },
+  setNewReminderButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 30,
+    padding: 16,
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  setNewReminderText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
 });

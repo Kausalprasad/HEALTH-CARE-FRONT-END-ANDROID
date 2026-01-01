@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, Inter_300Light, Inter_400Regular } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function VaultWelcomeScreen({ navigation }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -61,19 +63,17 @@ export default function VaultWelcomeScreen({ navigation }) {
               style={styles.vaultLogo}
               resizeMode="contain"
             />
-            <Text style={brandNameStyle}>Health Vault</Text>
+            <Text style={brandNameStyle}>{t('vault.title')}</Text>
           </View>
 
           {/* Main Heading */}
           <View style={styles.headingContainer}>
-            <Text style={headingStyle}>Your Health Records, Reimagined</Text>
+            <Text style={headingStyle}>{t('vault.yourHealthRecords')}</Text>
           </View>
 
           {/* Description */}
           <Text style={descriptionStyle}>
-            A single, protected space for prescriptions,{'\n'}
-            reports, and bills, instantly analyzed by AI{'\n'}
-            when you need it.
+            {t('vault.vaultDescription2')}
           </Text>
         </View>
       </LinearGradient>

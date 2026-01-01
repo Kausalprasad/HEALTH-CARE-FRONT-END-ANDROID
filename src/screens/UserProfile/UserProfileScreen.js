@@ -11,8 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../../config/config';
+import { useTranslation } from 'react-i18next';
 
 const ProfileSetupScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [profileStatus, setProfileStatus] = useState(null);
 
@@ -165,7 +167,7 @@ const ProfileSetupScreen = ({ navigation }) => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7c7ce0" />
-          <Text style={styles.loadingText}>Checking profile status...</Text>
+          <Text style={styles.loadingText}>{t('profile.checkingStatus')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -186,11 +188,11 @@ const ProfileSetupScreen = ({ navigation }) => {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Profile Complete!</Text>
+          <Text style={styles.title}>{t('profile.profileComplete')}</Text>
 
           {/* Description */}
           <Text style={styles.description}>
-            Your profile is all set up.{'\n'}You can view or edit your{'\n'}information anytime.
+            {t('profile.profileCompleteDesc')}
           </Text>
 
           {/* Spacer */}
@@ -202,7 +204,7 @@ const ProfileSetupScreen = ({ navigation }) => {
             onPress={handleViewProfile}
             activeOpacity={0.8}
           >
-            <Text style={styles.createButtonText}>View Profile</Text>
+            <Text style={styles.createButtonText}>{t('profile.viewProfile')}</Text>
           </TouchableOpacity>
 
           {/* Back to Dashboard */}
@@ -211,7 +213,7 @@ const ProfileSetupScreen = ({ navigation }) => {
             onPress={handleSkipForNow}
             activeOpacity={0.6}
           >
-            <Text style={styles.skipButtonText}>Back to Dashboard</Text>
+            <Text style={styles.skipButtonText}>{t('profile.backToDashboard')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -237,16 +239,16 @@ const ProfileSetupScreen = ({ navigation }) => {
         {/* Title */}
         <Text style={styles.title}>
           {profileStatus && profileStatus.exists ? 
-            'Complete Your\nProfile' : 
-            'Let\'s Set Up\nyour Profile'
+            t('profile.completeYour') : 
+            t('profile.letsSetup')
           }
         </Text>
 
         {/* Description */}
         <Text style={styles.description}>
           {profileStatus && profileStatus.exists ? 
-            'Finish setting up your profile\nto access all features.' :
-            'Add your details once and\naccess all your medical\ninfo easily.'
+            t('profile.finishSetup') :
+            t('profile.setupDesc')
           }
         </Text>
 
@@ -261,8 +263,8 @@ const ProfileSetupScreen = ({ navigation }) => {
         >
           <Text style={styles.createButtonText}>
             {profileStatus && profileStatus.exists ? 
-              'Continue Profile' : 
-              'Create Profile'
+              t('profile.continueProfile') : 
+              t('profile.createProfile')
             }
           </Text>
         </TouchableOpacity>
@@ -273,7 +275,7 @@ const ProfileSetupScreen = ({ navigation }) => {
           onPress={handleSkipForNow}
           activeOpacity={0.6}
         >
-          <Text style={styles.skipButtonText}>Skip for now</Text>
+          <Text style={styles.skipButtonText}>{t('profile.skipForNow')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

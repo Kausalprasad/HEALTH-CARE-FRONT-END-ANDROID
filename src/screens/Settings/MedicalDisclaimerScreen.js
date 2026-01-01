@@ -13,9 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { useTranslation } from 'react-i18next';
 
 export default function MedicalDisclaimerScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -67,8 +69,8 @@ export default function MedicalDisclaimerScreen() {
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.aboutTitle}>Disclaimer</Text>
-          <Text style={styles.appTagline}>Last updated: {currentDate}</Text>
+          <Text style={styles.aboutTitle}>{t('medicalDisclaimer.title')}</Text>
+          <Text style={styles.appTagline}>{t('medicalDisclaimer.lastUpdated')} {currentDate}</Text>
         </View>
 
         {/* Content Card */}
@@ -81,106 +83,106 @@ export default function MedicalDisclaimerScreen() {
 
             {/* Section 1 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• General wellness product</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.generalWellness')}</Text>
               <Text style={styles.sectionText}>
-                HealNova is a general wellness application designed to provide educational health information and encourage healthy lifestyle choices. This app is NOT a medical device and is NOT regulated by the FDA or other medical device authorities.
+                {t('medicalDisclaimer.generalWellnessText')}
               </Text>
             </View>
 
             {/* Section 2 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Not for medical diagnosis</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.notForDiagnosis')}</Text>
               <Text style={styles.sectionText}>
-                HealNova does NOT diagnose, treat, cure, or prevent any disease or medical condition. All AI-powered health analysis features are screening tools for wellness awareness only.
+                {t('medicalDisclaimer.notForDiagnosisText')}
               </Text>
             </View>
 
             {/* Section 3 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Not professional medical advice</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.notProfessionalAdvice')}</Text>
               <Text style={styles.sectionText}>
-                Information provided by HealNova is for informational and educational purposes only and should NOT be considered professional medical advice, diagnosis, or treatment.
+                {t('medicalDisclaimer.notProfessionalAdviceText')}
               </Text>
             </View>
 
             {/* Remaining sections - keeping content but updating structure */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• No doctor-patient relationship</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.noDoctorPatient')}</Text>
               <Text style={styles.sectionText}>
-                Using HealNova does not create a physician-patient or professional healthcare relationship between you and MatchBestSoftware Pvt Ltd, HealNova, or any healthcare provider.
+                {t('medicalDisclaimer.noDoctorPatientText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Accuracy limitations</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.accuracyLimitations')}</Text>
               <Text style={styles.sectionText}>
-                AI analysis results depend heavily on image quality, lighting, and focus. Results may be inaccurate or incomplete. ALWAYS verify findings with qualified healthcare professionals.
+                {t('medicalDisclaimer.accuracyLimitationsText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Individual results vary</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.individualResults')}</Text>
               <Text style={styles.sectionText}>
-                Health information and AI analysis results will vary from person to person. We make NO guarantees about accuracy, reliability, or specific health outcomes.
+                {t('medicalDisclaimer.individualResultsText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Medical emergencies</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.medicalEmergencies')}</Text>
               <Text style={styles.sectionText}>
-                IF YOU THINK YOU HAVE A MEDICAL EMERGENCY, CALL YOUR LOCAL EMERGENCY NUMBER IMMEDIATELY. United States: 911, India: 102 (Ambulance) or 108 (Emergency). HealNova is NOT designed for emergency medical situations.
+                {t('medicalDisclaimer.medicalEmergenciesText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Not FDA-approved or cleared</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.notFdaApproved')}</Text>
               <Text style={styles.sectionText}>
-                Statements and features in HealNova have NOT been evaluated by the U.S. Food and Drug Administration (FDA), Central Drugs Standard Control Organization (CDSCO), or other regulatory authorities. HealNova's AI features are NOT intended to diagnose, treat, cure, or prevent any disease.
+                {t('medicalDisclaimer.notFdaApprovedText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Third-party services</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.thirdPartyServices')}</Text>
               <Text style={styles.sectionText}>
-                HealNova uses third-party AI services for image analysis. We are not responsible for the accuracy or reliability of these third-party algorithms.
+                {t('medicalDisclaimer.thirdPartyServicesText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Limitation of liability</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.limitationLiability')}</Text>
               <Text style={styles.sectionText}>
-                TO THE FULLEST EXTENT PERMITTED BY LAW, MatchBestSoftware Pvt Ltd SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF HEALNOVA OR RELIANCE ON ITS CONTENT.
+                {t('medicalDisclaimer.limitationLiabilityText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Use at your own risk</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.useAtOwnRisk')}</Text>
               <Text style={styles.sectionText}>
-                Any action you take based on information provided by HealNova is strictly at your own risk. You assume full responsibility for all decisions regarding your health and medical care.
+                {t('medicalDisclaimer.useAtOwnRiskText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Consult healthcare professionals</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.consultProfessionals')}</Text>
               <Text style={styles.sectionText}>
-                For any health concerns, symptoms, or medical conditions, consult licensed physicians, specialists, or healthcare providers. Obtain proper diagnostic tests and examinations. Follow professional medical advice. Never delay seeking medical care based on app results.
+                {t('medicalDisclaimer.consultProfessionalsText')}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Contact information</Text>
+              <Text style={styles.sectionTitle}>{t('medicalDisclaimer.contactInformation')}</Text>
               <Text style={styles.sectionText}>
-                For questions about this disclaimer:
+                {t('medicalDisclaimer.contactQuestions')}
               </Text>
               <View style={styles.contactBox}>
-                <Text style={styles.contactText}>MatchBestSoftware Pvt Ltd</Text>
-                <Text style={styles.contactText}>Email: contact@matchbestsoftware.com</Text>
-                <Text style={styles.contactText}>Phone: +91 97737 73629</Text>
-                <Text style={styles.contactText}>Website: https://healnova.ai</Text>
+                <Text style={styles.contactText}>{t('about.companyName')}</Text>
+                <Text style={styles.contactText}>{t('about.email')} {t('about.emailValue')}</Text>
+                <Text style={styles.contactText}>{t('about.phone')} {t('about.phoneValue')}</Text>
+                <Text style={styles.contactText}>{t('about.website')} {t('about.websiteValue')}</Text>
               </View>
               <View style={styles.emergencyBox}>
                 <Text style={styles.emergencyText}>
-                  FOR MEDICAL EMERGENCIES, CALL 911 (US) OR 102/108 (INDIA) IMMEDIATELY.
+                  {t('medicalDisclaimer.emergencyCall')}
                 </Text>
               </View>
             </View>
@@ -188,7 +190,7 @@ export default function MedicalDisclaimerScreen() {
             {/* Acknowledgment */}
             <View style={styles.acknowledgmentBox}>
               <Text style={styles.acknowledgmentText}>
-                BY USING HEALNOVA, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO THIS MEDICAL DISCLAIMER.
+                {t('medicalDisclaimer.acknowledgment')}
               </Text>
             </View>
           </ScrollView>

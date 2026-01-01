@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, Inter_400Regular,Inter_300Light } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function VaultCreatedScreen({ navigation }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -38,13 +40,13 @@ export default function VaultCreatedScreen({ navigation }) {
               style={styles.vaultLogo}
               resizeMode="contain"
             />
-            <Text style={styles.brandName}>Health Vault</Text>
+            <Text style={styles.brandName}>{t('vault.title')}</Text>
           </View>
 
           {/* Success Message */}
-          <Text style={styles.successTitle}>Vault Created!</Text>
+          <Text style={styles.successTitle}>{t('vault.vaultCreated')}</Text>
           <Text style={styles.successMessage}>
-            Your documents are now secure and ready to use.
+            {t('vault.vaultCreatedMessage')}
           </Text>
 
           {/* Login Button */}
@@ -53,7 +55,7 @@ export default function VaultCreatedScreen({ navigation }) {
             onPress={handleLogin}
             activeOpacity={0.8}
           >
-            <Text style={styles.loginButtonText}>Login</Text>
+            <Text style={styles.loginButtonText}>{t('auth.login')}</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>

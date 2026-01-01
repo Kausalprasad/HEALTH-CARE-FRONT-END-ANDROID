@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,8 +18,10 @@ import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../../config/config';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const ProfileSetupStep1 = ({ navigation, route }) => {
+  const { t } = useTranslation();
   // Check if in edit mode
   const { params } = route;
   const isEdit = params?.isEdit || false;
@@ -40,7 +42,11 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const genderOptions = ['Male', 'Female', 'Other'];
+  const genderOptions = useMemo(() => [
+    { label: t('riskAssessment.male'), value: 'Male' },
+    { label: t('riskAssessment.female'), value: 'Female' },
+    { label: t('riskAssessment.other'), value: 'Other' }
+  ], [t]);
   const bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   // Format date for display (DD/MM/YYYY)
@@ -111,7 +117,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
     const { status: galleryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (cameraStatus !== 'granted' || galleryStatus !== 'granted') {
-      Alert.alert('Permissions Required', 'Camera and gallery permissions are needed to upload photos.');
+      Alert.alert(t('profile.permissionsRequired'), t('profile.permissionsMessage'));
       return false;
     }
     return true;
@@ -123,12 +129,12 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
     if (!hasPermissions) return;
 
     Alert.alert(
-      'Select Photo',
-      'Choose how you want to select your profile photo',
+      t('profile.selectPhoto'),
+      t('profile.selectPhotoMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Camera', onPress: () => openCamera() },
-        { text: 'Gallery', onPress: () => openGallery() },
+        { text: t('profile.cancel'), style: 'cancel' },
+        { text: t('profile.camera'), onPress: () => openCamera() },
+        { text: t('profile.gallery'), onPress: () => openGallery() },
       ]
     );
   };
@@ -155,7 +161,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Camera error:', error);
-      Alert.alert('Error', 'Failed to open camera');
+      Alert.alert(t('profile.error'), t('profile.failedToOpenCamera'));
     }
   };
 
@@ -181,7 +187,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error('Gallery error:', error);
-      Alert.alert('Error', 'Failed to open gallery');
+      Alert.alert(t('profile.error'), t('profile.failedToOpenGallery'));
     }
   };
 
@@ -192,7 +198,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
         setPhotoUploading(false);
         return;
       }
@@ -234,13 +240,13 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       if (data.success) {
         const photoUrl = `${BASE_URL}${data.data.profilePhoto.url}`;
         setProfilePhoto(photoUrl);
-        Alert.alert('Success', 'Profile photo updated successfully!');
+        Alert.alert(t('profile.success'), t('profile.photoUpdated'));
       } else {
-        Alert.alert('Error', data.message || 'Failed to upload photo');
+        Alert.alert(t('profile.error'), data.message || t('profile.failedToOpenGallery'));
       }
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Error', `Failed to upload photo: ${error.message}`);
+      Alert.alert(t('profile.error'), `${t('profile.failedToOpenGallery')}: ${error.message}`);
     } finally {
       setPhotoUploading(false);
     }
@@ -249,18 +255,18 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
   // Delete photo
   const deletePhoto = async () => {
     Alert.alert(
-      'Delete Photo',
-      'Are you sure you want to remove your profile photo?',
+      t('profile.deletePhoto'),
+      t('profile.deletePhotoConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('profile.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('profile.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               const user = auth.currentUser;
               if (!user) {
-                Alert.alert('Error', 'User not authenticated');
+                Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
                 return;
               }
               const token = await user.getIdToken();
@@ -274,13 +280,13 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
               const data = await response.json();
               if (data.success) {
                 setProfilePhoto(null);
-                Alert.alert('Success', 'Profile photo removed');
+                Alert.alert(t('profile.success'), t('profile.photoRemoved'));
               } else {
-                Alert.alert('Error', data.message || 'Failed to delete photo');
+                Alert.alert(t('profile.error'), data.message || t('profile.failedToOpenGallery'));
               }
             } catch (error) {
               console.error('Delete error:', error);
-              Alert.alert('Error', 'Failed to delete photo');
+              Alert.alert(t('profile.error'), t('profile.failedToOpenGallery'));
             }
           },
         },
@@ -293,7 +299,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
       // Get token from Firebase Auth
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
         return;
       }
       const token = await user.getIdToken();
@@ -309,7 +315,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
 
       // Check if payload is empty
       if (Object.keys(payload).length === 0) {
-        Alert.alert('Info', 'Please fill at least one field to update');
+        Alert.alert(t('profile.info'), t('profile.fillAtLeastOne'));
         return;
       }
 
@@ -337,17 +343,17 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
         // Create profile with all required fields for step1
         // Check if we have minimum required data
         if (!payload.fullName && !user.displayName) {
-          Alert.alert('Error', 'Full name is required to create profile');
+          Alert.alert(t('profile.error'), t('profile.fullNameRequired'));
           return;
         }
         
         if (!payload.dateOfBirth) {
-          Alert.alert('Error', 'Date of birth is required to create profile');
+          Alert.alert(t('profile.error'), t('profile.dobRequired'));
           return;
         }
         
         if (!payload.gender) {
-          Alert.alert('Error', 'Gender is required to create profile');
+          Alert.alert(t('profile.error'), t('profile.genderRequired'));
           return;
         }
         
@@ -389,29 +395,29 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
               }
             }
             
-            Alert.alert('Success', 'Profile created successfully!', [
+            Alert.alert(t('profile.success'), t('profile.profileCreated'), [
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: () => navigation.goBack()
               }
             ]);
             return;
           } else {
-            Alert.alert('Error', createData.message || createData.error || 'Something went wrong');
+            Alert.alert(t('profile.error'), createData.message || createData.error || t('profile.somethingWentWrong'));
             return;
           }
         } else {
-          const errorData = await createResponse.json().catch(() => ({ message: 'Network error' }));
+          const errorData = await createResponse.json().catch(() => ({ message: t('profile.networkError') }));
           console.error('Create Error:', errorData);
-          Alert.alert('Error', errorData.message || errorData.error || 'Failed to create profile');
+          Alert.alert(t('profile.error'), errorData.message || errorData.error || t('profile.somethingWentWrong'));
           return;
         }
       }
 
       if (!finalResponse.ok) {
-        const errorData = await finalResponse.json().catch(() => ({ message: 'Network error' }));
+        const errorData = await finalResponse.json().catch(() => ({ message: t('profile.networkError') }));
         console.error('API Error:', errorData);
-        Alert.alert('Error', errorData.message || errorData.error || `Server error: ${finalResponse.status}`);
+        Alert.alert(t('profile.error'), errorData.message || errorData.error || `Server error: ${finalResponse.status}`);
         return;
       }
 
@@ -430,18 +436,18 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
           }
         }
         
-        Alert.alert('Success', 'Profile updated successfully!', [
+        Alert.alert(t('profile.success'), t('profile.profileUpdated'), [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => navigation.goBack() // Always go back to ProfileView
           }
         ]);
       } else {
-        Alert.alert('Error', data.message || data.error || 'Something went wrong');
+        Alert.alert(t('profile.error'), data.message || data.error || t('profile.somethingWentWrong'));
       }
     } catch (err) {
       console.error('Step 1 error:', err);
-      Alert.alert('Error', err.message || 'Network error. Please check your connection.');
+      Alert.alert(t('profile.error'), err.message || t('profile.networkError'));
     }
   };
 
@@ -461,7 +467,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          Personal Information
+          {t('profile.personalInformation')}
         </Text>
         <View style={styles.placeholder} />
       </View>
@@ -475,25 +481,25 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
         {/* Basic Information Section */}
         <View style={styles.whiteCard}>
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Full Name</Text>
+            <Text style={styles.inputLabel}>{t('profile.fullName')}</Text>
             <TextInput
               style={styles.textInput}
               value={fullName}
               onChangeText={setFullName}
-              placeholder="Full Name"
+              placeholder={t('profile.fullNamePlaceholder')}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Gender</Text>
+            <Text style={styles.inputLabel}>{t('profile.gender')}</Text>
             <TouchableOpacity 
               style={styles.dropdownContainer}
               onPress={() => setShowGenderDropdown(!showGenderDropdown)}
               activeOpacity={0.7}
             >
               <Text style={[styles.dropdownText, !gender && styles.placeholderText]}>
-                {gender || 'Gender'}
+                {gender ? genderOptions.find(g => g.value === gender)?.label || gender : t('profile.genderPlaceholder')}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#999" />
             </TouchableOpacity>
@@ -503,29 +509,29 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
             <View style={styles.dropdownMenu}>
               {genderOptions.map((option) => (
                 <TouchableOpacity
-                  key={option}
+                  key={option.value}
                   style={styles.dropdownItem}
                   onPress={() => {
-                    setGender(option);
+                    setGender(option.value);
                     setShowGenderDropdown(false);
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.dropdownItemText}>{option}</Text>
+                  <Text style={styles.dropdownItemText}>{option.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>DOB</Text>
+            <Text style={styles.inputLabel}>{t('profile.dob')}</Text>
             <TouchableOpacity 
               style={[styles.inputContainer, styles.dateInputContainer]}
               onPress={() => setShowDatePicker(true)}
               activeOpacity={0.7}
             >
               <Text style={[styles.dateInputText, !dateOfBirth && styles.placeholderText]}>
-                {dateOfBirth ? formatDateForDisplay(dateOfBirth) : 'DOB'}
+                {dateOfBirth ? formatDateForDisplay(dateOfBirth) : t('profile.dobPlaceholder')}
               </Text>
               <Ionicons name="calendar-outline" size={20} color="#666" style={styles.inputIcon} />
             </TouchableOpacity>
@@ -541,7 +547,7 @@ const ProfileSetupStep1 = ({ navigation, route }) => {
           onPress={handleSave}
           activeOpacity={0.8}
         >
-          <Text style={styles.nextButtonText}>Save</Text>
+          <Text style={styles.nextButtonText}>{t('profile.save')}</Text>
         </TouchableOpacity>
       </View>
 

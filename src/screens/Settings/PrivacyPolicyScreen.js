@@ -13,9 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { useTranslation } from 'react-i18next';
 
 export default function PrivacyPolicyScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -67,8 +69,8 @@ export default function PrivacyPolicyScreen() {
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.aboutTitle}>Privacy Policy</Text>
-          <Text style={styles.appTagline}>Last updated: {currentDate}</Text>
+          <Text style={styles.aboutTitle}>{t('privacy.title')}</Text>
+          <Text style={styles.appTagline}>{t('privacy.lastUpdated')} {currentDate}</Text>
         </View>
 
         {/* Content Card */}
@@ -103,189 +105,189 @@ export default function PrivacyPolicyScreen() {
 
             {/* Section 1.1 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Important: General wellness application</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.importantWellness')}</Text>
               <Text style={styles.sectionText}>
-                HealNova is a GENERAL WELLNESS APPLICATION that provides educational health information to encourage healthy lifestyle choices and wellness awareness.
+                {t('privacy.importantWellnessText')}
               </Text>
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>✓ WHAT HEALNOVA IS:</Text>
-                <Text style={styles.cardText}>• A wellness screening and health tracking tool</Text>
-                <Text style={styles.cardText}>• An educational health information resource</Text>
-                <Text style={styles.cardText}>• A lifestyle and wellness support application</Text>
+                <Text style={styles.cardTitle}>{t('privacy.whatIs')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.isWellnessTool')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.isEducational')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.isLifestyleSupport')}</Text>
               </View>
               <View style={[styles.card, styles.cardWarning]}>
-                <Text style={[styles.cardTitle, styles.cardTitleWarning]}>✗ WHAT HEALNOVA IS NOT:</Text>
-                <Text style={styles.cardText}>• NOT a medical device (not FDA-cleared or approved)</Text>
-                <Text style={styles.cardText}>• NOT for medical diagnosis or disease detection</Text>
-                <Text style={styles.cardText}>• NOT a substitute for professional medical advice, diagnosis, or treatment</Text>
-                <Text style={styles.cardText}>• NOT for use in medical emergencies</Text>
-                <Text style={styles.cardText}>• NOT intended to replace doctor visits or clinical evaluations</Text>
+                <Text style={[styles.cardTitle, styles.cardTitleWarning]}>{t('privacy.whatIsNot')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.notMedicalDevice')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.notForDiagnosis')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.notSubstitute')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.notForEmergencies')}</Text>
+                <Text style={styles.cardText}>• {t('privacy.notReplaceDoctor')}</Text>
               </View>
             </View>
 
             {/* Section 2 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Information we collect</Text>
-          <Text style={styles.subsectionTitle}>2.1 PERSONAL INFORMATION</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.informationWeCollect')}</Text>
+          <Text style={styles.subsectionTitle}>{t('privacy.personalInfo')}</Text>
           <Text style={styles.sectionText}>
-            When you create an account:
+            {t('privacy.personalInfoText')}
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• Name</Text>
-            <Text style={styles.bulletPoint}>• Email address (verified during registration)</Text>
-            <Text style={styles.bulletPoint}>• Phone number</Text>
-            <Text style={styles.bulletPoint}>• Age and date of birth</Text>
-            <Text style={styles.bulletPoint}>• Gender/sex</Text>
-            <Text style={styles.bulletPoint}>• Password (encrypted)</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.name')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.email')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.phone')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.age')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.gender')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.personalData.password')}</Text>
           </View>
-          <Text style={styles.subsectionTitle}>2.2 HEALTH INFORMATION - IMAGE ANALYSIS</Text>
+          <Text style={styles.subsectionTitle}>{t('privacy.healthInfo')}</Text>
           <Text style={styles.sectionText}>
-            You may upload images for AI wellness screening. Images are temporarily processed and deleted by BytePlus after analysis. We keep wellness assessment results only, not original images.
+            {t('privacy.healthInfoText')}
           </Text>
         </View>
 
             {/* Section 3 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• How we use your information</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.howWeUse')}</Text>
           <Text style={styles.sectionText}>
-            We use your information to:
+            {t('privacy.howWeUseText')}
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• Provide AI wellness screening and generate personalized lifestyle recommendations</Text>
-            <Text style={styles.bulletPoint}>• Display your wellness history and track trends over time</Text>
-            <Text style={styles.bulletPoint}>• Send medication reminders and appointment notifications</Text>
-            <Text style={styles.bulletPoint}>• Improve AI model accuracy (using aggregated, anonymized data only)</Text>
-            <Text style={styles.bulletPoint}>• Provide customer support</Text>
-            <Text style={styles.bulletPoint}>• Send important app updates and security alerts</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.provideScreening')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.displayHistory')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.sendReminders')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.improveAI')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.customerSupport')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.usage.sendUpdates')}</Text>
           </View>
           <View style={styles.cardWarning}>
-            <Text style={styles.cardTitleWarning}>WE DO NOT USE YOUR DATA FOR:</Text>
-            <Text style={styles.cardText}>• Advertising or marketing</Text>
-            <Text style={styles.cardText}>• Selling to third parties</Text>
-            <Text style={styles.cardText}>• Sharing with insurance companies or employers</Text>
-            <Text style={styles.cardText}>• Medical diagnosis or clinical decision-making</Text>
+            <Text style={styles.cardTitleWarning}>{t('privacy.weDoNotUse')}</Text>
+            <Text style={styles.cardText}>• {t('privacy.noAdvertising')}</Text>
+            <Text style={styles.cardText}>• {t('privacy.noSelling')}</Text>
+            <Text style={styles.cardText}>• {t('privacy.noSharing')}</Text>
+            <Text style={styles.cardText}>• {t('privacy.noMedical')}</Text>
           </View>
         </View>
 
             {/* Section 4 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Data security</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.dataSecurity')}</Text>
           <Text style={styles.sectionText}>
-            We protect your information using:
+            {t('privacy.dataSecurityText')}
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• Encryption: All data transmitted using TLS 1.3, stored using AES-256 encryption</Text>
-            <Text style={styles.bulletPoint}>• Secure Infrastructure: Hosted on Amazon Web Services (AWS) with healthcare-grade security</Text>
-            <Text style={styles.bulletPoint}>• Access Controls: Your data is accessible only to you through your password-protected account</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.security.encryption')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.security.infrastructure')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.security.accessControls')}</Text>
           </View>
         </View>
 
             {/* Section 5 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Data sharing</Text>
-          <Text style={styles.subsectionTitle}>5.1 WE DO NOT SELL YOUR DATA</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.dataSharing')}</Text>
+          <Text style={styles.subsectionTitle}>{t('privacy.doNotSell')}</Text>
           <Text style={styles.sectionText}>
-            We will NEVER sell, rent, or trade your personal or health information.
+            {t('privacy.doNotSellText')}
           </Text>
-          <Text style={styles.subsectionTitle}>5.2 THIRD-PARTY SERVICE PROVIDERS</Text>
+          <Text style={styles.subsectionTitle}>{t('privacy.thirdPartyProviders')}</Text>
           <Text style={styles.sectionText}>
-            We share data ONLY with trusted service providers necessary to operate HealNova:
+            {t('privacy.thirdPartyProvidersText')}
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• Amazon Web Services (AWS): Cloud hosting, database storage</Text>
-            <Text style={styles.bulletPoint}>• BytePlus: AI image analysis, AI text analysis</Text>
-            <Text style={styles.bulletPoint}>• Groq API: 24/7 AI Health Information Assistant</Text>
-            <Text style={styles.bulletPoint}>• Google Gemini API: Prescription analysis</Text>
-            <Text style={styles.bulletPoint}>• OCR.space: Prescription text extraction</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.providers.aws')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.providers.byteplus')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.providers.groq')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.providers.gemini')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.providers.ocr')}</Text>
           </View>
         </View>
 
             {/* Section 6 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Your privacy rights</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.privacyRights')}</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bulletPoint}>• Access Your Data: View all your health data within the app</Text>
-            <Text style={styles.bulletPoint}>• Correct Your Data: Update your information in Settings → Profile</Text>
-            <Text style={styles.bulletPoint}>• Delete Your Data: Delete your account and ALL data in Settings → Account → Delete Account</Text>
-            <Text style={styles.bulletPoint}>• Disconnect Wearables: Disconnect HealthKit/Health Connect at any time</Text>
-            <Text style={styles.bulletPoint}>• Opt Out of Model Training: Email contact@matchbestsoftware.com</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.rights.access')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.rights.correct')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.rights.delete')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.rights.disconnect')}</Text>
+            <Text style={styles.bulletPoint}>• {t('privacy.rights.optOut')}</Text>
           </View>
         </View>
 
             {/* Section 7 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Data retention</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.dataRetention')}</Text>
           <Text style={styles.sectionText}>
-            Account information is kept until you delete your account. Wellness image analysis images are temporarily processed and deleted after analysis. Chat history is NOT stored. Deleted account data is immediately deleted from active systems, with backups purged within 30 days.
+            {t('privacy.dataRetentionText')}
           </Text>
         </View>
 
             {/* Section 8 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Children's privacy</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.childrenPrivacy')}</Text>
           <Text style={styles.sectionText}>
-            HealNova is NOT for children under 18. We do not knowingly collect data from anyone under 18. You must verify you are 18+ during registration.
+            {t('privacy.childrenPrivacyText')}
           </Text>
         </View>
 
             {/* Section 9 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• International users</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.internationalUsers')}</Text>
           <Text style={styles.sectionText}>
-            HealNova is currently available in India only. Data is stored in AWS Asia Pacific (Mumbai) region.
+            {t('privacy.internationalUsersText')}
           </Text>
         </View>
 
             {/* Section 10 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• No cookies or tracking</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.noCookies')}</Text>
           <Text style={styles.sectionText}>
-            HealNova does NOT use advertising cookies, tracking cookies, Google Analytics, or any analytics tools. We only use essential session cookies to keep you logged in.
+            {t('privacy.noCookiesText')}
           </Text>
         </View>
 
             {/* Section 12 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Medical disclaimer and limitations</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.medicalDisclaimer')}</Text>
           <View style={styles.cardWarning}>
-            <Text style={styles.cardTitleWarning}>CRITICAL: READ CAREFULLY</Text>
+            <Text style={styles.cardTitleWarning}>{t('privacy.critical')}</Text>
             <Text style={styles.cardText}>
-              HealNova is a general wellness application, NOT a medical device. All AI-generated health information is preliminary and may contain errors. You MUST consult licensed healthcare providers for any health concerns.
+              {t('privacy.criticalText')}
             </Text>
           </View>
         </View>
 
             {/* Section 13 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Changes to this privacy policy</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.changes')}</Text>
           <Text style={styles.sectionText}>
-            We may update this Privacy Policy to reflect new features or legal requirements. You will be notified via email and in-app notification. Significant changes require your acceptance.
+            {t('privacy.changesText')}
           </Text>
         </View>
 
             {/* Section 14 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Contact us</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.contactUs')}</Text>
           <View style={styles.contactBox}>
-            <Text style={styles.contactText}>Email: contact@matchbestsoftware.com</Text>
-            <Text style={styles.contactText}>Phone: +91-9773773629 (Mon-Sat, 10 AM - 6 PM IST)</Text>
-            <Text style={styles.contactText}>Address: Spaze iTech Park, Sector 49, Gurugram, Haryana 122018, India</Text>
-            <Text style={styles.contactText}>Website: https://healnova.ai</Text>
+            <Text style={styles.contactText}>{t('privacy.contactEmail')}</Text>
+            <Text style={styles.contactText}>{t('privacy.contactPhone')}</Text>
+            <Text style={styles.contactText}>{t('privacy.contactAddress')}</Text>
+            <Text style={styles.contactText}>{t('privacy.contactWebsite')}</Text>
           </View>
         </View>
 
             {/* Section 16 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>• Consent</Text>
+              <Text style={styles.sectionTitle}>{t('privacy.consent')}</Text>
           <Text style={styles.sectionText}>
-            By using HealNova, you confirm that you have read and understood this Privacy Policy, understand HealNova is a general wellness application NOT a medical device, and consent to the collection and use of your information as described.
+            {t('privacy.consentText')}
           </Text>
         </View>
 
             {/* Acknowledgment */}
             <View style={styles.acknowledgmentBox}>
               <Text style={styles.acknowledgmentText}>
-                By creating an account or using HealNova, you acknowledge that you have read, understood, and agree to this Privacy Policy.
+                {t('privacy.acknowledgment')}
               </Text>
             </View>
           </ScrollView>

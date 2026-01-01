@@ -5,24 +5,22 @@ import {
   View,
   TextInput,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import { BASE_URL } from "../../config/config"
+import { useTranslation } from 'react-i18next'
 
-const GENDERS = [
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" },
-  { label: "Other", value: "other" },
-]
-
-const QUICK_SYMPTOMS = ["Fever", "Cough", "Headache", "Sore Throat", "Fatigue", "Nausea"]
+// Genders and symptoms will be translated in component
+const GENDER_IDS = ["male", "female", "other"]
+const SYMPTOM_IDS = ["fever", "cough", "headache", "soreThroat", "fatigue", "nausea"]
 
 export default function AIDoctorScreen({ navigation }) {
+  const { t } = useTranslation();
   const [symptoms, setSymptoms] = useState("")
   const [age, setAge] = useState("")
   const [gender, setGender] = useState("male")
@@ -30,6 +28,16 @@ export default function AIDoctorScreen({ navigation }) {
   const [conditions, setConditions] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Translated genders
+  const GENDERS = [
+    { label: t('riskAssessment.male'), value: 'male' },
+    { label: t('riskAssessment.female'), value: 'female' },
+    { label: t('common.other'), value: 'other' }
+  ];
+
+  // Translated quick symptoms
+  const QUICK_SYMPTOMS = SYMPTOM_IDS.map(id => t(`aiDoctor.symptoms.${id}`));
 
   const onAddQuickSymptom = (s) => {
     const exists = symptoms.toLowerCase().includes(s.toLowerCase())
@@ -39,7 +47,7 @@ export default function AIDoctorScreen({ navigation }) {
 
   const fetchAdvice = async () => {
     if (!symptoms.trim()) {
-      setError("Please enter your symptoms to get advice.")
+      setError(t('aiDoctor.enterSymptomsError'))
       return
     }
     setLoading(true)
@@ -89,7 +97,7 @@ export default function AIDoctorScreen({ navigation }) {
       })
     } catch (e) {
       console.error("AI Doctor fetch error:", e)
-      setError("Error fetching advice. Please try again.")
+      setError(t('aiDoctor.errorFetching'))
     } finally {
       setLoading(false)
     }
@@ -113,7 +121,7 @@ export default function AIDoctorScreen({ navigation }) {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           
-          <Text style={styles.headerTitle}>AI Doctor</Text>
+          <Text style={styles.headerTitle}>{t('aiDoctor.title')}</Text>
           
           <View style={styles.placeholder} />
         </View>
@@ -121,11 +129,11 @@ export default function AIDoctorScreen({ navigation }) {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Symptoms Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Describe your symptoms</Text>
+            <Text style={styles.cardTitle}>{t('aiDoctor.describeSymptoms')}</Text>
 
             <TextInput
               style={styles.textArea}
-              placeholder="Eg. fever, cough, fatigue..."
+              placeholder={t('aiDoctor.symptomsPlaceholder')}
               placeholderTextColor="#9ca3af"
               value={symptoms}
               onChangeText={setSymptoms}
@@ -152,10 +160,10 @@ export default function AIDoctorScreen({ navigation }) {
           <View style={styles.card}>
             <View style={styles.demographicsRow}>
               <View style={styles.demographicItem}>
-                <Text style={styles.label}>Your age</Text>
+                <Text style={styles.label}>{t('aiDoctor.yourAge')}</Text>
                 <TextInput
                   style={styles.ageInput}
-                  placeholder="13"
+                  placeholder={t('aiDoctor.agePlaceholder')}
                   placeholderTextColor="#9ca3af"
                   value={age}
                   onChangeText={setAge}
@@ -164,14 +172,14 @@ export default function AIDoctorScreen({ navigation }) {
               </View>
 
               <View style={styles.demographicItem}>
-                <Text style={styles.label}>Gender</Text>
+                <Text style={styles.label}>{t('aiDoctor.gender')}</Text>
                 <TouchableOpacity
                   style={styles.genderDropdown}
                   onPress={() => setShowGenderDropdown(!showGenderDropdown)}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.genderText, !gender && styles.placeholderText]}>
-                    {gender ? GENDERS.find(g => g.value === gender)?.label || 'Male' : 'Male'}
+                    {gender ? GENDERS.find(g => g.value === gender)?.label || GENDERS[0].label : GENDERS[0].label}
                   </Text>
                   <Ionicons name="chevron-down" size={20} color="#666" />
                 </TouchableOpacity>
@@ -199,11 +207,11 @@ export default function AIDoctorScreen({ navigation }) {
 
           {/* Medical Conditions Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Medical condition (if any)</Text>
+            <Text style={styles.cardTitle}>{t('aiDoctor.medicalCondition')}</Text>
             
             <TextInput
               style={styles.input}
-              placeholder="Eg. diabetes, hypertension.."
+              placeholder={t('aiDoctor.conditionPlaceholder')}
               placeholderTextColor="#9ca3af"
               value={conditions}
               onChangeText={setConditions}
@@ -220,7 +228,7 @@ export default function AIDoctorScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>Get Advice</Text>
+              <Text style={styles.ctaText}>{t('aiDoctor.getAdvice')}</Text>
             )}
           </TouchableOpacity>
 

@@ -10,6 +10,7 @@ import {
   StatusBar,
   Alert,
   Image,
+  Dimensions,
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,8 +22,12 @@ import {
   signOut,
 } from "firebase/auth";
 import { AuthContext } from "../../context/AuthContext";
+import { useTranslation } from 'react-i18next';
+
+const { width: screenWidth } = Dimensions.get("window");
 
 export default function RegisterScreen({ navigation }) {
+  const { t } = useTranslation();
   const { setUser } = useContext(AuthContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,19 +40,19 @@ export default function RegisterScreen({ navigation }) {
   // ✅ Validation
   const validateForm = () => {
     if (!name.trim()) {
-      Alert.alert("Error", "Please enter your name");
+      Alert.alert(t('alerts.error'), t('auth.enterName'));
       return false;
     }
     if (!email || !email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Alert.alert(t('alerts.error'), t('validation.invalidEmail'));
       return false;
     }
     if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
+      Alert.alert(t('alerts.error'), t('validation.passwordTooShort'));
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert(t('alerts.error'), t('validation.passwordsDontMatch'));
       return false;
     }
     return true;
@@ -75,8 +80,8 @@ export default function RegisterScreen({ navigation }) {
       await signOut(auth);
 
       Alert.alert(
-        "Verify Your Email",
-        "We have sent a verification link to your email. Please verify your email before logging in."
+        t('auth.emailNotVerified'),
+        t('auth.checkEmail')
       );
 
       navigation.replace("Login");
@@ -98,7 +103,7 @@ export default function RegisterScreen({ navigation }) {
         default:
           errorMessage = error.message;
       }
-      Alert.alert("Signup Failed", errorMessage);
+      Alert.alert(t('auth.signupFailed'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -123,13 +128,13 @@ export default function RegisterScreen({ navigation }) {
 
         {/* White Card */}
         <View style={styles.whiteCard}>
-          <Text style={styles.title}>Sign up</Text>
+          <Text style={styles.title}>{t('auth.signup')}</Text>
 
           {/* Name Input */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder={t('profile.fullName')}
               placeholderTextColor="#999"
               value={name}
               onChangeText={setName}
@@ -140,7 +145,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Enter email"
+              placeholder={t('auth.enterEmail')}
               placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
@@ -153,7 +158,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Enter password"
+              placeholder={t('auth.enterPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               value={password}
@@ -166,7 +171,7 @@ export default function RegisterScreen({ navigation }) {
             >
               <Ionicons
                 name={showPassword ? "eye-outline" : "eye-off-outline"}
-                size={20}
+                size={Math.min(20, screenWidth * 0.05)}
                 color="#999"
               />
             </TouchableOpacity>
@@ -176,7 +181,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Confirm password"
+              placeholder={t('auth.confirmPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
@@ -202,7 +207,7 @@ export default function RegisterScreen({ navigation }) {
             disabled={isLoading}
           >
             <Text style={styles.signUpButtonText}>
-              {isLoading ? "Creating..." : "Sign Up"}
+              {isLoading ? t('common.loading') : t('auth.signup')}
             </Text>
           </TouchableOpacity>
 
@@ -218,19 +223,19 @@ export default function RegisterScreen({ navigation }) {
             style={styles.googleButton}
             onPress={() => Alert.alert("Google Sign-Up", "Coming soon!")}
           >
-            <AntDesign name="google" size={20} color="#4285F4" />
+            <AntDesign name="google" size={Math.min(20, screenWidth * 0.05)} color="#4285F4" />
             <Text style={styles.googleButtonText}>Sign in with google</Text>
           </TouchableOpacity>
 
           {/* Sign In Link */}
           <View style={styles.signInContainer}>
             <Text style={styles.signInText}>
-              Already have an account?{" "}
+              {t('auth.alreadyHaveAccount')}{" "}
               <Text
                 style={styles.signInLink}
                 onPress={() => navigation.navigate("Login")}
               >
-                Sign in
+                {t('auth.signIn')}
               </Text>
             </Text>
           </View>
@@ -249,29 +254,29 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 40,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 0) + Math.min(20, screenWidth * 0.05) : Math.min(40, screenWidth * 0.1),
+    paddingBottom: Math.min(20, screenWidth * 0.05),
   },
   headerLogo: {
-    width: 150,
-    height: 60,
+    width: Math.min(150, screenWidth * 0.375),
+    height: Math.min(60, screenWidth * 0.15),
   },
   whiteCard: {
     flex: 1,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 30,
-    marginTop: 20,
-    marginHorizontal: 20,
+    borderTopLeftRadius: Math.min(30, screenWidth * 0.075),
+    borderTopRightRadius: Math.min(30, screenWidth * 0.075),
+    paddingHorizontal: Math.min(24, screenWidth * 0.06),
+    paddingTop: Math.min(30, screenWidth * 0.075),
+    paddingBottom: Math.min(30, screenWidth * 0.075),
+    marginTop: Math.min(20, screenWidth * 0.05),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
   },
   title: {
-    fontSize: 28,
+    fontSize: Math.min(28, screenWidth * 0.07),
     fontWeight: "700",
     color: "#222",
-    marginBottom: 32,
+    marginBottom: Math.min(32, screenWidth * 0.08),
     textAlign: "center",
   },
   googleButton: {
@@ -280,20 +285,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(30, 30, 30, 1)",
-    borderRadius: 30,
-    paddingVertical: 14,
-    marginBottom: 24,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingVertical: Math.min(14, screenWidth * 0.035),
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   googleButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
+    marginLeft: Math.min(10, screenWidth * 0.025),
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: "#000",
     fontWeight: "500",
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   orLine: {
     flex: 1,
@@ -301,38 +306,38 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   orText: {
-    marginHorizontal: 12,
-    fontSize: 14,
+    marginHorizontal: Math.min(12, screenWidth * 0.03),
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#999",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F5F5F5",
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    height: 56,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingHorizontal: Math.min(16, screenWidth * 0.04),
+    marginBottom: Math.min(16, screenWidth * 0.04),
+    height: Math.min(56, screenWidth * 0.14),
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: "#222",
   },
   eyeIcon: {
-    padding: 4,
+    padding: Math.min(4, screenWidth * 0.01),
   },
   signUpButton: {
     backgroundColor: "#1FA8E7",
-    borderRadius: 30,
-    paddingVertical: 16,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
     alignItems: "center",
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: Math.min(8, screenWidth * 0.02),
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   signUpButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: "600",
   },
   signInContainer: {
@@ -340,7 +345,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signInText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#666",
   },
   signInLink: {

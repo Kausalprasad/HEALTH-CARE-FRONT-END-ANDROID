@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { BASE_URL } from '../../config/config';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -84,6 +85,7 @@ const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
 };
 
 const RiskAssessmentScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     user_id: '',
     age: '',
@@ -263,7 +265,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
 
   const generateRiskAssessment = async () => {
     if (!formData.age || !formData.gender || !formData.height || !formData.weight) {
-      Alert.alert('Error', 'Please fill in age, gender, height, and weight');
+      Alert.alert(t('alerts.error'), t('riskAssessment.fillRequired'));
       return;
     }
 
@@ -274,12 +276,12 @@ const RiskAssessmentScreen = ({ navigation }) => {
 
     if (isNaN(age) || isNaN(height) || isNaN(weight) || 
         age <= 0 || height <= 0 || weight <= 0) {
-      Alert.alert('Error', 'Please enter valid age, height, and weight');
+      Alert.alert(t('alerts.error'), t('riskAssessment.invalidData'));
       return;
     }
 
     if (!userToken) {
-      Alert.alert('Error', 'User not authenticated. Please login again.');
+      Alert.alert(t('alerts.error'), t('riskAssessment.notAuthenticated'));
       return;
     }
 
@@ -354,9 +356,9 @@ const RiskAssessmentScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error:', error);
       if (error.name === 'AbortError') {
-        Alert.alert('Timeout', 'Server is taking too long. Please try again.');
+        Alert.alert(t('alerts.timeout'), t('alerts.serverError'));
       } else {
-        Alert.alert('Connection Error', `Cannot connect to server: ${error.message}`);
+        Alert.alert(t('alerts.connectionError'), `${t('alerts.cannotConnect')}: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -423,14 +425,14 @@ const RiskAssessmentScreen = ({ navigation }) => {
       : (assessment.overall_risk_percentage || assessment.avg_risk || getRiskPercentage(selectedReport));
     
     const riskLevel = assessment.overall_risk_level || assessment.risk_level || 
-      (avgRisk < 20 ? 'Low' : avgRisk < 50 ? 'Moderate' : 'High');
+      (avgRisk < 20 ? t('riskAssessment.low') : avgRisk < 50 ? t('riskAssessment.moderate') : t('riskAssessment.high'));
     
     const categories = [
-      { key: 'cardiovascular', label: 'Heart', icon: 'heart', color: '#9C27B0' },
-      { key: 'diabetes', label: 'Diabetes', icon: 'leaf', color: '#4CAF50' },
-      { key: 'hypertension', label: 'BP', icon: 'pulse', color: '#2196F3' },
-      { key: 'cancer', label: 'Cancer', icon: 'ribbon', color: '#00BCD4' },
-      { key: 'kidney_disease', label: 'Kidney', icon: 'medical', color: '#FF9800' },
+      { key: 'cardiovascular', label: t('riskAssessment.categories.heart'), icon: 'heart', color: '#9C27B0' },
+      { key: 'diabetes', label: t('riskAssessment.categories.diabetes'), icon: 'leaf', color: '#4CAF50' },
+      { key: 'hypertension', label: t('riskAssessment.categories.bp'), icon: 'pulse', color: '#2196F3' },
+      { key: 'cancer', label: t('riskAssessment.categories.cancer'), icon: 'ribbon', color: '#00BCD4' },
+      { key: 'kidney_disease', label: t('riskAssessment.categories.kidney'), icon: 'medical', color: '#FF9800' },
     ];
 
     // Collect risk factors and recommendations from all categories
@@ -510,7 +512,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
             >
               <Ionicons name="chevron-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Risk Assessment</Text>
+            <Text style={styles.headerTitle}>{t('riskAssessment.title')}</Text>
             <View style={styles.headerPlaceholder} />
           </View>
 
@@ -523,7 +525,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                   : { risk_percentage: avgRisk, risk_level: riskLevel };
                 const displayPercent = displayRisk.risk_percentage || displayRisk.percentage || avgRisk;
                 const displayLevel = displayRisk.risk_level || 
-                  (displayPercent < 20 ? 'Low' : displayPercent < 50 ? 'Moderate' : 'High');
+                  (displayPercent < 20 ? t('riskAssessment.low') : displayPercent < 50 ? t('riskAssessment.moderate') : t('riskAssessment.high'));
                 const progressPercent = Math.min(displayPercent, 100);
                 const radius = 72;
                 const circumference = 2 * Math.PI * radius;
@@ -597,7 +599,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
             <View style={styles.infoCard}>
               <View style={styles.cardHeader}>
                 <Ionicons name="search" size={20} color="#333" />
-                <Text style={styles.cardTitle}>Risk Factors</Text>
+                <Text style={styles.cardTitle}>{t('riskAssessment.riskFactors')}</Text>
               </View>
               {(() => {
                 let riskFactorsList = [];
@@ -622,7 +624,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.emptyDataText}>No risk factors identified</Text>
+                  <Text style={styles.emptyDataText}>{t('common.noData')}</Text>
                 );
               })()}
             </View>
@@ -631,7 +633,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
             <View style={styles.infoCard}>
               <View style={styles.cardHeader}>
                 <Ionicons name="megaphone" size={20} color="#333" />
-                <Text style={styles.cardTitle}>Recommendation</Text>
+                <Text style={styles.cardTitle}>{t('riskAssessment.recommendations')}</Text>
               </View>
               {(() => {
                 let recommendationsList = [];
@@ -656,7 +658,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.emptyDataText}>No recommendations available</Text>
+                  <Text style={styles.emptyDataText}>{t('common.noData')}</Text>
                 );
               })()}
             </View>
@@ -665,22 +667,22 @@ const RiskAssessmentScreen = ({ navigation }) => {
             <View style={styles.infoCard}>
               <View style={styles.cardHeader}>
                 <Ionicons name="information-circle" size={20} color="#9C27B0" />
-                <Text style={styles.cardTitle}>Your Information</Text>
+                <Text style={styles.cardTitle}>{t('pregnancy.yourInformation')}</Text>
               </View>
               {/* Labels Row */}
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Age:</Text>
-                <Text style={styles.infoLabel}>Gender</Text>
-                <Text style={styles.infoLabel}>Height</Text>
-                <Text style={styles.infoLabel}>Weight</Text>
+                <Text style={styles.infoLabel}>{t('riskAssessment.age')}:</Text>
+                <Text style={styles.infoLabel}>{t('riskAssessment.gender')}</Text>
+                <Text style={styles.infoLabel}>{t('riskAssessment.height')}</Text>
+                <Text style={styles.infoLabel}>{t('riskAssessment.weight')}</Text>
                 <Text style={styles.infoLabel}>BMI</Text>
               </View>
               {/* Values Row */}
               <View style={styles.infoRow}>
-                <Text style={styles.infoValue}>{inputData.age || 'N/A'} years</Text>
+                <Text style={styles.infoValue}>{inputData.age || 'N/A'} {t('pregnancy.years')}</Text>
                 <Text style={styles.infoValue}>{inputData.gender || 'N/A'}</Text>
-                <Text style={styles.infoValue}>{inputData.height || 'N/A'}cm</Text>
-                <Text style={styles.infoValue}>{inputData.weight || 'N/A'}kg</Text>
+                <Text style={styles.infoValue}>{inputData.height || 'N/A'}{t('pregnancy.cm')}</Text>
+                <Text style={styles.infoValue}>{inputData.weight || 'N/A'}{t('pregnancy.kg')}</Text>
                 <Text style={styles.infoValue}>
                   {inputData.height && inputData.weight 
                     ? (inputData.weight / Math.pow(inputData.height/100, 2)).toFixed(1)
@@ -692,7 +694,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
             {/* Download and Share Buttons */}
             <View style={styles.actionButtons}>
               <TouchableOpacity style={styles.downloadButton}>
-                <Text style={styles.buttonText}>Download</Text>
+                <Text style={styles.buttonText}>{t('common.download')}</Text>
               </TouchableOpacity>
               <LinearGradient
                 colors={['#9C27B0', '#E91E63', '#FF9800']}
@@ -701,7 +703,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                 style={styles.shareButton}
               >
                 <TouchableOpacity>
-                  <Text style={styles.buttonText}>Share</Text>
+                  <Text style={styles.buttonText}>{t('common.share')}</Text>
                 </TouchableOpacity>
               </LinearGradient>
             </View>
@@ -730,7 +732,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
           >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Risk Assessment</Text>
+          <Text style={styles.headerTitle}>{t('riskAssessment.title')}</Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
@@ -768,13 +770,13 @@ const RiskAssessmentScreen = ({ navigation }) => {
             <View style={styles.formCard}>
               <View style={styles.formCardGradient}>
                 {/* Add Your Details Section */}
-                <Text style={styles.sectionTitle}>Add Your Details</Text>
+                <Text style={styles.sectionTitle}>{t('pregnancy.addDetails')}</Text>
 
                 <View style={styles.inputRow}>
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Age"
+                      placeholder={t('riskAssessment.age')}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.age}
@@ -786,7 +788,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                       selectedValue={formData.gender}
                       onValueChange={(value) => handleInputChange('gender', value)}
                       items={genderOptions}
-                      placeholder="Gender"
+                      placeholder={t('riskAssessment.gender')}
                     />
                   </View>
                 </View>
@@ -795,7 +797,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Height (cm)"
+                      placeholder={`${t('riskAssessment.height')} (cm)`}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.height}
@@ -805,7 +807,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Weight (kg)"
+                      placeholder={`${t('riskAssessment.weight')} (kg)`}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.weight}
@@ -894,7 +896,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                 {/* Family History Section */}
                 <View style={styles.familyHistorySection}>
                   <View style={styles.familyHistoryHeader}>
-                    <Text style={styles.sectionTitle}>Family History</Text>
+                    <Text style={styles.sectionTitle}>{t('common.familyHistory')}</Text>
                     {familyHistory.length > 0 && (
                       <TouchableOpacity
                         onPress={() => setFamilyHistory([])}
@@ -950,7 +952,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                     onPress={addFamilyHistory}
                   >
                     <Ionicons name="add" size={20} color="#2196F3" />
-                    <Text style={styles.addFamilyText}>Add Family History</Text>
+                    <Text style={styles.addFamilyText}>{t('common.addFamilyHistory')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -965,7 +967,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.analyzeButtonText}>Analyze Risk</Text>
+                <Text style={styles.analyzeButtonText}>{t('common.analyze')} {t('riskAssessment.title')}</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -989,7 +991,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
               </View>
             ) : Object.keys(groupedReports).length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No reports found</Text>
+                <Text style={styles.emptyText}>{t('riskAssessment.noReports')}</Text>
               </View>
             ) : (
               <ScrollView style={styles.reportsScroll} showsVerticalScrollIndicator={false}>
@@ -1015,7 +1017,7 @@ const RiskAssessmentScreen = ({ navigation }) => {
                           </View>
                           <View style={styles.reportRight}>
                             <Text style={styles.reportRisk}>{avgRisk.toFixed(1)}%</Text>
-                            <Text style={styles.reportRiskLabel}>Avg risk</Text>
+                            <Text style={styles.reportRiskLabel}>{t('riskAssessment.overallRisk')}</Text>
                           </View>
                         </TouchableOpacity>
                       );

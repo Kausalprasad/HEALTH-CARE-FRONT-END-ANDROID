@@ -14,11 +14,13 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get("window");
 
 export default function DisclaimerScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [isChecked, setIsChecked] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -35,8 +37,8 @@ export default function DisclaimerScreen() {
   const handleAgree = async () => {
     if (!isChecked) {
       Alert.alert(
-        "Required",
-        "Please check the box to acknowledge that you have read and understood the disclaimer."
+        t('disclaimer.required'),
+        t('disclaimer.checkBoxMessage')
       );
       return;
     }
@@ -48,21 +50,21 @@ export default function DisclaimerScreen() {
       // No manual navigation needed - the conditional rendering will handle it
     } catch (error) {
       console.error("Error saving disclaimer acceptance:", error);
-      Alert.alert("Error", "Failed to save your acceptance. Please try again.");
+      Alert.alert(t('disclaimer.errorSaving'), t('disclaimer.errorSavingMessage'));
     }
   };
 
   const handleCancel = () => {
     Alert.alert(
-      "Exit App?",
-      "You must accept the disclaimer to use HealNova. Do you want to exit?",
+      t('disclaimer.exitApp'),
+      t('disclaimer.exitMessage'),
       [
         {
-          text: "Stay",
+          text: t('disclaimer.stay'),
           style: "cancel",
         },
         {
-          text: "Exit",
+          text: t('disclaimer.exit'),
           style: "destructive",
           onPress: () => {
             // Sign out user if they cancel
@@ -89,8 +91,8 @@ export default function DisclaimerScreen() {
                 <Ionicons name="medical" size={32} color="#fff" />
               </View>
             </View>
-            <Text style={styles.title}>⚕️ IMPORTANT HEALTH NOTICE</Text>
-            <Text style={styles.subtitle}>HealNova is a General Wellness Application</Text>
+            <Text style={styles.title}>⚕️ {t('disclaimer.title')}</Text>
+            <Text style={styles.subtitle}>{t('disclaimer.subtitle')}</Text>
           </View>
         </View>
 
@@ -99,7 +101,7 @@ export default function DisclaimerScreen() {
           <View style={styles.sectionTitleContainer}>
             <Ionicons name="document-text" size={20} color="#7475B4" />
             <Text style={styles.sectionTitle}>
-              Please read carefully before using AI health features
+              {t('disclaimer.readCarefully')}
             </Text>
           </View>
 
@@ -109,11 +111,10 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#E8F5E9" }]}>
                 <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
               </View>
-              <Text style={styles.bulletTitle}>For Wellness & Educational Purposes Only</Text>
+              <Text style={styles.bulletTitle}>{t('disclaimer.wellnessPurpose')}</Text>
             </View>
             <Text style={styles.bulletDescription}>
-              This app provides general health information to encourage healthy lifestyle
-              choices and wellness awareness.
+              {t('disclaimer.wellnessDescription')}
             </Text>
           </View>
 
@@ -123,10 +124,10 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#FFEBEE" }]}>
                 <Ionicons name="close-circle" size={22} color="#F44336" />
               </View>
-              <Text style={styles.bulletTitle}>Not a Medical Device</Text>
+              <Text style={styles.bulletTitle}>{t('disclaimer.notMedicalDevice')}</Text>
             </View>
             <Text style={styles.bulletDescription}>
-              HealNova is not FDA-cleared or approved as a medical device.
+              {t('disclaimer.notMedicalDeviceDesc')}
             </Text>
           </View>
 
@@ -136,11 +137,10 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#FFEBEE" }]}>
                 <Ionicons name="close-circle" size={22} color="#F44336" />
               </View>
-              <Text style={styles.bulletTitle}>Not for Diagnosis or Treatment</Text>
+              <Text style={styles.bulletTitle}>{t('disclaimer.notForDiagnosis')}</Text>
             </View>
             <Text style={styles.bulletDescription}>
-              This app does not diagnose, treat, cure, or prevent any disease or medical
-              condition. AI analysis results are informational screening tools only.
+              {t('disclaimer.notForDiagnosisDesc')}
             </Text>
           </View>
 
@@ -150,27 +150,27 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#FFEBEE" }]}>
                 <Ionicons name="close-circle" size={22} color="#F44336" />
               </View>
-              <Text style={styles.bulletTitle}>Not a Substitute for Medical Care</Text>
+              <Text style={styles.bulletTitle}>{t('disclaimer.notSubstitute')}</Text>
             </View>
             <Text style={styles.bulletDescription}>
-              Always consult qualified healthcare professionals for:
+              {t('disclaimer.notSubstituteDesc')}
             </Text>
             <View style={styles.listContainer}>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#7475B4" />
-                <Text style={styles.bulletList}>Medical advice, diagnosis, or treatment</Text>
+                <Text style={styles.bulletList}>{t('disclaimer.medicalAdvice')}</Text>
               </View>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#7475B4" />
-                <Text style={styles.bulletList}>Interpretation of health screening results</Text>
+                <Text style={styles.bulletList}>{t('disclaimer.interpretResults')}</Text>
               </View>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#7475B4" />
-                <Text style={styles.bulletList}>Any health concerns or symptoms</Text>
+                <Text style={styles.bulletList}>{t('disclaimer.healthConcerns')}</Text>
               </View>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#7475B4" />
-                <Text style={styles.bulletList}>Emergency medical situations</Text>
+                <Text style={styles.bulletList}>{t('disclaimer.emergencySituations')}</Text>
               </View>
             </View>
           </View>
@@ -181,15 +181,14 @@ export default function DisclaimerScreen() {
               <View style={styles.warningIconContainer}>
                 <Ionicons name="warning" size={28} color="#FF9800" />
               </View>
-              <Text style={styles.warningTitle}>Medical Emergencies</Text>
+              <Text style={styles.warningTitle}>{t('disclaimer.medicalEmergencies')}</Text>
             </View>
             <View style={styles.warningContent}>
               <Text style={styles.warningText}>
-                If you have a medical emergency, call your local emergency number (911 in US,
-                102/108 in India) immediately.
+                {t('disclaimer.emergencyText')}
               </Text>
               <Text style={styles.warningTextBold}>
-                Do not rely on this app for emergency situations.
+                {t('disclaimer.emergencyWarning')}
               </Text>
             </View>
           </View>
@@ -200,25 +199,25 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#E3F2FD" }]}>
                 <Ionicons name="stats-chart" size={20} color="#2196F3" />
               </View>
-              <Text style={styles.infoTitle}>Accuracy Limitations</Text>
+              <Text style={styles.infoTitle}>{t('disclaimer.accuracyLimitations')}</Text>
             </View>
             <View style={styles.infoContent}>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#2196F3" />
                 <Text style={styles.infoText}>
-                  AI results depend on image quality and may be inaccurate
+                  {t('disclaimer.accuracy1')}
                 </Text>
               </View>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#2196F3" />
                 <Text style={styles.infoText}>
-                  Results should be verified by healthcare professionals
+                  {t('disclaimer.accuracy2')}
                 </Text>
               </View>
               <View style={styles.listItem}>
                 <Ionicons name="ellipse" size={6} color="#2196F3" />
                 <Text style={styles.infoText}>
-                  Individual results vary - this is a screening tool only
+                  {t('disclaimer.accuracy3')}
                 </Text>
               </View>
             </View>
@@ -230,11 +229,10 @@ export default function DisclaimerScreen() {
               <View style={[styles.iconBadge, { backgroundColor: "#F3E5F5" }]}>
                 <Ionicons name="shield-checkmark" size={20} color="#9C27B0" />
               </View>
-              <Text style={styles.infoTitle}>No Doctor-Patient Relationship</Text>
+              <Text style={styles.infoTitle}>{t('disclaimer.noDoctorPatient')}</Text>
             </View>
             <Text style={styles.infoText}>
-              Using this app does not create any physician-patient or professional healthcare
-              relationship.
+              {t('disclaimer.noDoctorPatientDesc')}
             </Text>
           </View>
 
@@ -242,9 +240,7 @@ export default function DisclaimerScreen() {
           <View style={styles.agreementBox}>
             <Ionicons name="information-circle" size={20} color="#7475B4" style={styles.agreementIcon} />
             <Text style={styles.agreementText}>
-              By tapping "I Understand and Agree," you acknowledge that you have read,
-              understood, and agree to use HealNova as a general wellness tool only, and you
-              will consult healthcare professionals for medical decisions.
+              {t('disclaimer.agreementText')}
             </Text>
           </View>
         </View>
@@ -261,7 +257,7 @@ export default function DisclaimerScreen() {
             {isChecked && <Ionicons name="checkmark" size={18} color="#fff" />}
           </View>
           <Text style={styles.checkboxLabel}>
-            I have read and understood the disclaimer
+            {t('disclaimer.checkboxLabel')}
           </Text>
         </TouchableOpacity>
 
@@ -272,7 +268,7 @@ export default function DisclaimerScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="close" size={20} color="#F44336" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('disclaimer.cancel')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -286,7 +282,7 @@ export default function DisclaimerScreen() {
             disabled={!isChecked}
           >
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
-            <Text style={styles.agreeButtonText}>I Understand and Agree</Text>
+            <Text style={styles.agreeButtonText}>{t('disclaimer.iUnderstand')}</Text>
           </TouchableOpacity>
         </View>
       </View>

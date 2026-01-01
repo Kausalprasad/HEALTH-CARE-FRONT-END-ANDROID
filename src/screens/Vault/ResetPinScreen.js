@@ -18,8 +18,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { resetPin } from '../../api/vaultApi';
 import { useFonts, Inter_400Regular, Inter_300Light } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 export default function ResetPinScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_300Light,
@@ -65,12 +67,12 @@ export default function ResetPinScreen({ navigation, route }) {
   const handleConfirm = () => {
     const pinString = pin.join('');
     if (pinString.length !== 4) {
-      Alert.alert('Error', 'Please enter a 4-digit PIN');
+      Alert.alert(t('alerts.error'), t('vault.enter4DigitPin'));
       return;
     }
 
     if (!resetToken) {
-      Alert.alert('Error', 'Reset token is missing. Please try again.');
+      Alert.alert(t('alerts.error'), t('vault.resetTokenMissing'));
       navigation.goBack();
       return;
     }
@@ -112,18 +114,18 @@ export default function ResetPinScreen({ navigation, route }) {
                   style={styles.vaultLogo}
                   resizeMode="contain"
                 />
-                <Text style={styles.brandName}>Health Vault</Text>
+                <Text style={styles.brandName}>{t('vault.title')}</Text>
               </View>
 
               {/* Title */}
-              <Text style={styles.title}>Create New PIN</Text>
+              <Text style={styles.title}>{t('vault.resetPin')}</Text>
               <Text style={styles.subtitle}>
-                A single, protected space for prescriptions, reports, and bills, instantly analyzed by AI when you need it.
+                {t('vault.vaultDescription2')}
               </Text>
 
               {/* PIN Input */}
               <View style={styles.pinSection}>
-                <Text style={styles.label}>Enter new PIN</Text>
+                <Text style={styles.label}>{t('vault.enterPin')}</Text>
                 <View style={styles.pinContainer}>
                   {pin.map((digit, index) => (
                     <TextInput
@@ -151,7 +153,7 @@ export default function ResetPinScreen({ navigation, route }) {
                 activeOpacity={0.8}
               >
                 <Text style={styles.confirmButtonText}>
-                  {loading ? 'Processing...' : 'Confirm'}
+                  {loading ? t('common.loading') : t('common.confirm')}
                 </Text>
               </TouchableOpacity>
             </View>

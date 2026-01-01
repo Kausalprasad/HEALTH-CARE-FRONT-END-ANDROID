@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function PermissionHandler({ onOpenSettings }) {
+  const { t } = useTranslation();
   const handleOpenSettings = () => {
     try {
       if (onOpenSettings && typeof onOpenSettings === 'function') {
@@ -32,14 +34,10 @@ export default function PermissionHandler({ onOpenSettings }) {
           <Ionicons name="heart-outline" size={64} color="#3B82F6" />
         </View>
         
-        <Text style={styles.title}>Health Connect Required</Text>
+        <Text style={styles.title}>{t('vitals.healthConnectRequired')}</Text>
         
         <Text style={styles.desc}>
-          To use the Vitals feature, you need to:{'\n\n'}
-          1. Install Health Connect app from Play Store{'\n'}
-          2. Open Health Connect app and set it up{'\n'}
-          3. Grant permissions to this app{'\n\n'}
-          The app will continue to work normally. You can use other features without Health Connect.
+          {t('vitals.healthConnectDesc')}
         </Text>
         
         <TouchableOpacity
@@ -48,11 +46,11 @@ export default function PermissionHandler({ onOpenSettings }) {
           activeOpacity={0.8}
         >
           <Ionicons name="download-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Download Health Connect</Text>
+          <Text style={styles.buttonText}>{t('vitals.downloadHealthConnect')}</Text>
         </TouchableOpacity>
         
         <Text style={styles.note}>
-          Note: Health Connect requires Android 14+ or device with Health Connect app installed.
+          {t('vitals.healthConnectNote')}
         </Text>
       </View>
     </View>

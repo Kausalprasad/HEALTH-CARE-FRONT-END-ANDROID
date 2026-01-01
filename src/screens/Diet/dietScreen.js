@@ -13,8 +13,11 @@ import {
   FlatList,
   Platform,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from "../../config/config";
 
 const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
@@ -34,7 +37,7 @@ const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
         <Text style={[styles.customPickerText, !selectedValue && styles.placeholderText]}>
           {getLabel()}
         </Text>
-        <Text style={styles.dropdownArrow}>▼</Text>
+        <Ionicons name="chevron-down" size={16} color="#666" />
       </TouchableOpacity>
 
       <Modal
@@ -80,6 +83,7 @@ const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
 
 const DietScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
+    name: '',
     height: '',
     weight: '',
     age: '',
@@ -100,6 +104,7 @@ const DietScreen = ({ navigation }) => {
   const [loadingSavedDiets, setLoadingSavedDiets] = useState(false);
   const [activeTab, setActiveTab] = useState('generate');
   const [userToken, setUserToken] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const genderOptions = [
     { label: 'Male', value: 'male' },
@@ -270,6 +275,7 @@ const DietScreen = ({ navigation }) => {
     setLoading(true);
 
     const requestData = {
+      name: formData.name || '',
       height,
       weight,
       age,
@@ -329,365 +335,442 @@ const DietScreen = ({ navigation }) => {
     }
   };
 
-  const SavedDietItem = ({ item }) => {
-    const formatGoal = (goal) => {
-      if (!goal) return 'Diet Plan';
-      return goal
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-    };
+  const formatGoal = (goal) => {
+    if (!goal) return 'Diet Plan';
+    return goal
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const groupDietsByDate = (diets) => {
+    const grouped = {};
+    diets.forEach(diet => {
+      const date = new Date(diet.createdAt || diet.generated_at || diet.created_at);
+      const dateKey = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', weekday: 'short' });
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(diet);
+    });
+    return grouped;
+  };
+
+  const renderHistoryTab = () => {
+    const filteredDiets = savedDiets.filter(diet => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      const goal = formatGoal(diet.user_profile?.goal || diet.goal).toLowerCase();
+      return goal.includes(query);
+    });
+
+    const groupedDiets = groupDietsByDate(filteredDiets);
 
     return (
-      <View style={styles.savedDietCard}>
-        <View style={styles.savedDietHeader}>
-          <View style={styles.savedDietLeft}>
-            <Text style={styles.savedDietGoal}>
-              {formatGoal(item.user_profile?.goal || item.goal).toUpperCase()}
-            </Text>
-            <Text style={styles.savedDietDate}>
-              {new Date(item.createdAt || item.generated_at).toLocaleDateString('en-GB')}
-            </Text>
-          </View>
-          <View style={styles.savedDietRight}>
-            <Text style={styles.savedDietCalories}>
-              {item.user_profile?.target_calories || '1500'}
-            </Text>
-            <Text style={styles.savedDietCalText}>cal/day</Text>
-          </View>
+      <View style={styles.historyContainer}>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search"
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
-        
-        <View style={styles.savedDietActions}>
-          <TouchableOpacity 
-            style={styles.savedViewButton}
-            onPress={() => viewSavedDiet(item)}
-          >
-            <Text style={styles.savedViewButtonText}>view</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.savedDeleteButton}
-            onPress={() => deleteSavedDiet(item._id)}
-          >
-            <Text style={styles.savedDeleteButtonText}>delete</Text>
-          </TouchableOpacity>
+
+        {loadingSavedDiets ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#9C27B0" />
+          </View>
+        ) : Object.keys(groupedDiets).length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No Diet Plans Yet</Text>
         </View>
+      ) : (
+        <ScrollView style={styles.reportsScroll} showsVerticalScrollIndicator={false}>
+          {Object.entries(groupedDiets).map(([date, diets]) => (
+            <View key={date} style={styles.dateGroup}>
+              <Text style={styles.dateHeader}>{date}</Text>
+              {diets.map((diet, index) => (
+                <TouchableOpacity
+                  key={diet._id || index}
+                  style={styles.reportCard}
+                  onPress={() => viewSavedDiet(diet)}
+                >
+                  <View style={styles.reportLeft}>
+                    <View style={styles.reportIcon}>
+                      <Ionicons name="restaurant" size={24} color="#FF9800" />
+                    </View>
+                    <View>
+                      <Text style={styles.reportTitle}>
+                        {formatGoal(diet.user_profile?.goal || diet.goal)}
+                      </Text>
+                      <Text style={styles.reportSize}>312 KB</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+        )}
       </View>
     );
   };
 
-  const renderHistoryTab = () => (
-    <View style={styles.container}>
-      {loadingSavedDiets ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#7C6FDC" />
-          <Text style={styles.loadingText}>Loading your diet plans...</Text>
-        </View>
-      ) : savedDiets.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📋</Text>
-          <Text style={styles.emptyTitle}>No Diet Plans Yet</Text>
-          <Text style={styles.emptyText}>Generate your first diet plan to see it here</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={savedDiets}
-          renderItem={({ item }) => <SavedDietItem item={item} />}
-          keyExtractor={item => item._id}
-          contentContainerStyle={styles.historyListContent}
-          scrollEnabled={true}
-        />
-      )}
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      <View style={styles.headerSafeArea}>
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Diet Plan</Text>
           <View style={styles.headerPlaceholder} />
         </View>
-      </View>
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'generate' && styles.activeTab]}
-          onPress={() => setActiveTab('generate')}
-        >
-          <Text style={[styles.tabText, activeTab === 'generate' && styles.activeTabText]}>
-            Generate
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'history' && styles.activeTab]}
-          onPress={() => setActiveTab('history')}
-        >
-          <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
-            My Plans
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('generate')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'generate' ? styles.tabTextGenerateActive : styles.tabTextGenerateInactive
+            ]}>
+              Generate
+            </Text>
+            {activeTab === 'generate' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => setActiveTab('history')}
+          >
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'history' ? styles.tabTextReportsActive : styles.tabTextReportsInactive
+            ]}>
+              My Plans
+            </Text>
+            {activeTab === 'history' && <View style={styles.tabUnderline} />}
+          </TouchableOpacity>
+        </View>
 
       {activeTab === 'generate' ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.formContainer}>
-            <View style={styles.inputRow}>
-              <View style={styles.inputHalf}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* White Card Container */}
+          <View style={styles.formCard}>
+            <View style={styles.formCardGradient}>
+              {/* Add Your Details Section */}
+              <Text style={styles.sectionTitle}>Add Details</Text>
+
+              <View style={styles.fullInput}>
                 <TextInput
-                  style={styles.inputField}
-                  placeholder="Height (cm)"
-                  keyboardType="numeric"
-                  value={formData.height}
-                  onChangeText={(value) => handleInputChange('height', value)}
-                  placeholderTextColor="#BDBDBD"
+                  style={styles.input}
+                  placeholder="Name"
+                  placeholderTextColor="#999"
+                  value={formData.name}
+                  onChangeText={(value) => handleInputChange('name', value)}
                 />
               </View>
-              <View style={styles.inputHalf}>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Weight"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={formData.weight}
+                    onChangeText={(value) => handleInputChange('weight', value)}
+                  />
+                </View>
+                <View style={styles.inputHalf}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Height"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={formData.height}
+                    onChangeText={(value) => handleInputChange('height', value)}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Age"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={formData.age}
+                    onChangeText={(value) => handleInputChange('age', value)}
+                  />
+                </View>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.sex}
+                    onValueChange={(value) => handleInputChange('sex', value)}
+                    items={genderOptions}
+                    placeholder="Gender"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.region}
+                    onValueChange={(value) => handleInputChange('region', value)}
+                    items={regionOptions}
+                    placeholder="Region"
+                  />
+                </View>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.goal}
+                    onValueChange={(value) => handleInputChange('goal', value)}
+                    items={goalOptions}
+                    placeholder="Goal"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.food_preference}
+                    onValueChange={(value) => handleInputChange('food_preference', value)}
+                    items={foodPreferenceOptions}
+                    placeholder="Preference"
+                  />
+                </View>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.activity_level}
+                    onValueChange={(value) => handleInputChange('activity_level', value)}
+                    items={activityLevelOptions}
+                    placeholder="Activity Level"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.budget_category}
+                    onValueChange={(value) => handleInputChange('budget_category', value)}
+                    items={budgetOptions}
+                    placeholder="Budget"
+                  />
+                </View>
+                <View style={styles.inputHalf}>
+                  <CustomPicker
+                    selectedValue={formData.cooking_time_available}
+                    onValueChange={(value) => handleInputChange('cooking_time_available', value)}
+                    items={cookingTimeOptions}
+                    placeholder="Available Time"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fullInput}>
                 <TextInput
-                  style={styles.inputField}
-                  placeholder="Weight (kg)"
-                  keyboardType="numeric"
-                  value={formData.weight}
-                  onChangeText={(value) => handleInputChange('weight', value)}
-                  placeholderTextColor="#BDBDBD"
+                  style={styles.input}
+                  placeholder="Medical Condition (optional)"
+                  placeholderTextColor="#999"
+                  value={formData.medical_conditions}
+                  onChangeText={(value) => handleInputChange('medical_conditions', value)}
                 />
               </View>
-            </View>
 
-            <View style={styles.inputRow}>
-              <View style={styles.inputHalf}>
+              <View style={styles.fullInput}>
                 <TextInput
-                  style={styles.inputField}
-                  placeholder="Age"
-                  keyboardType="numeric"
-                  value={formData.age}
-                  onChangeText={(value) => handleInputChange('age', value)}
-                  placeholderTextColor="#BDBDBD"
-                />
-              </View>
-              <View style={styles.inputHalf}>
-                <CustomPicker
-                  selectedValue={formData.sex}
-                  onValueChange={(value) => handleInputChange('sex', value)}
-                  items={genderOptions}
-                  placeholder="Gender"
+                  style={styles.input}
+                  placeholder="Allergies (optional)"
+                  placeholderTextColor="#999"
+                  value={formData.allergies}
+                  onChangeText={(value) => handleInputChange('allergies', value)}
                 />
               </View>
             </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.region}
-                onValueChange={(value) => handleInputChange('region', value)}
-                items={regionOptions}
-                placeholder="Region"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.goal}
-                onValueChange={(value) => handleInputChange('goal', value)}
-                items={goalOptions}
-                placeholder="Goal"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.food_preference}
-                onValueChange={(value) => handleInputChange('food_preference', value)}
-                items={foodPreferenceOptions}
-                placeholder="Food Preference"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.activity_level}
-                onValueChange={(value) => handleInputChange('activity_level', value)}
-                items={activityLevelOptions}
-                placeholder="Activity Level"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.budget_category}
-                onValueChange={(value) => handleInputChange('budget_category', value)}
-                items={budgetOptions}
-                placeholder="Budget"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <CustomPicker
-                selectedValue={formData.cooking_time_available}
-                onValueChange={(value) => handleInputChange('cooking_time_available', value)}
-                items={cookingTimeOptions}
-                placeholder="Cooking Time"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <TextInput
-                style={styles.inputField}
-                placeholder="Medical Condition (optional)"
-                value={formData.medical_conditions}
-                onChangeText={(value) => handleInputChange('medical_conditions', value)}
-                placeholderTextColor="#BDBDBD"
-              />
-            </View>
-
-            <View style={styles.dropdownContainer}>
-              <TextInput
-                style={styles.inputField}
-                placeholder="Allergies (optional)"
-                value={formData.allergies}
-                onChangeText={(value) => handleInputChange('allergies', value)}
-                placeholderTextColor="#BDBDBD"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.generateButton, loading && styles.buttonDisabled]}
-              onPress={generateDietPlan}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.generateButtonText}>Generate</Text>
-              )}
-            </TouchableOpacity>
           </View>
+
+          {/* Generate Report Button */}
+          <TouchableOpacity
+            style={styles.analyzeButton}
+            onPress={generateDietPlan}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.analyzeButtonText}>Generate report</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       ) : (
         renderHistoryTab()
       )}
-    </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  headerSafeArea: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
   },
   header: {
+    marginTop: StatusBar.currentHeight || 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 28,
-    color: '#000000',
-    fontWeight: '300',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
-    width: 50,
+    width: 40,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    gap: 24,
   },
   tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 20,
-    marginHorizontal: 4,
-  },
-  activeTab: {
-    backgroundColor: '#7C6FDC',
+    paddingBottom: 8,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#9E9E9E',
+    fontFamily: 'Inter',
   },
-  activeTabText: {
-    color: '#FFFFFF',
+  tabTextGenerateActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
+  tabTextGenerateInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
   },
-  formContainer: {
-    backgroundColor: '#FFFFFF',
+  tabTextReportsActive: {
+    fontSize: 27,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    color: '#9C27B0',
+    fontFamily: 'Inter',
+  },
+  tabTextReportsInactive: {
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#999',
+    fontFamily: 'Inter',
+  },
+  tabUnderline: {
+    height: 2,
+    backgroundColor: '#9C27B0',
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  formCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+  },
+  formCardGradient: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 20,
+    fontFamily: 'Inter',
   },
   inputRow: {
     flexDirection: 'row',
-    marginBottom: 12,
-    gap: 12,
+    gap: 16,
+    marginBottom: 16,
   },
   inputHalf: {
     flex: 1,
   },
-  inputField: {
-    backgroundColor: '#FFFFFF',
+  fullInput: {
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     fontSize: 14,
-    color: '#000000',
-  },
-  dropdownContainer: {
-    marginBottom: 12,
+    color: '#000',
+    fontFamily: 'Inter',
   },
   customPickerButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 50,
   },
   customPickerText: {
     fontSize: 14,
-    color: '#000000',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   placeholderText: {
-    color: '#BDBDBD',
-  },
-  dropdownArrow: {
-    fontSize: 10,
-    color: '#666',
+    color: '#999',
   },
   modalOverlay: {
     flex: 1,
@@ -696,11 +779,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderRadius: 12,
     width: '80%',
     maxHeight: '60%',
-    overflow: 'hidden',
   },
   modalScroll: {
     maxHeight: 400,
@@ -711,30 +793,31 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   modalItemSelected: {
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#F3E5F5',
   },
   modalItemText: {
     fontSize: 14,
-    color: '#000000',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   modalItemTextSelected: {
-    color: '#7C6FDC',
+    color: '#9C27B0',
     fontWeight: '600',
+    fontFamily: 'Inter',
   },
-  generateButton: {
-    backgroundColor: '#7C6FDC',
-    borderRadius: 8,
+  analyzeButton: {
+    backgroundColor: '#2196F3',
+    marginHorizontal: 16,
+    marginBottom: 40,
     padding: 16,
+    borderRadius: 30,
     alignItems: 'center',
-    marginTop: 20,
   },
-  buttonDisabled: {
-    backgroundColor: '#B8B0E8',
-  },
-  generateButtonText: {
-    color: '#FFFFFF',
+  analyzeButtonText: {
+    color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: 'Inter',
   },
   loadingContainer: {
     flex: 1,
@@ -746,6 +829,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#666',
+    fontFamily: 'Inter',
   },
   emptyContainer: {
     flex: 1,
@@ -764,86 +848,89 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
     textAlign: 'center',
+    fontFamily: 'Inter',
   },
   emptyText: {
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+    fontFamily: 'Inter',
   },
-  historyListContent: {
-    padding: 16,
-    paddingBottom: 40,
+  historyContainer: {
+    flex: 1,
   },
-  savedDietCard: {
-    backgroundColor: '#FFFFFF',
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
     borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 14,
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  reportsScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  dateGroup: {
+    marginBottom: 24,
+  },
+  dateHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    fontFamily: 'Inter',
+  },
+  reportCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 30,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  savedDietHeader: {
+  reportLeft: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  savedDietLeft: {
     flex: 1,
   },
-  savedDietGoal: {
+  reportIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  reportTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#7C6FDC',
-    letterSpacing: 0.5,
+    fontWeight: '600',
+    color: '#000',
+    fontFamily: 'Inter',
   },
-  savedDietDate: {
+  reportSize: {
     fontSize: 12,
-    color: '#9E9E9E',
+    color: '#999',
     marginTop: 4,
-  },
-  savedDietRight: {
-    alignItems: 'flex-end',
-  },
-  savedDietCalories: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  savedDietCalText: {
-    fontSize: 11,
-    color: '#9E9E9E',
-    marginTop: 2,
-  },
-  savedDietActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  savedViewButton: {
-    flex: 1,
-    backgroundColor: '#00BFA5',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  savedViewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  savedDeleteButton: {
-    flex: 1,
-    backgroundColor: '#FF5252',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  savedDeleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Inter',
   },
 });
 
