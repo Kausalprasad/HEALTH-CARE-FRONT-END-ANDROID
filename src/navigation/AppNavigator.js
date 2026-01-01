@@ -71,6 +71,7 @@ import HeartGame from "../screens/HealthGames/Games/HeartGame";
 import AboutScreen from "../screens/Settings/AboutScreen";
 import MedicalDisclaimerScreen from "../screens/Settings/MedicalDisclaimerScreen";
 import PrivacyPolicyScreen from "../screens/Settings/PrivacyPolicyScreen";
+import LanguageScreen from "../screens/Settings/LanguageScreen";
 
 
 
@@ -257,6 +258,7 @@ export default function AppNavigator() {
 <Stack.Screen name="AboutScreen" component={AboutScreen}/>
 <Stack.Screen name="MedicalDisclaimerScreen" component={MedicalDisclaimerScreen}/>
 <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen}/>
+<Stack.Screen name="LanguageScreen" component={LanguageScreen}/>
   
 
 

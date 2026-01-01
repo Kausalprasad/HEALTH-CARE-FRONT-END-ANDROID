@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '../../config/config';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -83,6 +84,7 @@ const CustomPicker = ({ selectedValue, onValueChange, items, placeholder }) => {
 };
 
 const PregnancyScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -95,20 +97,20 @@ const PregnancyScreen = ({ navigation }) => {
     symptoms: '',
   });
 
-  const dietOptions = [
-    { label: 'Vegetarian', value: 'Vegetarian' },
-    { label: 'Non-Vegetarian', value: 'Non-Vegetarian' },
-    { label: 'Vegan', value: 'Vegan' },
-    { label: 'Pescatarian', value: 'Pescatarian' },
-  ];
+  const dietOptions = useMemo(() => [
+    { label: t('pregnancy.dietOptions.vegetarian'), value: 'Vegetarian' },
+    { label: t('pregnancy.dietOptions.nonVegetarian'), value: 'Non-Vegetarian' },
+    { label: t('pregnancy.dietOptions.vegan'), value: 'Vegan' },
+    { label: t('pregnancy.dietOptions.pescatarian'), value: 'Pescatarian' },
+  ], [t]);
 
-  const activityOptions = [
-    { label: 'Sedentary', value: 'Sedentary' },
-    { label: 'Light', value: 'Light' },
-    { label: 'Moderate', value: 'Moderate' },
-    { label: 'Active', value: 'Active' },
-    { label: 'Very Active', value: 'Very Active' },
-  ];
+  const activityOptions = useMemo(() => [
+    { label: t('pregnancy.activityOptions.sedentary'), value: 'Sedentary' },
+    { label: t('pregnancy.activityOptions.light'), value: 'Light' },
+    { label: t('pregnancy.activityOptions.moderate'), value: 'Moderate' },
+    { label: t('pregnancy.activityOptions.active'), value: 'Active' },
+    { label: t('pregnancy.activityOptions.veryActive'), value: 'Very Active' },
+  ], [t]);
 
   const [loading, setLoading] = useState(false);
   const [savedRecommendations, setSavedRecommendations] = useState([]);
@@ -163,11 +165,11 @@ const PregnancyScreen = ({ navigation }) => {
       if (response.ok) {
         setSavedRecommendations(data || []);
       } else {
-        Alert.alert('Error', data.error || 'Failed to fetch saved recommendations');
+        Alert.alert(t('common.error'), data.error || t('pregnancy.errors.fetchFailed'));
       }
     } catch (error) {
       console.error('Error fetching saved recommendations:', error);
-      Alert.alert('Error', 'Failed to connect to server');
+      Alert.alert(t('common.error'), t('pregnancy.errors.connectFailed'));
     } finally {
       setLoadingSavedRecommendations(false);
     }
@@ -177,12 +179,12 @@ const PregnancyScreen = ({ navigation }) => {
     if (!userToken) return;
 
     Alert.alert(
-      'Delete Recommendation',
-      'Are you sure you want to delete this recommendation?',
+      t('pregnancy.deleteAction'),
+      t('pregnancy.errors.deleteConfirm'),
       [
-        { text: 'Cancel', onPress: () => {} },
+        { text: t('common.cancel'), onPress: () => {} },
         {
-          text: 'Delete',
+          text: t('pregnancy.deleteAction'),
           onPress: async () => {
             try {
               const response = await fetch(`${BASE_URL}/api/pregnancy/recommendations/${recommendationId}`, {
@@ -195,14 +197,14 @@ const PregnancyScreen = ({ navigation }) => {
 
               const data = await response.json();
               if (response.ok) {
-                Alert.alert('Success', 'Recommendation deleted successfully');
+                Alert.alert(t('common.success'), t('pregnancy.errors.deleteSuccess'));
                 fetchSavedRecommendations();
               } else {
-                Alert.alert('Error', data.error || 'Failed to delete');
+                Alert.alert(t('common.error'), data.error || t('pregnancy.errors.deleteFailed'));
               }
             } catch (error) {
               console.error('Error deleting recommendation:', error);
-              Alert.alert('Error', 'Failed to delete recommendation');
+              Alert.alert(t('common.error'), t('pregnancy.errors.deleteFailed'));
             }
           },
         },
@@ -221,7 +223,7 @@ const PregnancyScreen = ({ navigation }) => {
 
   const generateRecommendation = async () => {
     if (!formData.age || !formData.pregnancyMonth || !formData.height || !formData.weight) {
-      Alert.alert('Error', 'Please fill in age, pregnancy month, height, and weight');
+      Alert.alert(t('common.error'), t('pregnancy.errors.fillRequired'));
       return;
     }
 
@@ -232,12 +234,12 @@ const PregnancyScreen = ({ navigation }) => {
 
     if (isNaN(age) || isNaN(pregnancyMonth) || isNaN(height) || isNaN(weight) || 
         age <= 0 || pregnancyMonth <= 0 || pregnancyMonth > 9 || height <= 0 || weight <= 0) {
-      Alert.alert('Error', 'Please enter valid age, pregnancy month (1-9), height, and weight');
+      Alert.alert(t('common.error'), t('pregnancy.errors.invalidInput'));
       return;
     }
 
     if (!userToken) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert(t('common.error'), t('pregnancy.errors.notAuthenticated'));
       return;
     }
 
@@ -273,20 +275,20 @@ const PregnancyScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Recommendation generated successfully!');
+        Alert.alert(t('common.success'), t('pregnancy.errors.generatedSuccess'));
         // Refresh history if on history tab
         if (activeTab === 'history') {
           fetchSavedRecommendations();
         }
       } else {
-        Alert.alert('Error', data.error || 'Failed to generate recommendation');
+        Alert.alert(t('common.error'), data.error || t('pregnancy.errors.generateFailed'));
       }
     } catch (error) {
       console.error('Error:', error);
       if (error.name === 'AbortError') {
-        Alert.alert('Timeout', 'Server is taking too long. Please try again.');
+        Alert.alert(t('common.error'), t('pregnancy.errors.timeout'));
       } else {
-        Alert.alert('Connection Error', `Cannot connect to server: ${error.message}`);
+        Alert.alert(t('common.error'), t('pregnancy.errors.connectionError'));
       }
     } finally {
       setLoading(false);
@@ -402,7 +404,7 @@ const PregnancyScreen = ({ navigation }) => {
         <View style={styles.savedRecommendationHeader}>
           <View style={styles.savedRecommendationLeft}>
             <Text style={styles.savedRecommendationTitle}>
-              PREGNANCY CARE
+              {t('pregnancy.title').toUpperCase()}
             </Text>
             <Text style={styles.savedRecommendationDate}>
               {new Date(item.createdAt).toLocaleDateString('en-GB')}
@@ -412,7 +414,7 @@ const PregnancyScreen = ({ navigation }) => {
             <Text style={styles.savedRecommendationMonth}>
               {inputData.pregnancy_month || inputData.pregnancyMonth || 'N/A'}
             </Text>
-            <Text style={styles.savedRecommendationMonthText}>month</Text>
+            <Text style={styles.savedRecommendationMonthText}>{t('pregnancy.month')}</Text>
           </View>
         </View>
         
@@ -421,13 +423,13 @@ const PregnancyScreen = ({ navigation }) => {
             style={styles.savedViewButton}
             onPress={() => viewSavedRecommendation(item)}
           >
-            <Text style={styles.savedViewButtonText}>view</Text>
+            <Text style={styles.savedViewButtonText}>{t('pregnancy.view')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.savedDeleteButton}
             onPress={() => deleteSavedRecommendation(item._id)}
           >
-            <Text style={styles.savedDeleteButtonText}>delete</Text>
+            <Text style={styles.savedDeleteButtonText}>{t('pregnancy.delete')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -442,7 +444,7 @@ const PregnancyScreen = ({ navigation }) => {
         </View>
       ) : savedRecommendations.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No reports found</Text>
+          <Text style={styles.emptyText}>{t('pregnancy.noReportsFound')}</Text>
         </View>
       ) : (
         <ScrollView style={styles.reportsScroll} showsVerticalScrollIndicator={false}>
@@ -463,7 +465,7 @@ const PregnancyScreen = ({ navigation }) => {
                     <Ionicons name="document-text" size={24} color="#9C27B0" />
                   </View>
                   <View>
-                    <Text style={styles.reportTitle}>Pregnancy Care</Text>
+                    <Text style={styles.reportTitle}>{t('pregnancy.title')}</Text>
                     <Text style={styles.reportSize}>
                       {new Date(item.createdAt).toLocaleDateString('en-GB')}
                     </Text>
@@ -473,7 +475,7 @@ const PregnancyScreen = ({ navigation }) => {
                   <Text style={styles.reportRisk}>
                     {inputData.pregnancy_month || inputData.pregnancyMonth || 'N/A'}
                   </Text>
-                  <Text style={styles.reportRiskLabel}>Month</Text>
+                  <Text style={styles.reportRiskLabel}>{t('pregnancy.Month')}</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -503,7 +505,7 @@ const PregnancyScreen = ({ navigation }) => {
                 }
               }}
             >
-              <Text style={styles.actionModalButtonText}>View</Text>
+              <Text style={styles.actionModalButtonText}>{t('pregnancy.viewAction')}</Text>
             </TouchableOpacity>
             <View style={styles.actionModalDivider} />
             <TouchableOpacity
@@ -516,7 +518,7 @@ const PregnancyScreen = ({ navigation }) => {
                 }
               }}
             >
-              <Text style={styles.actionModalDeleteText}>Delete</Text>
+              <Text style={styles.actionModalDeleteText}>{t('pregnancy.deleteAction')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -547,7 +549,7 @@ const PregnancyScreen = ({ navigation }) => {
             >
               <Ionicons name="chevron-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Pregnancy Care</Text>
+            <Text style={styles.headerTitle}>{t('pregnancy.title')}</Text>
             <View style={styles.headerPlaceholder} />
           </View>
 
@@ -558,7 +560,7 @@ const PregnancyScreen = ({ navigation }) => {
                 <Text style={styles.monthNumber}>
                   {inputData.pregnancy_month || inputData.pregnancyMonth || formData.pregnancyMonth || 'N/A'}
                 </Text>
-                <Text style={styles.monthLabel}>Month</Text>
+                <Text style={styles.monthLabel}>{t('pregnancy.Month')}</Text>
               </View>
             </View>
           </View>
@@ -569,7 +571,7 @@ const PregnancyScreen = ({ navigation }) => {
               onPress={() => setDetailTab('health')}
             >
               <Text style={detailTab === 'health' ? styles.detailTabTextActive : styles.detailTabText}>
-                Health
+                {t('pregnancy.health')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -577,7 +579,7 @@ const PregnancyScreen = ({ navigation }) => {
               onPress={() => setDetailTab('nutrition')}
             >
               <Text style={detailTab === 'nutrition' ? styles.detailTabTextActive : styles.detailTabText}>
-                Nutrition
+                {t('pregnancy.nutrition')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -585,7 +587,7 @@ const PregnancyScreen = ({ navigation }) => {
               onPress={() => setDetailTab('activity')}
             >
               <Text style={detailTab === 'activity' ? styles.detailTabTextActive : styles.detailTabText}>
-                Activity
+                {t('pregnancy.activity')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -593,78 +595,78 @@ const PregnancyScreen = ({ navigation }) => {
               onPress={() => setDetailTab('fetalDev')}
             >
               <Text style={detailTab === 'fetalDev' ? styles.detailTabTextActive : styles.detailTabText}>
-                Fetal Dev
+                {t('pregnancy.fetalDev')}
               </Text>
             </TouchableOpacity>
           </View>
 
           {detailTab === 'health' && (
             <View style={styles.infoCard}>
-              <Text style={styles.sectionTitle}>🏥 Health Recommendations</Text>
+              <Text style={styles.sectionTitle}>🏥 {t('pregnancy.healthRecommendations')}</Text>
               <Text style={styles.cardText}>
-                {sections.health || 'No health information available'}
+                {sections.health || t('pregnancy.noHealthInfo')}
               </Text>
             </View>
           )}
 
           {detailTab === 'nutrition' && (
             <View style={styles.infoCard}>
-              <Text style={styles.sectionTitle}>🥗 Nutrition Guidelines</Text>
+              <Text style={styles.sectionTitle}>🥗 {t('pregnancy.nutritionGuidelines')}</Text>
               <Text style={styles.cardText}>
-                {sections.nutrition || 'No nutrition information available'}
+                {sections.nutrition || t('pregnancy.noNutritionInfo')}
               </Text>
             </View>
           )}
 
           {detailTab === 'activity' && (
             <View style={styles.infoCard}>
-              <Text style={styles.sectionTitle}>🏃‍♀️ Activity Recommendations</Text>
+              <Text style={styles.sectionTitle}>🏃‍♀️ {t('pregnancy.activityRecommendations')}</Text>
               <Text style={styles.cardText}>
-                {sections.activity || 'No activity information available'}
+                {sections.activity || t('pregnancy.noActivityInfo')}
               </Text>
             </View>
           )}
 
           {detailTab === 'fetalDev' && (
             <View style={styles.infoCard}>
-              <Text style={styles.sectionTitle}>👶 Fetal Development</Text>
+              <Text style={styles.sectionTitle}>👶 {t('pregnancy.fetalDevelopment')}</Text>
               <Text style={styles.cardText}>
-                {sections.fetalDev || 'No fetal development information available'}
+                {sections.fetalDev || t('pregnancy.noFetalInfo')}
               </Text>
             </View>
           )}
 
           <View style={styles.infoCard}>
-            <Text style={styles.sectionTitle}>📋 Your Information</Text>
+            <Text style={styles.sectionTitle}>📋 {t('pregnancy.yourInformation')}</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Age:</Text>
-              <Text style={styles.infoValue}>{inputData.age || formData.age || 'N/A'} years</Text>
+              <Text style={styles.infoLabel}>{t('pregnancy.ageLabel')}</Text>
+              <Text style={styles.infoValue}>{inputData.age || formData.age || 'N/A'} {t('pregnancy.years')}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Height:</Text>
-              <Text style={styles.infoValue}>{inputData.height || formData.height || 'N/A'} cm</Text>
+              <Text style={styles.infoLabel}>{t('pregnancy.heightLabel')}</Text>
+              <Text style={styles.infoValue}>{inputData.height || formData.height || 'N/A'} {t('pregnancy.cm')}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Weight:</Text>
-              <Text style={styles.infoValue}>{inputData.weight || formData.weight || 'N/A'} kg</Text>
+              <Text style={styles.infoLabel}>{t('pregnancy.weightLabel')}</Text>
+              <Text style={styles.infoValue}>{inputData.weight || formData.weight || 'N/A'} {t('pregnancy.kg')}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Diet:</Text>
+              <Text style={styles.infoLabel}>{t('pregnancy.dietLabel')}</Text>
               <Text style={styles.infoValue}>{inputData.diet_type || inputData.dietType || formData.dietType || 'N/A'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Activity:</Text>
+              <Text style={styles.infoLabel}>{t('pregnancy.activityLabel')}</Text>
               <Text style={styles.infoValue}>{inputData.activity_level || inputData.activityLevel || formData.activityLevel || 'N/A'}</Text>
             </View>
             {(inputData.health_condition || inputData.healthCondition || formData.healthCondition) && (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Condition:</Text>
+                <Text style={styles.infoLabel}>{t('pregnancy.conditionLabel')}</Text>
                 <Text style={styles.infoValue}>{inputData.health_condition || inputData.healthCondition || formData.healthCondition}</Text>
               </View>
             )}
             {(inputData.symptoms || formData.symptoms) && (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Symptoms:</Text>
+                <Text style={styles.infoLabel}>{t('pregnancy.symptomsLabel')}</Text>
                 <Text style={styles.infoValue}>{inputData.symptoms || formData.symptoms}</Text>
               </View>
             )}
@@ -694,7 +696,7 @@ const PregnancyScreen = ({ navigation }) => {
           >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Pregnancy Care</Text>
+          <Text style={styles.headerTitle}>{t('pregnancy.title')}</Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
@@ -708,7 +710,7 @@ const PregnancyScreen = ({ navigation }) => {
               styles.tabText, 
               activeTab === 'generate' ? styles.tabTextGenerateActive : styles.tabTextGenerateInactive
             ]}>
-              Generate
+              {t('pregnancy.generate')}
             </Text>
             {activeTab === 'generate' && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
@@ -720,7 +722,7 @@ const PregnancyScreen = ({ navigation }) => {
               styles.tabText, 
               activeTab === 'history' ? styles.tabTextReportsActive : styles.tabTextReportsInactive
             ]}>
-              My Reports
+              {t('pregnancy.myReports')}
             </Text>
             {activeTab === 'history' && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
@@ -732,12 +734,12 @@ const PregnancyScreen = ({ navigation }) => {
             <View style={styles.formCard}>
               <View style={styles.formCardGradient}>
                 {/* Add Details Section */}
-                <Text style={styles.sectionTitle}>Add Details</Text>
+                <Text style={styles.sectionTitle}>{t('pregnancy.addDetails')}</Text>
 
                 <View style={styles.fullInput}>
                   <TextInput
                     style={styles.input}
-                    placeholder="Name"
+                    placeholder={t('pregnancy.name')}
                     placeholderTextColor="#999"
                     value={formData.name}
                     onChangeText={(value) => handleInputChange('name', value)}
@@ -748,7 +750,7 @@ const PregnancyScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Age"
+                      placeholder={t('pregnancy.age')}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.age}
@@ -758,7 +760,7 @@ const PregnancyScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Pregnancy Month"
+                      placeholder={t('pregnancy.pregnancyMonth')}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.pregnancyMonth}
@@ -771,7 +773,7 @@ const PregnancyScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Weight"
+                      placeholder={t('pregnancy.weight')}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.weight}
@@ -781,7 +783,7 @@ const PregnancyScreen = ({ navigation }) => {
                   <View style={styles.inputHalf}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Height"
+                      placeholder={t('pregnancy.height')}
                       placeholderTextColor="#999"
                       keyboardType="numeric"
                       value={formData.height}
@@ -795,7 +797,7 @@ const PregnancyScreen = ({ navigation }) => {
                     selectedValue={formData.dietType}
                     onValueChange={(value) => handleInputChange('dietType', value)}
                     items={dietOptions}
-                    placeholder="Preference"
+                    placeholder={t('pregnancy.preference')}
                   />
                 </View>
 
@@ -804,14 +806,14 @@ const PregnancyScreen = ({ navigation }) => {
                     selectedValue={formData.activityLevel}
                     onValueChange={(value) => handleInputChange('activityLevel', value)}
                     items={activityOptions}
-                    placeholder="Activity Level"
+                    placeholder={t('pregnancy.activityLevel')}
                   />
                 </View>
 
                 <View style={styles.fullInput}>
                   <TextInput
                     style={styles.input}
-                    placeholder="Health Condition (if any)"
+                    placeholder={t('pregnancy.healthCondition')}
                     placeholderTextColor="#999"
                     value={formData.healthCondition}
                     onChangeText={(value) => handleInputChange('healthCondition', value)}
@@ -821,7 +823,7 @@ const PregnancyScreen = ({ navigation }) => {
                 <View style={styles.fullInput}>
                   <TextInput
                     style={styles.input}
-                    placeholder="Symptoms (if any)"
+                    placeholder={t('pregnancy.symptoms')}
                     placeholderTextColor="#999"
                     value={formData.symptoms}
                     onChangeText={(value) => handleInputChange('symptoms', value)}
@@ -839,7 +841,7 @@ const PregnancyScreen = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.analyzeButtonText}>Generate report</Text>
+                <Text style={styles.analyzeButtonText}>{t('pregnancy.generateReport')}</Text>
               )}
             </TouchableOpacity>
           </ScrollView>

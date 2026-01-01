@@ -7,18 +7,18 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
-   SafeAreaView,
+  SafeAreaView,
   Dimensions,
 } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
+
 const { width } = Dimensions.get('window');
 
 const DayDetailScreen = ({ route, navigation }) => {
   const { dayData, dietPlan } = route.params;
   const [activeTab, setActiveTab] = useState('breakfast');
-
-  console.log('📥 Received dayData:', dayData);
-  console.log('📥 Received dietPlan:', dietPlan);
 
   // Extract meal details from backend plan text
   const extractMealDetails = (content, mealType) => {
@@ -43,14 +43,16 @@ const DayDetailScreen = ({ route, navigation }) => {
       ? mealContent.substring(descStart, descEnd).trim()
       : mealContent.substring(descStart, Math.min(descStart + 100, mealContent.length)).split('\n')[0].trim();
 
-    // Extract macros
+    // Extract macros - Format: (300 cal, Carbs: 45g, Protein: 5g, Fat: 10g)
     const macrosMatch = mealContent.match(/\(([^)]+)\)/);
     const macrosText = macrosMatch ? macrosMatch[1].trim() : '';
-    const caloriesMatch = macrosText.match(/(\d+)\s*kcal/i) || macrosText.match(/(\d+)\s*cal/i);
-    const proteinMatch = macrosText.match(/(\d+)g?\s*(?:protein|P)/i);
-    const carbsMatch = macrosText.match(/(\d+)g?\s*(?:carbs|carbohydrates|C)/i);
-    const fatsMatch = macrosText.match(/(\d+)g?\s*(?:fat|fats|F)/i);
-    const fiberMatch = macrosText.match(/(\d+)g?\s*(?:fiber|fibre)/i);
+    
+    // Match patterns: "300 cal", "Carbs: 45g", "Protein: 5g", "Fat: 10g"
+    const caloriesMatch = macrosText.match(/(\d+)\s*cal/i);
+    const proteinMatch = macrosText.match(/Protein:\s*(\d+)g?/i);
+    const carbsMatch = macrosText.match(/Carbs:\s*(\d+)g?/i);
+    const fatsMatch = macrosText.match(/Fat:\s*(\d+)g?/i);
+    const fiberMatch = macrosText.match(/Fiber:\s*(\d+)g?/i);
 
     const calories = caloriesMatch ? caloriesMatch[1] : '0';
     const protein = proteinMatch ? proteinMatch[1] : '0';
@@ -142,7 +144,9 @@ const DayDetailScreen = ({ route, navigation }) => {
     };
   };
 
-  const meals = parseDietPlanForDay(dietPlan.diet_plan || '');
+  // Handle API response structure - diet_plan can be at dietPlan.diet_plan or dietPlan.diet.diet_plan
+  const dietPlanText = dietPlan.diet_plan || dietPlan.diet?.diet_plan || '';
+  const meals = parseDietPlanForDay(dietPlanText);
   const currentMeal = meals?.[activeTab] || {
     description: 'Meal details not available',
     calories: 0,
@@ -155,128 +159,298 @@ const DayDetailScreen = ({ route, navigation }) => {
     ingredients: [],
   };
 
-  // Pie chart component
-  const MealPieChart = ({ ingredients }) => {
-    if (!ingredients || ingredients.length === 0) return null;
-    const colors = ['#E8D4B8', '#D4A574', '#F5D7A1', '#E0C097'];
 
-    const data = ingredients.map((item, index) => ({
-      name: item.name,
-      amount: parseInt(item.amount) || 1,
-      color: colors[index % colors.length],
-      legendFontColor: '#333',
-      legendFontSize: 13,
-    }));
-
+  // Pie Chart Component - Based on actual meal macros using SVG (Expo compatible)
+  const PieChartCircle = ({ meal }) => {
+    const size = 260;
+    const radius = 130;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    
+    // Get macros from meal data (convert strings to numbers)
+    const protein = parseInt(meal?.protein) || 0;
+    const carbs = parseInt(meal?.carbs) || 0;
+    const fats = parseInt(meal?.fats) || 0;
+    
+    // Calculate total and percentages
+    const total = protein + carbs + fats;
+    
+    // Default values: 75% blue (carbs), 25% purple (protein + fats)
+    let carbsPercent = 0.75;
+    let othersPercent = 0.25;
+    
+    if (total > 0) {
+      carbsPercent = carbs / total;
+      othersPercent = (protein + fats) / total;
+    }
+    
+    // Convert percentages to degrees
+    const carbsAngle = carbsPercent * 360;
+    const othersAngle = othersPercent * 360;
+    
+    // Helper function to create arc path
+    const createArc = (startAngle, endAngle) => {
+      const start = (startAngle * Math.PI) / 180;
+      const end = (endAngle * Math.PI) / 180;
+      
+      const x1 = centerX + radius * Math.cos(start);
+      const y1 = centerY + radius * Math.sin(start);
+      const x2 = centerX + radius * Math.cos(end);
+      const y2 = centerY + radius * Math.sin(end);
+      
+      const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+      
+      return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    };
+    
+    // Calculate angles (starting from -90 degrees to match VictoryPie)
+    const carbsStartAngle = -90;
+    const carbsEndAngle = carbsStartAngle + carbsAngle;
+    const othersStartAngle = carbsEndAngle;
+    const othersEndAngle = othersStartAngle + othersAngle;
+    
     return (
-      <View style={styles.pieContainer}>
-        <View style={styles.chartWrapper}>
-          <PieChart
-            data={data}
-            width={width - 80}
-            height={220}
-            accessor="amount"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            chartConfig={{
-              color: (opacity = 1) => `rgba(124, 111, 220, ${opacity})`,
-            }}
-            hasLegend={false}
-            center={[(width - 80) / 4, 0]}
+      <View style={styles.pieChartContainer}>
+        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Carbs segment (Blue) */}
+          <Path
+            d={createArc(carbsStartAngle, carbsEndAngle)}
+            fill="#0A33FF"
+            stroke="#FFFFFF"
+            strokeWidth={3}
           />
-        </View>
-        <View style={styles.legendContainer}>
-          {data.map((item, idx) => (
-            <View key={idx} style={styles.legendItem}>
-              <View style={styles.legendLabelRow}>
-                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                <Text style={styles.legendText}>{item.name}</Text>
-              </View>
-              <Text style={styles.legendAmount}>{ingredients[idx].amount}</Text>
-            </View>
-          ))}
-        </View>
+          {/* Others segment (Purple) - Protein + Fats */}
+          <Path
+            d={createArc(othersStartAngle, othersEndAngle)}
+            fill="#B05CE6"
+            stroke="#FFFFFF"
+            strokeWidth={3}
+          />
+        </Svg>
       </View>
     );
   };
 
+  // Extract food items from meal description - use currentMeal which updates with activeTab
+  const getFoodItems = (meal) => {
+    // First, try to use ingredients from the parsed meal
+    if (meal.ingredients && meal.ingredients.length > 0) {
+      return meal.ingredients.map(ing => ({
+        name: typeof ing === 'string' ? ing : (ing.name || ing.item || 'Food'),
+        amount: typeof ing === 'string' ? '150 gm' : (ing.amount || ing.quantity || '150 gm')
+      }));
+    }
+    
+    const items = [];
+    const description = meal.description || '';
+    
+    // Enhanced extraction from description - more specific patterns
+    const foodPatterns = [
+      { patterns: [/egg/gi, /eggs/gi], name: 'Eggs', amount: '2 Whole' },
+      { patterns: [/salad/gi], name: 'Salad', amount: '150 gm' },
+      { patterns: [/rice/gi, /biryani/gi], name: 'Rice', amount: '150 gm' },
+      { patterns: [/chicken/gi], name: 'Chicken', amount: '150 gm' },
+      { patterns: [/dal/gi, /daal/gi, /lentil/gi], name: 'Dal', amount: '150 gm' },
+      { patterns: [/roti/gi, /chapati/gi], name: 'Roti', amount: '2 pcs' },
+      { patterns: [/paneer/gi], name: 'Paneer', amount: '100 gm' },
+      { patterns: [/vegetable/gi, /veg/gi], name: 'Vegetables', amount: '100 gm' },
+      { patterns: [/paratha/gi], name: 'Paratha', amount: '2 pcs' },
+      { patterns: [/biryani/gi], name: 'Biryani', amount: '200 gm' },
+      { patterns: [/curry/gi], name: 'Curry', amount: '150 gm' },
+      { patterns: [/masala/gi, /chana masala/gi, /rajma masala/gi], name: 'Masala', amount: '150 gm' },
+      { patterns: [/dalia/gi], name: 'Dalia', amount: '100 gm' },
+      { patterns: [/milk/gi], name: 'Milk', amount: '200 ml' },
+      { patterns: [/nuts/gi], name: 'Nuts', amount: '30 gm' },
+    ];
+    
+    const foundItems = new Set();
+    
+    foodPatterns.forEach(({ patterns, name, amount }) => {
+      if (patterns.some(pattern => pattern.test(description)) && !foundItems.has(name)) {
+        items.push({ name, amount });
+        foundItems.add(name);
+      }
+    });
+    
+    // If no items found, try simpler extraction
+    if (items.length === 0) {
+      const descLower = description.toLowerCase();
+      const simpleMap = [
+        { keywords: ['egg'], name: 'Eggs', amount: '2 Whole' },
+        { keywords: ['salad'], name: 'Salad', amount: '150 gm' },
+        { keywords: ['rice', 'biryani'], name: 'Rice', amount: '150 gm' },
+        { keywords: ['chicken'], name: 'Chicken', amount: '150 gm' },
+        { keywords: ['dal', 'daal'], name: 'Dal', amount: '150 gm' },
+        { keywords: ['roti', 'chapati'], name: 'Roti', amount: '2 pcs' },
+        { keywords: ['paneer'], name: 'Paneer', amount: '100 gm' },
+        { keywords: ['paratha'], name: 'Paratha', amount: '2 pcs' },
+        { keywords: ['masala'], name: 'Masala', amount: '150 gm' },
+        { keywords: ['dalia'], name: 'Dalia', amount: '100 gm' },
+      ];
+      
+      simpleMap.forEach(({ keywords, name, amount }) => {
+        if (keywords.some(kw => descLower.includes(kw)) && !foundItems.has(name)) {
+          items.push({ name, amount });
+          foundItems.add(name);
+        }
+      });
+    }
+    
+    // If still no items, use description to create at least one item
+    if (items.length === 0 && description) {
+      const words = description.split(/[,\s]+/).filter(w => w.length > 2);
+      if (words.length > 0) {
+        items.push({ name: words[0].charAt(0).toUpperCase() + words[0].slice(1), amount: '150 gm' });
+      }
+    }
+    
+    return items;
+  };
+
   // Main UI
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{dayData.dayName}</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        {['breakfast', 'lunch', 'dinner'].map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Pie Chart */}
-        <MealPieChart ingredients={currentMeal.ingredients} />
-
-        {/* Medical Benefits */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Medical Benefits</Text>
-          <Text style={styles.sectionText}>
-            {currentMeal.medicalNote || 'This meal provides balanced nutrition for your health goals.'}
-          </Text>
+          <Text style={styles.headerTitle}>Diet Plan - {dayData.dayName.charAt(0) + dayData.dayName.slice(1).toLowerCase()}</Text>
+          <View style={styles.headerPlaceholder} />
         </View>
 
-        {/* Meal Overview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Meal Overview</Text>
-          <View style={styles.overviewGrid}>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Calories :</Text>
-              <Text style={styles.overviewValue}>{currentMeal.calories}</Text>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          {['breakfast', 'lunch', 'dinner'].map(tab => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, activeTab === tab && styles.activeTab]}
+              onPress={() => setActiveTab(tab)}
+            >
+              {activeTab === tab && (
+                <Ionicons 
+                  name={tab === 'breakfast' ? 'star' : tab === 'lunch' ? 'sunny' : 'moon'} 
+                  size={16} 
+                  color="#FFF" 
+                  style={styles.tabIcon}
+                />
+              )}
+              {activeTab !== tab && (
+                <Ionicons 
+                  name={tab === 'breakfast' ? 'star-outline' : tab === 'lunch' ? 'sunny-outline' : 'moon-outline'} 
+                  size={16} 
+                  color="#666" 
+                  style={styles.tabIcon}
+                />
+              )}
+              <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Pie Chart */}
+          <View style={styles.pieChartCard}>
+            <PieChartCircle meal={currentMeal} />
+          </View>
+
+          {/* Food Items Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="restaurant" size={20} color="#4CAF50" />
+              <Text style={styles.cardTitle}>Food Items</Text>
             </View>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Protein :</Text>
-              <Text style={styles.overviewValue}>{currentMeal.protein}g</Text>
-            </View>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Fiber :</Text>
-              <Text style={styles.overviewValue}>{currentMeal.fiber}g</Text>
-            </View>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Fats :</Text>
-              <Text style={styles.overviewValue}>{currentMeal.fats}g</Text>
+            <View style={styles.foodItemsContainer}>
+              {getFoodItems(currentMeal).map((item, index) => (
+                <View key={index} style={styles.foodItemRow}>
+                  <Text style={styles.foodItemName}>{item.name}</Text>
+                  <Text style={styles.foodItemAmount}>{item.amount}</Text>
+                </View>
+              ))}
             </View>
           </View>
-        </View>
 
-        {/* Estimate Cost */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Estimate Cost : {currentMeal.cost}</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Medical Benefits Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="heart" size={20} color="#81D4FA" />
+              <Text style={styles.cardTitle}>Medical Benefits</Text>
+            </View>
+            <Text style={styles.cardText}>
+              Please consult a doctor if your symptoms persist or worsen, especially considering your medical history of {dietPlan.user_profile?.medical_conditions?.[0] || dietPlan.diet?.user_profile?.medical_conditions?.[0] || 'Hh'}.
+            </Text>
+          </View>
+
+          {/* Nutritional Values Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="bar-chart" size={20} color="#EF5350" />
+              <Text style={styles.cardTitle}>Nutritional Values</Text>
+            </View>
+            <View style={styles.nutritionGrid}>
+              <View style={styles.nutritionRow}>
+                <Text style={styles.nutritionLabel}>Calories</Text>
+                <Text style={styles.nutritionValue}>{currentMeal.calories || '200'}</Text>
+              </View>
+              <View style={styles.nutritionRow}>
+                <Text style={styles.nutritionLabel}>Fiber</Text>
+                <Text style={styles.nutritionValue}>{currentMeal.fiber || '5'} gm</Text>
+              </View>
+              <View style={styles.nutritionRow}>
+                <Text style={styles.nutritionLabel}>Protein</Text>
+                <Text style={styles.nutritionValue}>{currentMeal.protein || '10'} gm</Text>
+              </View>
+              <View style={styles.nutritionRow}>
+                <Text style={styles.nutritionLabel}>Fat</Text>
+                <Text style={styles.nutritionValue}>{currentMeal.fats || '50'} gm</Text>
+              </View>
+              <View style={styles.nutritionRow}>
+                <Text style={styles.nutritionLabel}>Carbs</Text>
+                <Text style={styles.nutritionValue}>{currentMeal.carbs || '250'}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Estimated Cost Card */}
+          <View style={styles.card}>
+            <Text style={styles.costLabel}>Estimated Cost</Text>
+            <Text style={styles.costValue}>{currentMeal.cost || '₹190'} /day</Text>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.downloadButton}>
+              <Text style={styles.buttonText}>Download</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shareButton}>
+              <Text style={styles.shareButtonText}>Share</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
   },
   header: {
     marginTop: StatusBar.currentHeight || 0,
@@ -284,148 +458,194 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 32,
-    color: '#000000',
-    fontWeight: '300',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: 22,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    color: '#000',
+    fontFamily: 'Inter',
   },
   headerPlaceholder: {
     width: 40,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     gap: 8,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   activeTab: {
-    backgroundColor: '#7C6FDC',
+    backgroundColor: '#9C27B0',
+  },
+  tabIcon: {
+    marginRight: 6,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#9E9E9E',
+    color: '#666',
+    fontFamily: 'Inter',
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: '#FFF',
+    fontFamily: 'Inter',
   },
   scrollView: {
     flex: 1,
   },
-  pieContainer: {
-    backgroundColor: '#FFFFFF',
+  pieChartCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 12,
-    borderRadius: 16,
+    marginBottom: 16,
+    borderRadius: 24,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  chartWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  legendContainer: {
-    marginTop: 20,
+  pieChartContainer: {
+    width: 260,
+    height: 260,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  legendItem: {
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 24,
+    padding: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginLeft: 8,
+    fontFamily: 'Inter',
+  },
+  cardText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    fontFamily: 'Inter',
+  },
+  foodItemsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  foodItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    width: '45%',
   },
-  legendLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  legendText: {
+  foodItemName: {
     fontSize: 14,
     color: '#333',
-    fontWeight: '400',
+    fontFamily: 'Inter',
   },
-  legendAmount: {
+  foodItemAmount: {
     fontSize: 14,
     color: '#666',
-    fontWeight: '500',
+    fontFamily: 'Inter',
   },
-  section: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#7C6FDC',
-    marginBottom: 12,
-  },
-  sectionText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 22,
-  },
-  overviewGrid: {
+  nutritionGrid: {
     gap: 12,
   },
-  overviewItem: {
+  nutritionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#E0E0E0',
   },
-  overviewLabel: {
+  nutritionLabel: {
     fontSize: 14,
     color: '#666',
-    fontWeight: '400',
+    fontFamily: 'Inter',
   },
-  overviewValue: {
+  nutritionValue: {
     fontSize: 14,
     color: '#000',
-    fontWeight: '500',
+    fontWeight: '700',
+    fontFamily: 'Inter',
+  },
+  costLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontFamily: 'Inter',
+  },
+  costValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000',
+    fontFamily: 'Inter',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  downloadButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  shareButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    padding: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Inter',
+  },
+  shareButtonText: {
+    color: '#2196F3',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Inter',
+  },
+  bottomSpacing: {
+    height: 24,
   },
 });
 

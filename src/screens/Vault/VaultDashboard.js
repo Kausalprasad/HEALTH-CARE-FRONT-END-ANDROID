@@ -26,10 +26,12 @@ import { Linking } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as Print from "expo-print";
 import Svg, { Circle } from "react-native-svg";
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get("window");
 
 export default function VaultDashboard({ navigation }) {
+  const { t } = useTranslation();
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -65,35 +67,35 @@ export default function VaultDashboard({ navigation }) {
   const categories = [
     { 
       id: "All", 
-      name: "All Files", 
+      name: t('vault.categories.all'), 
       icon: "document-text",
       iconColor: "#9C27B0",
       iconBg: "#E1BEE7",
-      description: "Check all files together"
+      description: t('vault.categories.all')
     },
     { 
       id: "Reports", 
-      name: "Reports", 
+      name: t('vault.categories.reports'), 
       icon: "clipboard",
       iconColor: "#00BCD4",
       iconBg: "#B2EBF2",
-      description: "All Medical Reports"
+      description: t('vault.categories.reports')
     },
     { 
       id: "Prescriptions", 
-      name: "Prescriptions", 
+      name: t('vault.categories.prescriptions'), 
       icon: "medical",
       iconColor: "#4CAF50",
       iconBg: "#C8E6C9",
-      description: "Track every prescription"
+      description: t('vault.categories.prescriptions')
     },
     { 
       id: "Bills", 
-      name: "Medic Bills", 
+      name: t('vault.categories.bills'), 
       icon: "receipt",
       iconColor: "#FF9800",
       iconBg: "#FFE0B2",
-      description: "All bills, neatly stored."
+      description: t('vault.categories.bills')
     },
   ];
 
@@ -176,7 +178,7 @@ export default function VaultDashboard({ navigation }) {
       setFiles(fetchedFiles);
     } catch (err) {
       console.error("Error fetching files:", err);
-      Alert.alert("Error", `Failed to load files: ${err.message}`);
+      Alert.alert(t('alerts.error'), `${t('vault.failedToLoad')}: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -476,7 +478,7 @@ export default function VaultDashboard({ navigation }) {
         await handleUpload(selectedFile);
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to pick document");
+      Alert.alert(t('alerts.error'), t('vault.failedToPick'));
       console.error(err);
     }
   };
@@ -582,7 +584,7 @@ export default function VaultDashboard({ navigation }) {
     } catch (err) {
       console.error("Upload error:", err);
       setShowUploadModal(false);
-      Alert.alert("Error", `Failed to upload: ${err.message}`);
+      Alert.alert(t('alerts.error'), `${t('vault.failedToUpload')}: ${err.message}`);
     }
   };
 
@@ -620,7 +622,7 @@ export default function VaultDashboard({ navigation }) {
         if (file.aiOutput) {
           navigation.navigate("VaultAIReport", { file });
         } else {
-          Alert.alert("Info", "File cannot be opened. AI analysis not available.");
+          Alert.alert(t('alerts.info'), t('vault.fileCannotOpen'));
         }
       }
     } catch (error) {
@@ -628,7 +630,7 @@ export default function VaultDashboard({ navigation }) {
       if (file.aiOutput) {
         navigation.navigate("VaultAIReport", { file });
       } else {
-        Alert.alert("Error", "Failed to open file");
+        Alert.alert(t('alerts.error'), t('vault.failedToOpen'));
       }
     }
   };
@@ -653,7 +655,7 @@ export default function VaultDashboard({ navigation }) {
       });
     } catch (error) {
       console.error("Error sharing file:", error);
-      Alert.alert("Error", "Failed to share file");
+      Alert.alert(t('alerts.error'), t('vault.failedToShare'));
     }
   };
 
@@ -662,22 +664,22 @@ export default function VaultDashboard({ navigation }) {
     handleContextMenuClose();
     // Using Alert with input (Alert.prompt is iOS only, so we'll use a simple alert for now)
     Alert.alert(
-      "Rename File",
-      "Rename functionality will be implemented soon.",
-      [{ text: "OK" }]
+      t('vault.renameFile'),
+      t('vault.renameComingSoon'),
+      [{ text: t('common.ok') }]
     );
   };
 
   const handleMoveToFolderFromMenu = () => {
     if (!selectedFileForMenu) return;
     handleContextMenuClose();
-    Alert.alert("Move to Folder", "Select folder to move file to", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t('vault.moveToFolder'), t('vault.selectFolder'), [
+      { text: t('common.cancel'), style: "cancel" },
       {
-        text: "Move",
+        text: t('common.move'),
         onPress: async () => {
           // TODO: Implement move API call
-          Alert.alert("Success", "File moved successfully");
+          Alert.alert(t('alerts.success'), t('vault.fileMoved'));
           fetchUserFiles();
         },
       },
@@ -689,10 +691,10 @@ export default function VaultDashboard({ navigation }) {
     handleContextMenuClose();
     try {
       // TODO: Implement download functionality
-      Alert.alert("Download", "File download started");
+      Alert.alert(t('vault.download'), t('vault.fileDownloadStarted'));
     } catch (error) {
       console.error("Error downloading file:", error);
-      Alert.alert("Error", "Failed to download file");
+      Alert.alert(t('alerts.error'), t('vault.failedToDownload'));
     }
   };
 
@@ -700,12 +702,12 @@ export default function VaultDashboard({ navigation }) {
     if (!selectedFileForMenu) return;
     handleContextMenuClose();
     Alert.alert(
-      "Delete File",
-      `Are you sure you want to delete "${selectedFileForMenu.name}"?`,
+      t('vault.deleteFile'),
+      `${t('vault.deleteConfirm')} "${selectedFileForMenu.name}"?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         {
-          text: "Delete",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             try {
@@ -735,7 +737,7 @@ export default function VaultDashboard({ navigation }) {
                 setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
                 setFilteredFiles((prevFiltered) => prevFiltered.filter((f) => f.id !== fileId));
                 
-                Alert.alert("Success", "File deleted successfully");
+                Alert.alert(t('alerts.success'), t('vault.fileDeleted'));
               } else {
                 const errorText = await res.text().catch(() => "Unknown error");
                 console.error("Delete error response:", errorText);
@@ -743,7 +745,7 @@ export default function VaultDashboard({ navigation }) {
               }
             } catch (error) {
               console.error("Error deleting file:", error);
-              Alert.alert("Error", `Failed to delete file: ${error.message}`);
+              Alert.alert(t('alerts.error'), `${t('vault.failedToDelete')}: ${error.message}`);
             }
           },
         },
@@ -805,7 +807,7 @@ export default function VaultDashboard({ navigation }) {
               style={styles.headerIcon}
               resizeMode="contain"
             />
-            <Text style={styles.headerTitle}>Health Vault</Text>
+            <Text style={styles.headerTitle}>{t('vault.title')}</Text>
           </View>
           <View style={{ width: 24 }} />
         </View>
@@ -815,7 +817,7 @@ export default function VaultDashboard({ navigation }) {
           <Ionicons name="search" size={20} color="#757575" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search files here"
+            placeholder={t('vault.searchFiles')}
             placeholderTextColor="#757575"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -827,10 +829,10 @@ export default function VaultDashboard({ navigation }) {
             {/* Storage Card */}
             <View style={styles.storageCard}>
               <Text style={styles.storageText}>
-                {storage.used}GB Used <Text style={styles.storageTotal}>/{storage.total}GB</Text>
+                {storage.used}GB {t('vault.used')} <Text style={styles.storageTotal}>/{storage.total}GB</Text>
               </Text>
               <Text style={styles.storageSubtext}>
-                Your vault storage space at a glance.
+                {t('vault.storageAtGlance')}
               </Text>
             </View>
 
@@ -917,7 +919,7 @@ export default function VaultDashboard({ navigation }) {
             ) : filteredFiles.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="folder-open-outline" size={64} color="#999" />
-                <Text style={styles.emptyText}>No files found</Text>
+                <Text style={styles.emptyText}>{t('vault.noFiles')}</Text>
               </View>
             ) : (() => {
               const searchFiltered = filteredFiles.filter((file) =>
@@ -967,7 +969,7 @@ export default function VaultDashboard({ navigation }) {
 
         {/* Floating Add Button */}
         <TouchableOpacity style={styles.addButton} onPress={handleAdd} activeOpacity={0.9}>
-          <Text style={styles.addButtonText}>Add</Text>
+          <Text style={styles.addButtonText}>{t('vault.add')}</Text>
         </TouchableOpacity>
 
         {/* Upload Progress Modal */}
@@ -1016,9 +1018,9 @@ export default function VaultDashboard({ navigation }) {
                 </View>
               </View>
               
-              <Text style={styles.uploadModalTitle}>Uploading File..</Text>
+              <Text style={styles.uploadModalTitle}>{t('vault.uploading')}</Text>
               <Text style={styles.uploadModalSubtext}>
-                Uploading securely. Your information stays yours.
+                {t('vault.uploadingSecurely')}
               </Text>
             </View>
           </View>
@@ -1037,7 +1039,7 @@ export default function VaultDashboard({ navigation }) {
                 <Ionicons name="checkmark" size={60} color="#fff" />
               </View>
               
-              <Text style={styles.completionModalTitle}>Analyze Complete!</Text>
+              <Text style={styles.completionModalTitle}>{t('vault.analyzeComplete')}</Text>
               <Text style={styles.completionFileName}>
                 {uploadedFile?.name || "medical_report_01_nov_2025"}
               </Text>
@@ -1056,7 +1058,7 @@ export default function VaultDashboard({ navigation }) {
                   style={styles.moveToFolderButton}
                   onPress={handleMoveToFolder}
                 >
-                  <Text style={styles.moveToFolderButtonText}>Move to folder</Text>
+                  <Text style={styles.moveToFolderButtonText}>{t('vault.moveToFolder')}</Text>
                   <Ionicons name="chevron-down" size={16} color="#9C27B0" />
                 </TouchableOpacity>
               </View>
@@ -1082,7 +1084,7 @@ export default function VaultDashboard({ navigation }) {
                 onPress={handleShare}
                 activeOpacity={0.7}
               >
-                <Text style={styles.contextMenuText}>Share</Text>
+                <Text style={styles.contextMenuText}>{t('common.share')}</Text>
               </TouchableOpacity>
               <View style={styles.contextMenuDivider} />
               <TouchableOpacity
@@ -1090,7 +1092,7 @@ export default function VaultDashboard({ navigation }) {
                 onPress={handleRename}
                 activeOpacity={0.7}
               >
-                <Text style={styles.contextMenuText}>Rename</Text>
+                <Text style={styles.contextMenuText}>{t('common.rename')}</Text>
               </TouchableOpacity>
               <View style={styles.contextMenuDivider} />
               <TouchableOpacity
@@ -1098,7 +1100,7 @@ export default function VaultDashboard({ navigation }) {
                 onPress={handleMoveToFolderFromMenu}
                 activeOpacity={0.7}
               >
-                <Text style={styles.contextMenuText}>Move to folder</Text>
+                <Text style={styles.contextMenuText}>{t('vault.moveToFolder')}</Text>
               </TouchableOpacity>
               <View style={styles.contextMenuDivider} />
               <TouchableOpacity
@@ -1106,7 +1108,7 @@ export default function VaultDashboard({ navigation }) {
                 onPress={handleDownload}
                 activeOpacity={0.7}
               >
-                <Text style={styles.contextMenuText}>Download</Text>
+                <Text style={styles.contextMenuText}>{t('common.download')}</Text>
               </TouchableOpacity>
               <View style={styles.contextMenuDivider} />
               <TouchableOpacity
@@ -1114,7 +1116,7 @@ export default function VaultDashboard({ navigation }) {
                 onPress={handleDelete}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.contextMenuText, styles.contextMenuDeleteText]}>Delete</Text>
+                <Text style={[styles.contextMenuText, styles.contextMenuDeleteText]}>{t('common.delete')}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

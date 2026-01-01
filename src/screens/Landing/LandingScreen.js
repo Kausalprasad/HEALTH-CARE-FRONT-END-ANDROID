@@ -15,28 +15,30 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts, Inter_700Bold, Inter_400Regular } from "@expo-google-fonts/inter";
+import { useTranslation } from 'react-i18next';
 
-const { width, height } = Dimensions.get("window");
-
-const slides = [
-  {
-    id: 1,
-    title: "Smart healthcare for all.",
-    subtitle: "A more connected, more intelligent way to understand your health, built for everyone, everywhere",
-  },
-  {
-    id: 2,
-    title: "Doctors, just a tap away.",
-    subtitle: "Seamless access to specialists, designed around your schedule.",
-  },
-  {
-    id: 3,
-    title: "Your reports, organized.",
-    subtitle: "All your medical documents, sorted and easy to access, right when you need them.",
-  },
-];
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function LandingScreen({ navigation }) {
+  const { t } = useTranslation();
+
+  const slides = [
+    {
+      id: 1,
+      title: t('landing.slide1Title'),
+      subtitle: t('landing.slide1Subtitle'),
+    },
+    {
+      id: 2,
+      title: t('landing.slide2Title'),
+      subtitle: t('landing.slide2Subtitle'),
+    },
+    {
+      id: 3,
+      title: t('landing.slide3Title'),
+      subtitle: t('landing.slide3Subtitle'),
+    },
+  ];
   const [showSplash, setShowSplash] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -62,7 +64,7 @@ export default function LandingScreen({ navigation }) {
   }, []);
 
   const handleScroll = (event) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
     setCurrentIndex(index);
   };
 
@@ -189,7 +191,7 @@ export default function LandingScreen({ navigation }) {
               style={styles.nextButton}
               onPress={handleNext}
             >
-              <Ionicons name="arrow-forward" size={24} color="#fff" />
+              <Ionicons name="arrow-forward" size={Math.min(24, screenWidth * 0.06)} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -211,17 +213,17 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   splashLogo: {
-    width: 200,
-    height: 80,
-    marginBottom: 30,
+    width: Math.min(200, screenWidth * 0.5),
+    height: Math.min(80, screenWidth * 0.2),
+    marginBottom: Math.min(30, screenWidth * 0.075),
   },
   loadingBarContainer: {
-    width: width * 0.7,
-    height: 4,
+    width: screenWidth * 0.7,
+    height: Math.min(4, screenWidth * 0.01),
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 2,
+    borderRadius: Math.min(2, screenWidth * 0.005),
     overflow: "hidden",
-    marginTop: 10,
+    marginTop: Math.min(10, screenWidth * 0.025),
   },
   loadingBarBackground: {
     position: "absolute",
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
   loadingBarFill: {
     height: "100%",
     backgroundColor: "#4CAF50",
-    borderRadius: 2,
+    borderRadius: Math.min(2, screenWidth * 0.005),
   },
 
   // Onboarding styles
@@ -249,52 +251,52 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingTop: Math.min(40, screenWidth * 0.1),
+    paddingBottom: Math.min(20, screenWidth * 0.05),
   },
   logo: {
-    width: 180,
-    height: 70,
+    width: Math.min(180, screenWidth * 0.45),
+    height: Math.min(70, screenWidth * 0.175),
   },
   illustrationContainer: {
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
-    paddingVertical: 20,
+    paddingVertical: Math.min(20, screenWidth * 0.05),
   },
   illustration: {
-    width: 325.3148193359375,
-    height: 358,
+    width: Math.min(325.3148193359375, screenWidth * 0.813),
+    height: Math.min(358, screenWidth * 0.895),
   },
   bottomSection: {
     backgroundColor: "transparent",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 30,
-    paddingBottom: 30,
-    minHeight: height * 0.4,
+    borderTopLeftRadius: Math.min(30, screenWidth * 0.075),
+    borderTopRightRadius: Math.min(30, screenWidth * 0.075),
+    paddingTop: Math.min(30, screenWidth * 0.075),
+    paddingBottom: Math.min(30, screenWidth * 0.075),
+    minHeight: screenHeight * 0.4,
     flex: 0,
   },
   textSlide: {
-    width: width,
-    paddingHorizontal: 24,
+    width: screenWidth,
+    paddingHorizontal: Math.min(24, screenWidth * 0.06),
     alignItems: "flex-start",
     justifyContent: "flex-start",
-    paddingBottom: 20,
+    paddingBottom: Math.min(20, screenWidth * 0.05),
   },
   onboardingTitle: {
-    fontSize: 49.91,
+    fontSize: Math.min(49.91, screenWidth * 0.125),
     fontWeight: "700",
-    lineHeight: 60,
+    lineHeight: Math.min(60, screenWidth * 0.15),
     color: "#000",
     textAlign: "left",
     fontFamily: "Inter_700Bold",
-    marginBottom: 16,
+    marginBottom: Math.min(16, screenWidth * 0.04),
   },
   onboardingSubtitle: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: "400",
-    lineHeight: 24,
+    lineHeight: Math.min(24, screenWidth * 0.06),
     color: "#000",
     textAlign: "left",
     fontFamily: "Inter_400Regular",
@@ -305,30 +307,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: Math.min(24, screenWidth * 0.06),
+    paddingTop: Math.min(20, screenWidth * 0.05),
   },
   dotsContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   dot: {
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    height: Math.min(8, screenWidth * 0.02),
+    borderRadius: Math.min(4, screenWidth * 0.01),
+    marginRight: Math.min(6, screenWidth * 0.015),
   },
   activeDot: {
-    width: 24,
+    width: Math.min(24, screenWidth * 0.06),
     backgroundColor: "#000",
   },
   inactiveDot: {
-    width: 8,
+    width: Math.min(8, screenWidth * 0.02),
     backgroundColor: "#fff",
   },
   nextButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: Math.min(56, screenWidth * 0.14),
+    height: Math.min(56, screenWidth * 0.14),
+    borderRadius: Math.min(28, screenWidth * 0.07),
     backgroundColor: "#6B5AED",
     justifyContent: "center",
     alignItems: "center",

@@ -10,6 +10,7 @@ import {
   Alert,
   StatusBar,
   Image,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
@@ -25,6 +26,9 @@ import {
 } from "firebase/auth";
 import { auth } from "../../api/firebaseConfig";
 import { AuthContext } from "../../context/AuthContext";
+import { useTranslation } from 'react-i18next';
+
+const { width: screenWidth } = Dimensions.get("window");
 
 // Biometric imports
 import * as LocalAuthentication from "expo-local-authentication";
@@ -37,6 +41,7 @@ import * as Google from "expo-auth-session/providers/google";
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation();
   const { setUser } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -85,7 +90,7 @@ export default function LoginScreen({ navigation }) {
           setUser(userCredential.user);
         })
         .catch((error) => {
-          Alert.alert("Google Sign-In Failed", error.message);
+          Alert.alert(t('auth.loginFailed'), error.message);
         });
     }
   }, [response]);
@@ -119,20 +124,20 @@ export default function LoginScreen({ navigation }) {
           if (!user.emailVerified) {
             await signOut(auth);
             Alert.alert(
-              "⚠️ Email Verification Required",
-              "Your email is not verified yet. Please check your inbox and click the verification link we sent you. After clicking the link, you can use biometric login."
+              t('auth.emailNotVerified'),
+              t('auth.checkEmail')
             );
             return;
           }
           
           setUser(user);
         } else {
-          Alert.alert("Error", "No saved credentials found. Please login manually.");
+          Alert.alert(t('alerts.error'), t('auth.loginFailed'));
         }
       }
     } catch (error) {
       console.log("Biometric auth error:", error);
-      Alert.alert("Authentication Failed", "Please try again or use manual login.");
+      Alert.alert(t('auth.loginFailed'), t('common.tryAgain'));
     } finally {
       setIsLoading(false);
     }
@@ -140,12 +145,12 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t('alerts.error'), t('validation.required'));
       return;
     }
 
     if (!email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Alert.alert(t('alerts.error'), t('validation.invalidEmail'));
       return;
     }
 
@@ -288,7 +293,7 @@ export default function LoginScreen({ navigation }) {
 
         {/* White Card */}
         <View style={styles.whiteCard}>
-          <Text style={styles.title}>Sign in</Text>
+          <Text style={styles.title}>{t('auth.signIn')}</Text>
 
           {/* Google Sign In Button */}
           <TouchableOpacity
@@ -296,8 +301,8 @@ export default function LoginScreen({ navigation }) {
             disabled={!request}
             onPress={() => promptAsync()}
           >
-            <AntDesign name="google" size={20} color="#4285F4" />
-            <Text style={styles.googleButtonText}>Sign in with Google</Text>
+            <AntDesign name="google" size={Math.min(20, screenWidth * 0.05)} color="#4285F4" />
+            <Text style={styles.googleButtonText}>{t('auth.loginWithGoogle')}</Text>
           </TouchableOpacity>
 
           {/* OR Divider */}
@@ -311,7 +316,7 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Enter email"
+              placeholder={t('auth.enterEmail')}
               placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
@@ -324,7 +329,7 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Enter password"
+              placeholder={t('auth.enterPassword')}
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               value={password}
@@ -337,7 +342,7 @@ export default function LoginScreen({ navigation }) {
             >
               <Ionicons
                 name={showPassword ? "eye-outline" : "eye-off-outline"}
-                size={20}
+                size={Math.min(20, screenWidth * 0.05)}
                 color="#999"
               />
             </TouchableOpacity>
@@ -350,7 +355,7 @@ export default function LoginScreen({ navigation }) {
             disabled={isLoading}
           >
             <Text style={styles.signInButtonText}>
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? t('common.loading') : t('auth.signIn')}
             </Text>
           </TouchableOpacity>
 
@@ -364,7 +369,7 @@ export default function LoginScreen({ navigation }) {
               >
                 <MaterialCommunityIcons
                   name={Platform.OS === "ios" ? "face-recognition" : "fingerprint"}
-                  size={24}
+                  size={Math.min(24, screenWidth * 0.06)}
                   color="#666"
                 />
               </TouchableOpacity>
@@ -373,19 +378,19 @@ export default function LoginScreen({ navigation }) {
               style={styles.forgotPasswordButton}
               onPress={() => navigation.navigate("ForgotPassword")}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>
-              Don't have an account?{" "}
+              {t('auth.dontHaveAccount')}{" "}
               <Text
                 style={styles.signUpLink}
                 onPress={() => navigation.navigate("Signup")}
               >
-                Sign up
+                {t('auth.signup')}
               </Text>
             </Text>
           </View>
@@ -404,29 +409,29 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 20 : 40,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 0) + Math.min(20, screenWidth * 0.05) : Math.min(40, screenWidth * 0.1),
+    paddingBottom: Math.min(20, screenWidth * 0.05),
   },
   headerLogo: {
-    width: 150,
-    height: 60,
+    width: Math.min(150, screenWidth * 0.375),
+    height: Math.min(60, screenWidth * 0.15),
   },
   whiteCard: {
     flex: 1,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 30,
-    marginTop: 20,
-    marginHorizontal: 20,
+    borderTopLeftRadius: Math.min(30, screenWidth * 0.075),
+    borderTopRightRadius: Math.min(30, screenWidth * 0.075),
+    paddingHorizontal: Math.min(24, screenWidth * 0.06),
+    paddingTop: Math.min(30, screenWidth * 0.075),
+    paddingBottom: Math.min(30, screenWidth * 0.075),
+    marginTop: Math.min(20, screenWidth * 0.05),
+    marginHorizontal: Math.min(20, screenWidth * 0.05),
   },
   title: {
-    fontSize: 28,
+    fontSize: Math.min(28, screenWidth * 0.07),
     fontWeight: "700",
     color: "#222",
-    marginBottom: 32,
+    marginBottom: Math.min(32, screenWidth * 0.08),
     textAlign: "center",
   },
   googleButton: {
@@ -435,20 +440,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(30, 30, 30, 1)",
-    borderRadius: 30,
-    paddingVertical: 14,
-    marginBottom: 24,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingVertical: Math.min(14, screenWidth * 0.035),
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   googleButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
+    marginLeft: Math.min(10, screenWidth * 0.025),
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: "#000",
     fontWeight: "500",
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   orLine: {
     flex: 1,
@@ -456,54 +461,54 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   orText: {
-    marginHorizontal: 12,
-    fontSize: 14,
+    marginHorizontal: Math.min(12, screenWidth * 0.03),
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#999",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F5F5F5",
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    height: 56,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingHorizontal: Math.min(16, screenWidth * 0.04),
+    marginBottom: Math.min(16, screenWidth * 0.04),
+    height: Math.min(56, screenWidth * 0.14),
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: "#222",
   },
   eyeIcon: {
-    padding: 4,
+    padding: Math.min(4, screenWidth * 0.01),
   },
   signInButton: {
     backgroundColor: "#1FA8E7",
-    borderRadius: 30,
-    paddingVertical: 16,
+    borderRadius: Math.min(30, screenWidth * 0.075),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: Math.min(32, screenWidth * 0.08),
   },
   signInButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: "600",
   },
   bottomRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   fingerprintButton: {
-    padding: 8,
+    padding: Math.min(8, screenWidth * 0.02),
   },
   forgotPasswordButton: {
     flex: 1,
     alignItems: "flex-end",
   },
   forgotPasswordText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#1FA8E7",
     fontWeight: "500",
   },
@@ -512,7 +517,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signUpText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: "#666",
   },
   signUpLink: {

@@ -12,25 +12,27 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get("window");
 
 export default function VaultMenu({ navigation }) {
+  const { t } = useTranslation();
   const vaultFeatures = [
     {
       icon: "shield-checkmark",
-      title: "Bank-Level Security",
-      description: "256-bit encryption protection"
+      title: t('vault.bankLevelSecurity'),
+      description: t('vault.encryptionProtection')
     },
     {
       icon: "lock-closed",
-      title: "Private Access",
-      description: "Only you can access your data"
+      title: t('vault.privateAccess'),
+      description: t('vault.onlyYouAccess')
     },
     {
       icon: "cloud-upload",
-      title: "Secure Backup",
-      description: "Automatic encrypted backups"
+      title: t('vault.secureBackup'),
+      description: t('vault.automaticBackups')
     }
   ];
 
@@ -60,10 +62,10 @@ export default function VaultMenu({ navigation }) {
                 style={styles.vaultLogo}
                 resizeMode="contain"
               />
-              <Text style={styles.vaultTitle}>Health Vault</Text>
+              <Text style={styles.vaultTitle}>{t('vault.title')}</Text>
             </View>
             <Text style={styles.vaultSubtitle}>
-              Secure access to your personal health records
+              {t('vault.subtitle')}
             </Text>
           </View>
 
@@ -73,17 +75,16 @@ export default function VaultMenu({ navigation }) {
             <View style={styles.descriptionCard}>
               <View style={styles.descriptionHeader}>
                 <Ionicons name="information-circle" size={24} color="#2E8B57" />
-                <Text style={styles.descriptionTitle}>What is Health Vault?</Text>
+                <Text style={styles.descriptionTitle}>{t('vault.whatIsVault')}</Text>
               </View>
               <Text style={styles.descriptionText}>
-                Your Health Vault is a secure, encrypted storage system for your most sensitive medical information. 
-                Access your records, test results, and personal health data with complete privacy and security.
+                {t('vault.vaultDescription')}
               </Text>
             </View>
 
             {/* Security Features */}
             <View style={styles.featuresContainer}>
-              <Text style={styles.featuresTitle}>Security Features</Text>
+              <Text style={styles.featuresTitle}>{t('vault.securityFeatures')}</Text>
               <View style={styles.featuresGrid}>
                 {vaultFeatures.map((feature, index) => (
                   <View key={index} style={styles.featureCard}>
@@ -99,7 +100,7 @@ export default function VaultMenu({ navigation }) {
 
             {/* Action Buttons */}
             <View style={styles.actionsContainer}>
-              <Text style={styles.actionsTitle}>Access Your Vault</Text>
+              <Text style={styles.actionsTitle}>{t('vault.accessYourVault')}</Text>
               
               {/* Access Vault Button */}
               <TouchableOpacity
@@ -116,8 +117,8 @@ export default function VaultMenu({ navigation }) {
                       <Ionicons name="shield" size={24} color="#fff" />
                     </View>
                     <View style={styles.buttonTextContainer}>
-                      <Text style={styles.buttonTitle}>Access Vault</Text>
-                      <Text style={styles.buttonSubtitle}>Open your secure health vault</Text>
+                      <Text style={styles.buttonTitle}>{t('vault.accessVault')}</Text>
+                      <Text style={styles.buttonSubtitle}>{t('vault.openVault')}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
                   </View>
@@ -130,13 +131,13 @@ export default function VaultMenu({ navigation }) {
               <View style={styles.securityNoticeCard}>
                 <View style={styles.securityNoticeHeader}>
                   <Ionicons name="warning" size={20} color="#FF6B6B" />
-                  <Text style={styles.securityNoticeTitle}>Important Security Notice</Text>
+                  <Text style={styles.securityNoticeTitle}>{t('vault.importantSecurityNotice')}</Text>
                 </View>
                 <Text style={styles.securityNoticeText}>
-                  • Never share your Vault ID with anyone{'\n'}
-                  • Use a strong, unique password{'\n'}
-                  • Enable biometric authentication when available{'\n'}
-                  • Contact support if you suspect unauthorized access
+                  • {t('vault.securityNotice1')}{'\n'}
+                  • {t('vault.securityNotice2')}{'\n'}
+                  • {t('vault.securityNotice3')}{'\n'}
+                  • {t('vault.securityNotice4')}
                 </Text>
               </View>
             </View>
@@ -145,7 +146,7 @@ export default function VaultMenu({ navigation }) {
             <View style={styles.helpContainer}>
               <TouchableOpacity style={styles.helpButton}>
                 <Ionicons name="help-circle-outline" size={20} color="#2E8B57" />
-                <Text style={styles.helpText}>Need help with Vault setup?</Text>
+                <Text style={styles.helpText}>{t('vault.needHelp')}</Text>
                 <Ionicons name="chevron-forward" size={16} color="#2E8B57" />
               </TouchableOpacity>
             </View>

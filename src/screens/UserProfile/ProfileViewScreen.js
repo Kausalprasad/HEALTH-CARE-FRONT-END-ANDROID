@@ -21,10 +21,12 @@ import { BASE_URL } from '../../config/config';
 import { AuthContext } from '../../context/AuthContext';
 import { getAuth } from 'firebase/auth';
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 const ProfileView = ({ navigation }) => {
   const { logout } = useContext(AuthContext);
   const auth = getAuth();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState({
@@ -85,7 +87,7 @@ const ProfileView = ({ navigation }) => {
     const { status: galleryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (cameraStatus !== 'granted' || galleryStatus !== 'granted') {
-      Alert.alert('Permissions Required', 'Camera and gallery permissions are needed to upload photos.');
+      Alert.alert(t('profile.permissionsRequired'), t('profile.permissionsMessage'));
       return false;
     }
     return true;
@@ -97,12 +99,12 @@ const ProfileView = ({ navigation }) => {
     if (!hasPermissions) return;
 
     Alert.alert(
-      'Select Photo',
-      'Choose how you want to select your profile photo',
+      t('profile.selectPhoto'),
+      t('profile.selectPhotoMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Camera', onPress: () => openCamera() },
-        { text: 'Gallery', onPress: () => openGallery() },
+        { text: t('profile.cancel'), style: 'cancel' },
+        { text: t('profile.camera'), onPress: () => openCamera() },
+        { text: t('profile.gallery'), onPress: () => openGallery() },
       ]
     );
   };
@@ -122,7 +124,7 @@ const ProfileView = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Camera error:', error);
-      Alert.alert('Error', 'Failed to open camera');
+      Alert.alert(t('profile.error'), t('profile.failedToOpenCamera'));
     }
   };
 
@@ -141,7 +143,7 @@ const ProfileView = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Gallery error:', error);
-      Alert.alert('Error', 'Failed to open gallery');
+      Alert.alert(t('profile.error'), t('profile.failedToOpenGallery'));
     }
   };
 
@@ -151,7 +153,7 @@ const ProfileView = ({ navigation }) => {
       setPhotoUploading(true);
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
         return;
       }
       const token = await user.getIdToken();
@@ -185,13 +187,13 @@ const ProfileView = ({ navigation }) => {
         const photoUrl = `${BASE_URL}${data.data.profilePhoto.url}`;
         // Refresh profile to get updated photo
         await fetchProfile();
-        Alert.alert('Success', 'Profile photo updated successfully!');
+        Alert.alert(t('profile.success'), t('profile.photoUpdated'));
       } else {
-        Alert.alert('Error', data.message || 'Failed to upload photo');
+        Alert.alert(t('profile.error'), data.message || t('profile.failedToOpenGallery'));
       }
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Error', `Failed to upload photo: ${error.message}`);
+      Alert.alert(t('profile.error'), `${t('profile.failedToOpenGallery')}: ${error.message}`);
     } finally {
       setPhotoUploading(false);
     }
@@ -234,18 +236,18 @@ const ProfileView = ({ navigation }) => {
 
   const handleDeleteAccount = async () => {
     Alert.alert(
-      "Delete Account",
-      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      t('profile.deleteAccount'),
+      t('profile.deleteAccountConfirm'),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('profile.cancel'), style: "cancel" },
         {
-          text: "Delete",
+          text: t('profile.delete'),
           style: "destructive",
           onPress: async () => {
             try {
               const user = auth.currentUser;
               if (!user) {
-                Alert.alert('Error', 'User not authenticated');
+                Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
                 return;
               }
               const token = await user.getIdToken();
@@ -275,13 +277,13 @@ const ProfileView = ({ navigation }) => {
                     routes: [{ name: 'Landing' }],
                   });
                 }
-                Alert.alert('Success', 'Account deleted successfully');
+                Alert.alert(t('profile.success'), t('profile.success'));
               } else {
-                Alert.alert('Error', data.message || 'Failed to delete account');
+                Alert.alert(t('profile.error'), data.message || t('profile.somethingWentWrong'));
               }
             } catch (error) {
               console.error('Delete account error:', error);
-              Alert.alert('Error', 'Something went wrong. Please try again.');
+              Alert.alert(t('profile.error'), t('profile.somethingWentWrong'));
             }
           }
         }
@@ -334,7 +336,7 @@ const ProfileView = ({ navigation }) => {
           >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t('profile.title')}</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -388,7 +390,7 @@ const ProfileView = ({ navigation }) => {
                 <View style={[styles.sectionIcon, { backgroundColor: '#FF9800' }]}>
                   <Ionicons name="person" size={20} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
+                <Text style={styles.sectionTitle}>{t('profile.personalInformation')}</Text>
               </View>
               <View style={styles.sectionHeaderRight}>
                 {expandedSections.personalInfo && (
@@ -412,25 +414,25 @@ const ProfileView = ({ navigation }) => {
             {expandedSections.personalInfo && (
               <View style={styles.sectionContent}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Full Name</Text>
+                  <Text style={styles.infoLabel}>{t('profile.fullName')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.personalInfo?.fullName || 'Not set'}
+                    {profile?.personalInfo?.fullName || t('profile.notSet')}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Gender</Text>
+                  <Text style={styles.infoLabel}>{t('profile.gender')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.personalInfo?.gender || 'Not set'}
+                    {profile?.personalInfo?.gender || t('profile.notSet')}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>DOB</Text>
+                  <Text style={styles.infoLabel}>{t('profile.dob')}</Text>
                   <Text style={styles.infoValue}>
                     {profile?.personalInfo?.dateOfBirth 
                       ? new Date(profile.personalInfo.dateOfBirth).toLocaleDateString('en-GB')
-                      : 'Not set'}
+                      : t('profile.notSet')}
                   </Text>
                 </View>
               </View>
@@ -447,7 +449,7 @@ const ProfileView = ({ navigation }) => {
                 <View style={[styles.sectionIcon, { backgroundColor: '#00BCD4' }]}>
                   <Ionicons name="notifications" size={20} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+                <Text style={styles.sectionTitle}>{t('profile.emergencyContacts')}</Text>
               </View>
               <View style={styles.sectionHeaderRight}>
                 {expandedSections.emergencyContacts && (
@@ -482,23 +484,23 @@ const ProfileView = ({ navigation }) => {
                       <View key={index}>
                         {index > 0 && <View style={[styles.divider, { marginTop: 16, marginBottom: 16 }]} />}
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Name</Text>
+                          <Text style={styles.infoLabel}>{t('profile.contactName')}</Text>
                           <Text style={styles.infoValue}>
-                            {contact?.name || 'Not set'}
+                            {contact?.name || t('profile.notSet')}
                           </Text>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Relation</Text>
+                          <Text style={styles.infoLabel}>{t('profile.relation')}</Text>
                           <Text style={styles.infoValue}>
-                            {contact?.relationship || 'Not set'}
+                            {contact?.relationship || t('profile.notSet')}
                           </Text>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Phone Number</Text>
+                          <Text style={styles.infoLabel}>{t('profile.phoneNumber')}</Text>
                           <Text style={styles.infoValue}>
-                            {contact?.phoneNumber || 'Not set'}
+                            {contact?.phoneNumber || t('profile.notSet')}
                           </Text>
                         </View>
                       </View>
@@ -507,25 +509,25 @@ const ProfileView = ({ navigation }) => {
                   
                   // Fallback to single contact
                   return (
-                    <>
+                      <>
                       <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Name</Text>
+                        <Text style={styles.infoLabel}>{t('profile.contactName')}</Text>
                         <Text style={styles.infoValue}>
-                          {singleContact?.name || 'Not set'}
+                          {singleContact?.name || t('profile.notSet')}
                         </Text>
                       </View>
                       <View style={styles.divider} />
                       <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Relation</Text>
+                        <Text style={styles.infoLabel}>{t('profile.relation')}</Text>
                         <Text style={styles.infoValue}>
-                          {singleContact?.relationship || 'Not set'}
+                          {singleContact?.relationship || t('profile.notSet')}
                         </Text>
                       </View>
                       <View style={styles.divider} />
                       <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Phone Number</Text>
+                        <Text style={styles.infoLabel}>{t('profile.phoneNumber')}</Text>
                         <Text style={styles.infoValue}>
-                          {singleContact?.phoneNumber || 'Not set'}
+                          {singleContact?.phoneNumber || t('profile.notSet')}
                         </Text>
                       </View>
                     </>
@@ -545,7 +547,7 @@ const ProfileView = ({ navigation }) => {
                 <View style={[styles.sectionIcon, { backgroundColor: '#2196F3' }]}>
                   <Ionicons name="medical" size={20} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitle}>Health Essentials</Text>
+                <Text style={styles.sectionTitle}>{t('profile.healthEssentials')}</Text>
               </View>
               <View style={styles.sectionHeaderRight}>
                 {expandedSections.healthEssentials && (
@@ -569,23 +571,23 @@ const ProfileView = ({ navigation }) => {
             {expandedSections.healthEssentials && (
               <View style={styles.sectionContent}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Blood Group</Text>
+                  <Text style={styles.infoLabel}>{t('riskAssessment.bloodGroup')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.healthEssentials?.bloodGroup || 'Not set'}
+                    {profile?.healthEssentials?.bloodGroup || t('profile.notSet')}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Height</Text>
+                  <Text style={styles.infoLabel}>{t('riskAssessment.height')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.healthEssentials?.height || 'Not set'}
+                    {profile?.healthEssentials?.height || t('profile.notSet')}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Weight</Text>
+                  <Text style={styles.infoLabel}>{t('riskAssessment.weight')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.healthEssentials?.weight ? `${profile.healthEssentials.weight} kg` : 'Not set'}
+                    {profile?.healthEssentials?.weight ? `${profile.healthEssentials.weight} kg` : t('profile.notSet')}
                   </Text>
                 </View>
               </View>
@@ -602,7 +604,7 @@ const ProfileView = ({ navigation }) => {
                 <View style={[styles.sectionIcon, { backgroundColor: '#9C27B0' }]}>
                   <Ionicons name="medical-outline" size={20} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitle}>Medical Condition</Text>
+                <Text style={styles.sectionTitle}>{t('profile.medicalCondition')}</Text>
               </View>
               <View style={styles.sectionHeaderRight}>
                 {expandedSections.medicalCondition && (
@@ -632,9 +634,9 @@ const ProfileView = ({ navigation }) => {
                       <View key={index}>
                         {index > 0 && <View style={styles.divider} />}
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Medical Condition</Text>
+                          <Text style={styles.infoLabel}>{t('profile.medicalCondition')}</Text>
                           <Text style={styles.infoValue}>
-                            {condition?.conditionName || 'Not set'}
+                            {condition?.conditionName || t('profile.notSet')}
                           </Text>
                         </View>
                       </View>
@@ -643,8 +645,8 @@ const ProfileView = ({ navigation }) => {
                   </>
                 ) : (
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Medical Condition</Text>
-                    <Text style={styles.infoValue}>Not set</Text>
+                    <Text style={styles.infoLabel}>{t('profile.medicalCondition')}</Text>
+                    <Text style={styles.infoValue}>{t('profile.notSet')}</Text>
                   </View>
                 )}
 
@@ -655,9 +657,9 @@ const ProfileView = ({ navigation }) => {
                       <View key={index}>
                         {index > 0 && <View style={styles.divider} />}
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Allergies</Text>
+                          <Text style={styles.infoLabel}>{t('profile.allergies')}</Text>
                           <Text style={styles.infoValue}>
-                            {allergy?.allergenName || 'Not set'} {allergy?.severity ? `(${allergy.severity})` : ''}
+                            {allergy?.allergenName || t('profile.notSet')} {allergy?.severity ? `(${allergy.severity})` : ''}
                           </Text>
                         </View>
                       </View>
@@ -668,8 +670,8 @@ const ProfileView = ({ navigation }) => {
                   <>
                     {(!profile?.medicalConditions || profile.medicalConditions.length === 0) && <View style={styles.divider} />}
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Allergies</Text>
-                      <Text style={styles.infoValue}>Not set</Text>
+                      <Text style={styles.infoLabel}>{t('profile.allergies')}</Text>
+                      <Text style={styles.infoValue}>{t('profile.notSet')}</Text>
                     </View>
                   </>
                 )}
@@ -681,9 +683,9 @@ const ProfileView = ({ navigation }) => {
                       <View key={index}>
                         {index > 0 && <View style={styles.divider} />}
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Current Medication</Text>
+                          <Text style={styles.infoLabel}>{t('profile.currentMedications')}</Text>
                           <Text style={styles.infoValue}>
-                            {medication?.name || 'Not set'} {medication?.dosage ? `- ${medication.dosage}` : ''} {medication?.frequency ? `(${medication.frequency})` : ''}
+                            {medication?.name || t('profile.notSet')} {medication?.dosage ? `- ${medication.dosage}` : ''} {medication?.frequency ? `(${medication.frequency})` : ''}
                           </Text>
                         </View>
                       </View>
@@ -693,8 +695,8 @@ const ProfileView = ({ navigation }) => {
                   <>
                     {((!profile?.medicalConditions || profile.medicalConditions.length === 0) && (!profile?.allergies || profile.allergies.length === 0)) && <View style={styles.divider} />}
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Current Medication</Text>
-                      <Text style={styles.infoValue}>Not set</Text>
+                      <Text style={styles.infoLabel}>{t('profile.currentMedications')}</Text>
+                      <Text style={styles.infoValue}>{t('profile.notSet')}</Text>
                     </View>
                   </>
                 )}
@@ -712,7 +714,7 @@ const ProfileView = ({ navigation }) => {
                 <View style={[styles.sectionIcon, { backgroundColor: '#FF9800' }]}>
                   <Ionicons name="lock-closed" size={20} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitle}>Contact and Security</Text>
+                <Text style={styles.sectionTitle}>{t('profile.contactAndSecurity')}</Text>
               </View>
               <View style={styles.sectionHeaderRight}>
                 {expandedSections.contactSecurity && (
@@ -736,19 +738,19 @@ const ProfileView = ({ navigation }) => {
             {expandedSections.contactSecurity && (
               <View style={styles.sectionContent}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoLabel}>{t('profile.email')}</Text>
                   <Text style={styles.infoValue}>{userEmail}</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Phone Number</Text>
+                  <Text style={styles.infoLabel}>{t('profile.phoneNumber')}</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.contactInfo?.primaryPhone || 'Not set'}
+                    {profile?.contactInfo?.primaryPhone || t('profile.notSet')}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Password</Text>
+                  <Text style={styles.infoLabel}>{t('profile.password')}</Text>
                   <View style={styles.passwordRow}>
                     <Text style={styles.infoValue}>123*****</Text>
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -774,7 +776,7 @@ const ProfileView = ({ navigation }) => {
                   <View style={[styles.sectionIcon, { backgroundColor: '#FF3B30' }]}>
                     <Ionicons name="person-remove-outline" size={20} color="#fff" />
                   </View>
-                  <Text style={styles.deleteAccountText}>Delete My Account</Text>
+                  <Text style={styles.deleteAccountText}>{t('profile.deleteMyAccount')}</Text>
                 </View>
               </TouchableOpacity>
             </View>

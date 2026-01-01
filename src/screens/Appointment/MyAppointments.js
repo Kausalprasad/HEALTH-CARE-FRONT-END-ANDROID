@@ -12,7 +12,9 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  TextInput,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../../config/config";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +29,21 @@ export default function MyAppointments({ navigation }) {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [selectedAppointmentDetails, setSelectedAppointmentDetails] = useState(null);
+  const [editPatientModalVisible, setEditPatientModalVisible] = useState(false);
+  const [patientFormData, setPatientFormData] = useState({
+    name: "",
+    relationship: "Self",
+    dateOfBirth: "",
+    age: "",
+    height: "",
+    weight: "",
+    gender: "Male",
+    phoneNumber: "",
+    email: "",
+  });
 
   const auth = getAuth();
 
@@ -202,6 +219,7 @@ export default function MyAppointments({ navigation }) {
   const openRescheduleModal = useCallback(async (appointment) => {
     if (!appointment) return;
 
+    setDetailsModalVisible(false);
     setSelectedAppointment(appointment);
     setSelectedSlot("");
     setAvailableSlots([]);
@@ -332,84 +350,225 @@ export default function MyAppointments({ navigation }) {
     }
   }, []);
 
+  // Filter appointments based on search
+  const filteredAppointments = useMemo(() => {
+    if (!searchQuery.trim()) return appointments;
+    const query = searchQuery.toLowerCase();
+    return appointments.filter((item) => {
+      const doctor = getDoctorData(item);
+      return (
+        doctor.name.toLowerCase().includes(query) ||
+        doctor.specialization.toLowerCase().includes(query) ||
+        (item.patientName && item.patientName.toLowerCase().includes(query))
+      );
+    });
+  }, [appointments, searchQuery, getDoctorData]);
+
+  // Open details modal
+  const openDetailsModal = useCallback((item) => {
+    setSelectedAppointmentDetails(item);
+    setDetailsModalVisible(true);
+  }, []);
+
+  // Open edit patient modal
+  const openEditPatientModal = useCallback((appointment) => {
+    if (appointment) {
+      setPatientFormData({
+        name: appointment.patientName || "",
+        relationship: "Self",
+        dateOfBirth: appointment.patientDateOfBirth || "18/12/1997",
+        age: appointment.patientAge || "28",
+        height: appointment.patientHeight || "100",
+        weight: appointment.patientWeight || "100",
+        gender: appointment.patientGender || "Male",
+        phoneNumber: appointment.patientPhone || "8930188923",
+        email: appointment.patientEmail || "",
+      });
+      setSelectedAppointmentDetails(appointment);
+      setEditPatientModalVisible(true);
+      setDetailsModalVisible(false);
+    }
+  }, []);
+
+  // Handle patient update
+  const handlePatientUpdate = useCallback(async () => {
+    if (!selectedAppointmentDetails || !authToken) {
+      Alert.alert("Error", "Missing appointment or authentication");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/bookings/${selectedAppointmentDetails._id}/patient`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            patientName: patientFormData.name,
+            patientEmail: patientFormData.email,
+            patientPhone: patientFormData.phoneNumber,
+            patientDateOfBirth: patientFormData.dateOfBirth,
+            patientAge: patientFormData.age,
+            patientHeight: patientFormData.height,
+            patientWeight: patientFormData.weight,
+            patientGender: patientFormData.gender,
+            relationship: patientFormData.relationship,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Success", "Patient details updated successfully!", [
+          {
+            text: "OK",
+            onPress: () => {
+              setEditPatientModalVisible(false);
+              fetchAppointments();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("Error", data.message || "Failed to update patient details");
+      }
+    } catch (err) {
+      console.error("Update patient error:", err);
+      Alert.alert("Error", "Failed to update patient details. Please try again.");
+    }
+  }, [selectedAppointmentDetails, patientFormData, authToken, fetchAppointments]);
+
+  // Format full date for modal
+  const formatFullDate = useCallback((dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+      const day = date.getDate();
+      const month = date.toLocaleDateString("en-US", { month: "long" });
+      return `${dayName}, ${day} ${month}`;
+    } catch {
+      return "N/A";
+    }
+  }, []);
+
   // Render appointment card - memoized
   const renderAppointmentCard = useCallback(({ item }) => {
     const doctor = getDoctorData(item);
+    const appointmentDate = item.date ? new Date(item.date) : new Date();
+    const dayName = appointmentDate.toLocaleDateString("en-US", { weekday: "long" });
+    const formattedDate = formatDate(item.date);
+    const timeRange = item.startTime && item.endTime 
+      ? `${formatTime(item.startTime)} - ${formatTime(item.endTime)}`
+      : formatTime(item.startTime || item.time);
     
     return (
       <View style={styles.appointmentCard}>
-        <View style={styles.cardTop}>
-          <View style={styles.leftInfo}>
-            <Image
-              source={
-                doctor.profilePicture
-                  ? { uri: doctor.profilePicture }
-                  : require("../../../assets/doctor.png")
-              }
-              style={styles.doctorPhoto}
-            />
-            <View style={styles.doctorInfo}>
-              <Text style={styles.doctorName}>{doctor.name}</Text>
-              <Text style={styles.doctorSpecialty}>{doctor.specialization}</Text>
-            </View>
-          </View>
-
-          <View style={styles.rightInfo}>
-            <Text style={styles.dateText}>{formatDate(item.date)}</Text>
-            <Text style={styles.timeText}>{formatTime(item.startTime || item.time)}</Text>
+        {/* Doctor Info Section */}
+        <View style={styles.cardTopSection}>
+          <Image
+            source={
+              doctor.profilePicture
+                ? { uri: doctor.profilePicture }
+                : require("../../../assets/doctor.png")
+            }
+            style={styles.doctorPhoto}
+          />
+          <View style={styles.doctorInfo}>
+            <Text style={styles.doctorName}>{doctor.name}</Text>
+            <Text style={styles.doctorSpecialty}>{doctor.specialization}</Text>
           </View>
         </View>
 
-        <View style={styles.cardBottom}>
-          <View style={styles.patientInfo}>
-            <Text style={styles.infoLine}>
-              <Text style={styles.infoLabel}>Patient: </Text>
-              <Text style={styles.infoValue}>{item.patientName || "N/A"}</Text>
-            </Text>
-            <Text style={styles.infoLine}>
-              <Text style={styles.infoLabel}>Email: </Text>
-              <Text style={styles.infoValue}>{item.patientEmail || "N/A"}</Text>
-            </Text>
-            <Text style={styles.infoLine}>
-              <Text style={styles.infoLabel}>Hospital: </Text>
-              <Text style={styles.infoValue}>{item.hospitalName || "N/A"}</Text>
-            </Text>
-            <Text style={styles.infoLine}>
-              <Text style={styles.infoLabel}>Cost: </Text>
-              <Text style={styles.infoValue}>₹{item.fees || "0"}</Text>
-            </Text>
+        {/* Appointment Details Section */}
+        <View style={styles.appointmentDetails}>
+          <View style={styles.detailRow}>
+            <Ionicons name="calendar-outline" size={16} color="#666" style={styles.detailIcon} />
+            <Text style={styles.detailText}>{dayName}, {formattedDate}</Text>
           </View>
-
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => openRescheduleModal(item)}
-          >
-            <Ionicons name="create-outline" size={20} color="#5DBAAE" />
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
+          <View style={styles.detailRow}>
+            <Ionicons name="time-outline" size={16} color="#666" style={styles.detailIcon} />
+            <Text style={styles.detailText}>{timeRange}</Text>
+          </View>
         </View>
+        
+        {/* Details Button */}
+        <TouchableOpacity
+          style={styles.detailsButton}
+          onPress={() => openDetailsModal(item)}
+        >
+          <Text style={styles.detailsButtonText}>Details</Text>
+        </TouchableOpacity>
       </View>
     );
-  }, [getDoctorData, formatDate, formatTime, openRescheduleModal]);
+  }, [getDoctorData, formatDate, formatTime, openDetailsModal]);
 
   // Loading state
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#5DBAAE" />
-          <Text style={styles.loadingText}>Loading appointments...</Text>
-        </View>
-      </SafeAreaView>
+      <LinearGradient
+        colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+        locations={[0, 0.3, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color="#8B5CF6" />
+            <Text style={styles.loadingText}>Loading appointments...</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   // Empty state
   if (appointments.length === 0) {
     return (
+      <LinearGradient
+        colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+        locations={[0, 0.3, 0.6, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientContainer}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="chevron-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Appointments</Text>
+            <View style={styles.headerSpace} />
+          </View>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={64} color="#ccc" />
+            <Text style={styles.noDataText}>No appointments booked yet.</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  return (
+    <LinearGradient
+      colors={['rgba(254, 215, 112, 0.9)', 'rgba(235, 177, 180, 0.8)', 'rgba(145, 230, 251, 0.7)', 'rgba(217, 213, 250, 0.6)']}
+      locations={[0, 0.3, 0.6, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}
+    >
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -418,47 +577,121 @@ export default function MyAppointments({ navigation }) {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Appointments</Text>
-          <View style={styles.headerSpace} />
+          <View style={styles.placeholder} />
         </View>
-        <View style={styles.separator} />
-        <View style={styles.emptyContainer}>
-          <Ionicons name="calendar-outline" size={64} color="#ccc" />
-          <Text style={styles.noDataText}>No appointments booked yet.</Text>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search files here"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <TouchableOpacity style={styles.filterButton}>
+              <Ionicons name="options-outline" size={20} color="#666" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </SafeAreaView>
-    );
-  }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <FlatList
+            data={filteredAppointments}
+            keyExtractor={(item) => item._id}
+            showsVerticalScrollIndicator={false}
+            renderItem={renderAppointmentCard}
+            scrollEnabled={false}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+          />
+        </ScrollView>
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+        {/* Details Modal */}
+        <Modal
+          visible={detailsModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setDetailsModalVisible(false)}
         >
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Appointments</Text>
-        <View style={styles.placeholder} />
-      </View>
+          <View style={styles.detailsModalOverlay}>
+            <View style={styles.detailsModalContent}>
+              {selectedAppointmentDetails && (
+                <>
+                  <View style={styles.modalDoctorInfo}>
+                    <Image
+                      source={
+                        getDoctorData(selectedAppointmentDetails).profilePicture
+                          ? { uri: getDoctorData(selectedAppointmentDetails).profilePicture }
+                          : require("../../../assets/doctor.png")
+                      }
+                      style={styles.modalDoctorPhoto}
+                    />
+                    <View style={styles.modalDoctorDetails}>
+                      <Text style={styles.modalDoctorName}>
+                        {getDoctorData(selectedAppointmentDetails).name}
+                      </Text>
+                      <Text style={styles.modalDoctorSpecialty}>
+                        {getDoctorData(selectedAppointmentDetails).specialization}
+                      </Text>
+                    </View>
+                  </View>
 
-      <View style={styles.separator} />
+                  <View style={styles.modalDivider} />
 
-      <View style={styles.content}>
-        <Text style={styles.upcomingText}>Upcoming</Text>
+                  <View style={styles.modalInfoSection}>
+                    <View style={styles.modalInfoRow}>
+                      <Ionicons name="calendar-outline" size={18} color="#666666" />
+                      <Text style={styles.modalInfoText}>
+                        {formatFullDate(selectedAppointmentDetails.date)} | {formatTime(selectedAppointmentDetails.startTime || selectedAppointmentDetails.time)}
+                      </Text>
+                      <TouchableOpacity onPress={() => openRescheduleModal(selectedAppointmentDetails)}>
+                        <Ionicons name="create-outline" size={18} color="#8B5CF6" />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.modalInfoRow}>
+                      <Ionicons name="person-outline" size={18} color="#666666" />
+                      <Text style={styles.modalInfoText}>
+                        Patient: {selectedAppointmentDetails.patientName || "N/A"}
+                      </Text>
+                      <TouchableOpacity onPress={() => openEditPatientModal(selectedAppointmentDetails)}>
+                        <Ionicons name="create-outline" size={18} color="#8B5CF6" />
+                      </TouchableOpacity>
+                    </View>
 
-        <FlatList
-          data={appointments}
-          keyExtractor={(item) => item._id}
-          showsVerticalScrollIndicator={false}
-          renderItem={renderAppointmentCard}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-        />
-      </View>
+                    <View style={styles.modalDivider} />
+
+                    <View style={styles.modalInfoTextRow}>
+                      <Text style={styles.modalInfoText}>
+                        Email: {selectedAppointmentDetails.patientEmail || "N/A"}
+                      </Text>
+                    </View>
+                    <View style={styles.modalInfoTextRow}>
+                      <Text style={styles.modalInfoText}>
+                        Hospital: {selectedAppointmentDetails.hospitalName || "N/A"}
+                      </Text>
+                    </View>
+                    <View style={styles.modalInfoTextRow}>
+                      <Text style={styles.modalInfoText}>
+                        Cost: ₹{selectedAppointmentDetails.fees || "0"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setDetailsModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
 
       {/* Reschedule Modal */}
       <Modal
@@ -470,30 +703,15 @@ export default function MyAppointments({ navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Reschedule Appointment</Text>
-              <TouchableOpacity
-                onPress={() => setRescheduleModalVisible(false)}
-                style={styles.closeIcon}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Edit Appointment Date and Time</Text>
             </View>
-
-            {selectedAppointment && (
-              <View style={styles.currentInfo}>
-                <Text style={styles.currentLabel}>Current Appointment:</Text>
-                <Text style={styles.currentValue}>
-                  {formatDate(selectedAppointment.date)} at{" "}
-                  {formatTime(selectedAppointment.startTime || selectedAppointment.time)}
-                </Text>
-              </View>
-            )}
 
             <Text style={styles.sectionLabel}>Select New Date</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.dateScroll}
+              contentContainerStyle={styles.dateScrollContent}
             >
               {dates.map((item) => (
                 <TouchableOpacity
@@ -506,27 +724,11 @@ export default function MyAppointments({ navigation }) {
                 >
                   <Text
                     style={[
-                      styles.dateDay,
-                      selectedDate === item.date && styles.dateDaySelected,
+                      styles.dateBoxText,
+                      selectedDate === item.date && styles.dateBoxTextSelected,
                     ]}
                   >
-                    {item.day}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateNum,
-                      selectedDate === item.date && styles.dateNumSelected,
-                    ]}
-                  >
-                    {item.dayNum}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateMonth,
-                      selectedDate === item.date && styles.dateMonthSelected,
-                    ]}
-                  >
-                    {item.month}
+                    {item.day} {item.dayNum}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -538,41 +740,41 @@ export default function MyAppointments({ navigation }) {
             {loadingSlots ? (
               <ActivityIndicator
                 size="large"
-                color="#5DBAAE"
+                color="#8B5CF6"
                 style={{ marginVertical: 20 }}
               />
             ) : availableSlots.length > 0 ? (
               <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
                 style={styles.slotsContainer}
-                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.slotsScrollContent}
               >
-                <View style={styles.slotsGrid}>
-                  {availableSlots
-                    .filter(slot => slot && typeof slot === 'string')
-                    .map((slot, index) => {
-                      const slotParts = slot.split("-");
-                      const start = slotParts && slotParts.length > 0 ? slotParts[0] : null;
-                      return (
-                        <TouchableOpacity
-                          key={`${slot}-${index}`}
+                {availableSlots
+                  .filter(slot => slot && typeof slot === 'string')
+                  .map((slot, index) => {
+                    const slotParts = slot.split("-");
+                    const start = slotParts && slotParts.length > 0 ? slotParts[0] : null;
+                    return (
+                      <TouchableOpacity
+                        key={`${slot}-${index}`}
+                        style={[
+                          styles.slotBox,
+                          selectedSlot === slot && styles.slotBoxSelected,
+                        ]}
+                        onPress={() => setSelectedSlot(slot)}
+                      >
+                        <Text
                           style={[
-                            styles.slotBox,
-                            selectedSlot === slot && styles.slotBoxSelected,
+                            styles.slotText,
+                            selectedSlot === slot && styles.slotTextSelected,
                           ]}
-                          onPress={() => setSelectedSlot(slot)}
                         >
-                          <Text
-                            style={[
-                              styles.slotText,
-                              selectedSlot === slot && styles.slotTextSelected,
-                            ]}
-                          >
-                            {start ? formatTime(start) : "N/A"}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                </View>
+                          {start ? formatTime(start) : "N/A"}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
               </ScrollView>
             ) : (
               <View style={styles.noSlotsContainer}>
@@ -583,48 +785,162 @@ export default function MyAppointments({ navigation }) {
               </View>
             )}
 
-            <TouchableOpacity
-              style={[
-                styles.modalButton,
-                styles.updateBtn,
-                (!selectedSlot || loadingSlots) && styles.buttonDisabled,
-              ]}
-              onPress={handleReschedule}
-              disabled={loadingSlots || !selectedSlot}
-            >
-              <Text style={styles.buttonText}>
-                {loadingSlots ? "Loading..." : "Update Appointment"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.modalActionButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.applyButton,
+                  (!selectedSlot || loadingSlots) && styles.buttonDisabled,
+                ]}
+                onPress={handleReschedule}
+                disabled={loadingSlots || !selectedSlot}
+              >
+                <Text style={styles.applyButtonText}>
+                  {loadingSlots ? "Loading..." : "Apply"}
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelBtn]}
-              onPress={() => handleCancel(selectedAppointment?._id)}
-            >
-              <Text style={styles.buttonText}>Cancel Appointment</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelModalButton}
+                onPress={() => setRescheduleModalVisible(false)}
+              >
+                <Text style={styles.cancelModalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+
+      {/* Edit Patient Details Modal */}
+      <Modal
+        visible={editPatientModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditPatientModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.editPatientModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Patient Details</Text>
+              <TouchableOpacity
+                onPress={() => setEditPatientModalVisible(false)}
+                style={styles.closeIcon}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.patientFormScroll} showsVerticalScrollIndicator={false}>
+              <TextInput
+                style={styles.patientInput}
+                placeholder="Name"
+                value={patientFormData.name}
+                onChangeText={(text) => setPatientFormData({ ...patientFormData, name: text })}
+              />
+
+              <TouchableOpacity style={[styles.patientInput, styles.relationshipInput]}>
+                <Text style={styles.patientInputText}>{patientFormData.relationship}</Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+
+              <View style={styles.patientInputRow}>
+                <TextInput
+                  style={[styles.patientInput, { flex: 1, marginRight: 8 }]}
+                  placeholder="Date of Birth"
+                  value={patientFormData.dateOfBirth}
+                  onChangeText={(text) => setPatientFormData({ ...patientFormData, dateOfBirth: text })}
+                />
+                <TextInput
+                  style={[styles.patientInput, { flex: 1, marginLeft: 8 }]}
+                  placeholder="Age"
+                  value={patientFormData.age}
+                  onChangeText={(text) => setPatientFormData({ ...patientFormData, age: text })}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.patientInputRow}>
+                <TextInput
+                  style={[styles.patientInput, { flex: 1, marginRight: 8 }]}
+                  placeholder="Height"
+                  value={patientFormData.height}
+                  onChangeText={(text) => setPatientFormData({ ...patientFormData, height: text })}
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.patientInput, { flex: 1, marginLeft: 8 }]}
+                  placeholder="Weight"
+                  value={patientFormData.weight}
+                  onChangeText={(text) => setPatientFormData({ ...patientFormData, weight: text })}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.patientInputRow}>
+                <TouchableOpacity style={[styles.patientInput, { flex: 1, marginRight: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+                  <Text style={styles.patientInputText}>{patientFormData.gender}</Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+                <TextInput
+                  style={[styles.patientInput, { flex: 1, marginLeft: 8 }]}
+                  placeholder="Phone Number"
+                  value={patientFormData.phoneNumber}
+                  onChangeText={(text) => setPatientFormData({ ...patientFormData, phoneNumber: text })}
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <TextInput
+                style={styles.patientInput}
+                placeholder="Email"
+                value={patientFormData.email}
+                onChangeText={(text) => setPatientFormData({ ...patientFormData, email: text })}
+                keyboardType="email-address"
+              />
+            </ScrollView>
+
+            <View style={styles.patientModalButtons}>
+              <TouchableOpacity
+                style={styles.updatePatientButton}
+                onPress={handlePatientUpdate}
+              >
+                <Text style={styles.updatePatientButtonText}>Update</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelPatientButton}
+                onPress={() => setEditPatientModalVisible(false)}
+              >
+                <Text style={styles.cancelPatientButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#FFF",
   },
   header: {
     marginTop: StatusBar.currentHeight || 0,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#FFF",
+    paddingVertical: 12,
+    backgroundColor: "transparent",
   },
   backButton: {
-    marginRight: 12,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
   headerTitle: {
     fontSize: 20,
@@ -632,122 +948,107 @@ const styles = StyleSheet.create({
     color: "#000000",
     flex: 1,
     textAlign: "center",
-    marginRight: 36,
   },
   headerSpace: {
-    width: 36,
+    width: 40,
   },
   placeholder: {
-    width: 24,
+    width: 40,
   },
-  separator: {
-    height: 1,
-    backgroundColor: "#E5E5E5",
-  },
-  content: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-    paddingTop: 24,
+  searchContainer: {
     paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  upcomingText: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#000000",
-    marginBottom: 20,
-  },
-  appointmentCard: {
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#ffffff",
     borderRadius: 12,
-    marginBottom: 16,
-    overflow: "hidden",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  cardTop: {
-    backgroundColor: "#C9CAFF",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  searchIcon: {
+    marginRight: 12,
   },
-  leftInfo: {
-    flexDirection: "row",
-    alignItems: "center",
+  searchInput: {
     flex: 1,
+    fontSize: 16,
+    color: "#000",
+  },
+  filterButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  appointmentCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+    borderRadius: 30,
+    marginBottom: 16,
+    padding: 20,
+  },
+  cardTopSection: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
   },
   doctorPhoto: {
     width: 60,
     height: 60,
     borderRadius: 30,
     marginRight: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#f0f0f0",
   },
   doctorInfo: {
     flex: 1,
+    justifyContent: "flex-start",
   },
   doctorName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#ffffff",
+    color: "#000000",
     marginBottom: 4,
   },
   doctorSpecialty: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 14,
+    color: "#666666",
   },
-  rightInfo: {
-    alignItems: "flex-end",
+  appointmentDetails: {
+    marginBottom: 20,
   },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ffffff",
-    marginBottom: 4,
-  },
-  timeText: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
-  },
-  cardBottom: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  patientInfo: {
-    flex: 1,
-  },
-  infoLine: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontWeight: "600",
-    color: "#000000",
-  },
-  infoValue: {
-    fontWeight: "400",
-    color: "#000000",
-  },
-  editButton: {
+  detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "transparent",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    marginBottom: 8,
   },
-  editText: {
+  detailIcon: {
+    marginRight: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  detailsButton: {
+    borderWidth: 1,
+    borderColor: "#4A90E2",
+    borderRadius: 30,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  detailsButtonText: {
     fontSize: 16,
-    color: "#5DBAAE",
     fontWeight: "500",
-    marginLeft: 4,
+    color: "#4A90E2",
   },
   loader: {
     flex: 1,
@@ -763,11 +1064,88 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: 100,
   },
   noDataText: {
     fontSize: 16,
     color: "#666666",
     marginTop: 16,
+  },
+  detailsModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  detailsModalContent: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "#ffffff",
+    borderRadius: 30,
+    padding: 24,
+    overflow: "hidden",
+  },
+  modalDoctorInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  modalDoctorPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    backgroundColor: "#f0f0f0",
+  },
+  modalDoctorDetails: {
+    flex: 1,
+  },
+  modalDoctorName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000000",
+    marginBottom: 4,
+  },
+  modalDoctorSpecialty: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 16,
+  },
+  modalInfoSection: {
+    marginBottom: 24,
+  },
+  modalInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+  modalInfoTextRow: {
+    marginBottom: 12,
+    paddingLeft: 0,
+  },
+  modalInfoText: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  closeButton: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#4A90E2",
+    borderRadius: 30,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#4A90E2",
   },
   modalOverlay: {
     flex: 1,
@@ -823,73 +1201,62 @@ const styles = StyleSheet.create({
   dateScroll: {
     marginBottom: 10,
   },
+  dateScrollContent: {
+    paddingRight: 10,
+  },
   dateBox: {
     paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1.5,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    marginRight: 10,
-    alignItems: "center",
-    minWidth: 60,
-    backgroundColor: "#fafafa",
-  },
-  dateBoxSelected: {
-    backgroundColor: "#5DBAAE",
-    borderColor: "#5DBAAE",
-  },
-  dateDay: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "500",
-  },
-  dateDaySelected: {
-    color: "#fff",
-  },
-  dateNum: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111",
-    marginTop: 4,
-  },
-  dateNumSelected: {
-    color: "#fff",
-  },
-  dateMonth: {
-    fontSize: 10,
-    color: "#999",
-    marginTop: 2,
-  },
-  dateMonthSelected: {
-    color: "#fff",
-  },
-  slotsContainer: {
-    maxHeight: 200,
-    marginBottom: 20,
-  },
-  slotsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  slotBox: {
-    paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    margin: 6,
-    backgroundColor: "#fafafa",
+    borderColor: "#E5E7EB",
+    borderRadius: 20,
+    marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 70,
+    backgroundColor: "#ffffff",
+  },
+  dateBoxSelected: {
+    backgroundColor: "#8B5CF6",
+    borderColor: "#8B5CF6",
+  },
+  dateBoxText: {
+    fontSize: 14,
+    color: "#666666",
+    fontWeight: "500",
+  },
+  dateBoxTextSelected: {
+    color: "#ffffff",
+    fontWeight: "600",
+  },
+  slotsContainer: {
+    marginBottom: 20,
+  },
+  slotsScrollContent: {
+    paddingRight: 10,
+  },
+  slotBox: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   slotBoxSelected: {
-    backgroundColor: "#5DBAAE",
-    borderColor: "#5DBAAE",
+    backgroundColor: "#8B5CF6",
+    borderColor: "#8B5CF6",
   },
   slotText: {
     fontSize: 14,
-    color: "#111",
+    color: "#666666",
+    fontWeight: "500",
   },
   slotTextSelected: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "600",
   },
   noSlotsContainer: {
@@ -920,6 +1287,107 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalActionButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  applyButton: {
+    flex: 1,
+    backgroundColor: "#8B5CF6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applyButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelModalButton: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#8B5CF6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelModalButtonText: {
+    color: "#8B5CF6",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  editPatientModalContent: {
+    width: "90%",
+    maxWidth: 400,
+    maxHeight: "85%",
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 24,
+  },
+  patientFormScroll: {
+    maxHeight: 400,
+    marginBottom: 20,
+  },
+  patientInput: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#000000",
+    backgroundColor: "#ffffff",
+    marginBottom: 12,
+  },
+  relationshipInput: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  patientInputRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  patientInputText: {
+    fontSize: 16,
+    color: "#000000",
+  },
+  patientModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  updatePatientButton: {
+    flex: 1,
+    backgroundColor: "#8B5CF6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  updatePatientButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelPatientButton: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#8B5CF6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelPatientButtonText: {
+    color: "#8B5CF6",
     fontSize: 16,
     fontWeight: "600",
   },

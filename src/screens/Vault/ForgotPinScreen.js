@@ -15,8 +15,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { requestPinReset, verifyResetCode } from '../../api/vaultApi';
 import { auth } from '../../api/firebaseConfig';
+import { useTranslation } from 'react-i18next';
 
 function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -76,16 +78,16 @@ function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
       const result = await requestPinReset(email.trim());
       if (result.success) {
         setCodeSent(true);
-        Alert.alert('Success', 'Verification code sent to your email');
+        Alert.alert(t('alerts.success'), t('vault.codeSent'));
         // Focus first code input
         setTimeout(() => {
           codeRefs.current[0]?.focus();
         }, 100);
       } else {
-        Alert.alert('Error', result.message || 'Failed to send verification code');
+        Alert.alert(t('alerts.error'), result.message || t('vault.failedToSendCode'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send verification code. Please try again.');
+      Alert.alert(t('alerts.error'), t('vault.failedToSendCode'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
   const handleVerifyCode = async () => {
     const codeString = code.join('');
     if (codeString.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      Alert.alert(t('alerts.error'), t('vault.enter6DigitCode'));
       return;
     }
 
@@ -105,12 +107,12 @@ function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
         onCodeVerified(result.resetToken || result.token);
         onClose();
       } else {
-        Alert.alert('Error', result.message || 'Invalid verification code');
+        Alert.alert(t('alerts.error'), result.message || t('vault.invalidCode'));
         setCode(['', '', '', '', '', '']);
         codeRefs.current[0]?.focus();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to verify code. Please try again.');
+      Alert.alert(t('alerts.error'), t('vault.failedToVerifyCode'));
     } finally {
       setLoading(false);
     }
@@ -187,7 +189,7 @@ function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
               onPress={handleSendCode}
               disabled={loading}
             >
-              <Text style={styles.resendText}>Resend Code</Text>
+              <Text style={styles.resendText}>{t('vault.resendCode')}</Text>
             </TouchableOpacity>
 
             {/* Close Button */}
@@ -196,7 +198,7 @@ function ForgotPinScreen({ visible, onClose, onCodeVerified }) {
               onPress={handleClose}
               disabled={loading}
             >
-              <Text style={styles.closeButtonText}>Cancel</Text>
+              <Text style={styles.closeButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

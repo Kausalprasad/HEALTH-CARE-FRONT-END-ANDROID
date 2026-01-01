@@ -1,5 +1,7 @@
+import './src/i18n'; // Import i18n first
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from "@react-navigation/native";
 import { AuthProvider } from "./src/context/AuthContext";
 import AppNavigator from "./src/navigation/AppNavigator";
@@ -21,6 +23,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function App() {
+  const { t } = useTranslation();
   const [appReady, setAppReady] = useState(false);
 
   // load fonts with error handling
@@ -65,7 +68,7 @@ export default function App() {
           }}
           fallback={
             <View style={styles.fallbackContainer}>
-              <Text style={styles.fallbackText}>Loading...</Text>
+              <Text style={styles.fallbackText}>{t('splash.loading')}</Text>
             </View>
           }
         >

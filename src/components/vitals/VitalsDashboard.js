@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import useHealthData from '../../hooks/useHealthData';
 import PermissionHandler from './PermissionHandler';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -87,18 +88,22 @@ const generateBPBars = (vitals) => {
   });
 };
 
-const LoadingScreen = () => (
-  <SafeAreaView style={styles.container}>
-    <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-    <View style={styles.loadingContainer}>
-      <Text style={styles.loadingEmoji}>⚡</Text>
-      <Text style={styles.loadingTitle}>Loading Your Health Data</Text>
-      <Text style={styles.loadingSubtitle}>Please wait...</Text>
-    </View>
-  </SafeAreaView>
-);
+const LoadingScreen = () => {
+  const { t } = useTranslation();
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingEmoji}>⚡</Text>
+        <Text style={styles.loadingTitle}>{t('vitals.loadingTitle')}</Text>
+        <Text style={styles.loadingSubtitle}>{t('vitals.loadingSubtitle')}</Text>
+      </View>
+    </SafeAreaView>
+  );
+};
 
 const ErrorScreen = ({ error, onRefresh }) => {
+  const { t } = useTranslation();
   const isModuleError = error?.includes('not linked') || error?.includes('not available');
   
   return (
@@ -107,24 +112,21 @@ const ErrorScreen = ({ error, onRefresh }) => {
       <View style={styles.errorContainer}>
         <Text style={styles.errorEmoji}>{isModuleError ? '⚠️' : '😔'}</Text>
         <Text style={styles.errorTitle}>
-          {isModuleError ? 'Development Build Required' : 'Something went wrong'}
+          {isModuleError ? t('vitals.developmentBuildRequired') : t('vitals.somethingWentWrongTitle')}
         </Text>
         <Text style={styles.errorMessage}>{error}</Text>
         
         {isModuleError && (
           <View style={styles.instructionsContainer}>
-            <Text style={styles.instructionsTitle}>How to fix:</Text>
+            <Text style={styles.instructionsTitle}>{t('vitals.howToFix')}</Text>
             <Text style={styles.instructionsText}>
-              1. Stop using Expo Go{'\n'}
-              2. Run: npx expo prebuild{'\n'}
-              3. Run: npx expo run:android{'\n'}
-              4. Or use EAS Build
+              {t('vitals.fixInstructions')}
             </Text>
           </View>
         )}
         
         <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryText}>Try Again</Text>
+          <Text style={styles.retryText}>{t('vitals.tryAgain')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -132,6 +134,7 @@ const ErrorScreen = ({ error, onRefresh }) => {
 };
 
 export default function VitalsDashboard() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { vitals, loading, error, granted, refresh, openSettings } = useHealthData();
   const [refreshing, setRefreshing] = useState(false);
@@ -235,7 +238,7 @@ export default function VitalsDashboard() {
         >
           <Ionicons name="chevron-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Vitals</Text>
+        <Text style={styles.headerTitle}>{t('vitals.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -254,8 +257,8 @@ export default function VitalsDashboard() {
         {/* Steps Card - Full Width */}
         <View style={styles.fullCard}>
           <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Steps</Text>
-            <Text style={styles.cardTime}>Today</Text>
+            <Text style={styles.cardTitle}>{t('vitals.steps')}</Text>
+            <Text style={styles.cardTime}>{t('vitals.today')}</Text>
           </View>
           
           <View style={styles.stepsGraphContainer}>
@@ -276,7 +279,7 @@ export default function VitalsDashboard() {
           </View>
           <View style={styles.cardValueContainer}>
             <Text style={styles.cardMainValue}>{steps}</Text>
-            <Text style={styles.cardUnit}> steps</Text>
+            <Text style={styles.cardUnit}> {t('vitals.stepsUnit')}</Text>
           </View>
         </View>
 
@@ -285,8 +288,8 @@ export default function VitalsDashboard() {
           {/* Calories Card */}
           <View style={styles.halfCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Calories</Text>
-              <Text style={styles.cardTime}>Today</Text>
+              <Text style={styles.cardTitle}>{t('vitals.calories')}</Text>
+              <Text style={styles.cardTime}>{t('vitals.today')}</Text>
             </View>
             
             <View style={styles.heartRateGraph}>
@@ -303,15 +306,15 @@ export default function VitalsDashboard() {
             </View>
             <View style={styles.cardValueContainer}>
               <Text style={styles.cardMainValue}>{calories}</Text>
-              <Text style={styles.cardUnit}> kcal</Text>
+              <Text style={styles.cardUnit}> {t('vitals.kcal')}</Text>
             </View>
           </View>
 
           {/* Heart Rate Card */}
           <View style={styles.halfCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Heart Rate</Text>
-              <Text style={styles.cardTime}>15 min ago</Text>
+              <Text style={styles.cardTitle}>{t('vitals.heartRate')}</Text>
+              <Text style={styles.cardTime}>{t('vitals.minAgo')}</Text>
             </View>
             
             <View style={styles.heartRateGraph}>
@@ -328,21 +331,21 @@ export default function VitalsDashboard() {
             </View>
             <View style={styles.cardValueContainer}>
               <Text style={styles.cardMainValue}>{heartRate}</Text>
-              <Text style={styles.cardUnit}> bpm</Text>
+              <Text style={styles.cardUnit}> {t('vitals.bpm')}</Text>
             </View>
           </View>
         </View>
 
         {/* Body Indicators Section */}
-        <Text style={styles.sectionTitle}>Body Indicators</Text>
+        <Text style={styles.sectionTitle}>{t('vitals.bodyIndicators')}</Text>
 
         {/* Blood Oxygen & Blood Pressure Row */}
         <View style={styles.cardRow}>
           {/* Blood Oxygen Card */}
           <View style={styles.halfCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Blood Oxygen</Text>
-              <Text style={styles.cardTime}>15 min ago</Text>
+              <Text style={styles.cardTitle}>{t('vitals.bloodOxygen')}</Text>
+              <Text style={styles.cardTime}>{t('vitals.minAgo')}</Text>
             </View>
             
             <View style={styles.heartRateGraph}>
@@ -366,8 +369,8 @@ export default function VitalsDashboard() {
           {/* Blood Pressure Card */}
           <View style={styles.halfCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Blood Pressure</Text>
-              <Text style={styles.cardTime}>15 min ago</Text>
+              <Text style={styles.cardTitle}>{t('vitals.bloodPressure')}</Text>
+              <Text style={styles.cardTime}>{t('vitals.minAgo')}</Text>
             </View>
             
             <View style={styles.bpGraphContainer}>
@@ -388,7 +391,7 @@ export default function VitalsDashboard() {
             </View>
             <View style={styles.cardValueContainer}>
               <Text style={styles.cardMainValue}>{bloodPressure.display}</Text>
-              <Text style={styles.cardUnit}> sys/dia</Text>
+              <Text style={styles.cardUnit}> {t('vitals.sysDia')}</Text>
             </View>
           </View>
         </View>
@@ -396,8 +399,8 @@ export default function VitalsDashboard() {
         {/* Sleep Card - Full Width */}
         <View style={styles.fullCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Sleep</Text>
-            <Text style={styles.cardTime}>Last Night</Text>
+            <Text style={styles.cardTitle}>{t('vitals.sleep')}</Text>
+            <Text style={styles.cardTime}>{t('vitals.lastNight')}</Text>
           </View>
           
           <View style={styles.sleepTimelineContainer}>
@@ -408,9 +411,9 @@ export default function VitalsDashboard() {
           </View>
           <View style={styles.cardValueContainer}>
             <Text style={styles.cardMainValue}>{sleep.hours}</Text>
-            <Text style={styles.cardUnit}>h </Text>
+            <Text style={styles.cardUnit}>{t('vitals.h')} </Text>
             <Text style={styles.cardMainValue}>{sleep.mins}</Text>
-            <Text style={styles.cardUnit}> min</Text>
+            <Text style={styles.cardUnit}> {t('vitals.min')}</Text>
           </View>
         </View>
 

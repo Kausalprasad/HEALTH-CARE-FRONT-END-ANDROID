@@ -2,8 +2,10 @@
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from 'react-i18next';
 
 export default function VaultAIReport({ navigation, route }) {
+  const { t } = useTranslation();
   const { file } = route.params || {};
   
   // Helper function to safely convert values to strings
@@ -87,21 +89,21 @@ export default function VaultAIReport({ navigation, route }) {
     },
     {
       id: "diagnoses",
-      title: "Diagnoses",
+      title: t('vault.diagnoses'),
       icon: "medical",
       iconColor: "#00BCD4",
       content: diagnoses,
     },
     {
       id: "medications",
-      title: "Medications",
+      title: t('vault.medications'),
       icon: "pills",
       iconColor: "#4CAF50",
       content: medications,
     },
     {
       id: "followups",
-      title: "Follow-ups",
+      title: t('vault.followUps'),
       icon: "bulb",
       iconColor: "#FFC107",
       content: followUps,

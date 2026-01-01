@@ -12,17 +12,19 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from 'react-i18next';
 
-const { width } = Dimensions.get("window");
+const { width: screenWidth } = Dimensions.get("window");
 
 export default function FeaturesScreen({ navigation }) {
+  const { t } = useTranslation();
   const features = [
     {
-      title: "Health Analysis Tools",
+      title: t('features.categories.healthAnalysis'),
       items: [
         {
           id: "ai-health-checkup",
-          title: "AI Health\nCheckup",
+          title: t('features.aiHealthCheckup'),
           icon: require("../../../assets/Dashoabdicons/Group 21.png"),
           route: "AiHealthCheckupScreen",
           bgColor: "#1F2937",
@@ -30,7 +32,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "cosmetic",
-          title: "Cosmetic\nAnalysis",
+          title: t('features.cosmeticAnalysis'),
           icon: require("../../../assets/Dashoabdicons/CometicAnalysis.png"),
           route: "CosmeticScreen",
           bgColor: "#FFFFFF",
@@ -38,7 +40,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "xray",
-          title: "X-Ray\nAnalysis",
+          title: t('features.xrayAnalysis'),
           icon: require("../../../assets/Dashoabdicons/X-RayAnalysis.png"),
           route: "XrayScreen",
           bgColor: "#FFFFFF",
@@ -46,7 +48,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "reports",
-          title: "Prescription\nReader",
+          title: t('features.reportsReader'),
           icon: require("../../../assets/Dashoabdicons/ReportsReader.png"),
           route: "SymptomChecker",
           bgColor: "#FFFFFF",
@@ -54,7 +56,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "mental",
-          title: "Mental\nHealth",
+          title: t('features.mentalHealth'),
           icon: require("../../../assets/Dashoabdicons/MentalHealth1.png"),
           route: "MentalHealthScreen",
           bgColor: "#FFFFFF",
@@ -62,7 +64,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "preventive",
-          title: "Preventive\nHealth",
+          title: t('features.preventiveHealth'),
           icon: require("../../../assets/Dashoabdicons/PreventiveHealth.png"),
           route: "PreventiveHealthScreen",
           bgColor: "#FFFFFF",
@@ -71,11 +73,11 @@ export default function FeaturesScreen({ navigation }) {
       ],
     },
     {
-      title: "Medical & Treatment Planning",
+      title: t('features.categories.medicalTreatment'),
       items: [
         {
           id: "ai-doctor",
-          title: "24/7 AI\nDoctor",
+          title: t('features.aiDoctor247'),
           icon: require("../../../assets/Dashoabdicons/247AIDoctor.png"),
           route: "AIDoctor",
           bgColor: "#FFFFFF",
@@ -83,7 +85,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "mother-baby",
-          title: "Mother & Baby\nCare",
+          title: t('features.motherBabyCare'),
           icon: require("../../../assets/Dashoabdicons/MotherbabyCare.png"),
           route: "MotherBabyCareScreen",
           bgColor: "#FFFFFF",
@@ -91,7 +93,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "insurance",
-          title: "Insurance\nChecker",
+          title: t('features.insuranceChecker'),
           icon: require("../../../assets/Dashoabdicons/InsurnaceCheckker.png"),
           route: "InsuranceScreen",
           bgColor: "#FFFFFF",
@@ -100,11 +102,11 @@ export default function FeaturesScreen({ navigation }) {
       ],
     },
     {
-      title: "Wellness & Lifestyle",
+      title: t('features.categories.wellnessLifestyle'),
       items: [
         {
           id: "diet",
-          title: "Diet Plan\nGenerator",
+          title: t('features.dietPlanGenerator'),
           icon: require("../../../assets/Dashoabdicons/DietPlan.png"),
           route: "DietScreen",
           bgColor: "#FFFFFF",
@@ -112,7 +114,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "calorie",
-          title: "Calorie\nCalculator",
+          title: t('features.calorieCalculator'),
           icon: require("../../../assets/Dashoabdicons/CalorieCalculator.png"),
           route: "CalorieCalculator",
           bgColor: "#FFFFFF",
@@ -120,7 +122,7 @@ export default function FeaturesScreen({ navigation }) {
         },
         {
           id: "games",
-          title: "Health\nGames",
+          title: t('features.healthGames'),
           icon: require("../../../assets/Dashoabdicons/HealthGames.png"),
           route: "HealthGames",
           bgColor: "#FFFFFF",
@@ -147,7 +149,13 @@ export default function FeaturesScreen({ navigation }) {
         <View style={styles.iconContainer}>
           <Image source={item.icon} style={styles.iconImage} resizeMode="contain" />
         </View>
-        <Text style={[styles.cardTitle, { color: item.textColor }]}>{item.title}</Text>
+        <Text 
+          style={[styles.cardTitle, { color: item.textColor }]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {item.title}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -175,9 +183,9 @@ export default function FeaturesScreen({ navigation }) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="chevron-back" size={24} color="#000" />
+            <Ionicons name="chevron-back" size={Math.min(24, screenWidth * 0.06)} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Our Features</Text>
+          <Text style={styles.headerTitle}>{t('features.title')}</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -217,44 +225,44 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: Math.min(16, screenWidth * 0.04),
+    paddingVertical: Math.min(16, screenWidth * 0.04),
     backgroundColor: "transparent",
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: Math.min(40, screenWidth * 0.1),
+    height: Math.min(40, screenWidth * 0.1),
     justifyContent: "center",
     alignItems: "flex-start",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: "600",
     color: "#000",
     fontFamily: "Poppins_400Regular",
   },
   placeholder: {
-    width: 40,
+    width: Math.min(40, screenWidth * 0.1),
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 20,
+    paddingHorizontal: Math.min(16, screenWidth * 0.04),
+    paddingTop: Math.min(8, screenWidth * 0.02),
+    paddingBottom: Math.min(20, screenWidth * 0.05),
   },
   categorySection: {
-    marginBottom: 24,
+    marginBottom: Math.min(24, screenWidth * 0.06),
   },
   categoryHeader: {
     backgroundColor: "transparent",
     paddingVertical: 0,
     paddingHorizontal: 0,
-    marginBottom: 12,
+    marginBottom: Math.min(12, screenWidth * 0.03),
   },
   categoryTitle: {
-    fontSize: 15,
+    fontSize: Math.min(15, screenWidth * 0.0375),
     fontFamily: "Poppins_400Regular",
     fontWeight: "600",
     color: "#1F2937",
@@ -266,12 +274,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   featureCard: {
-    width: (width - 32 - 12) / 2, // 2 cards per row: (screen width - padding*2 - gap) / 2
-    maxWidth: 204, // Maximum width as specified
-    height: 133,
-    borderRadius: 32.88,
-    padding: 20,
-    marginBottom: 12,
+    width: (screenWidth - Math.min(32, screenWidth * 0.08) - Math.min(12, screenWidth * 0.03)) / 2, // 2 cards per row: (screen width - padding*2 - gap) / 2
+    maxWidth: Math.min(204, screenWidth * 0.51),
+    height: Math.min(133, screenWidth * 0.33),
+    borderRadius: Math.min(32.88, screenWidth * 0.082),
+    padding: Math.min(20, screenWidth * 0.05),
+    marginBottom: Math.min(12, screenWidth * 0.03),
     backgroundColor: "rgba(255, 255, 255, 0.75)",
     borderWidth: 1,
     borderColor: "rgba(233, 233, 233, 1)",
@@ -282,25 +290,25 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   iconContainer: {
-    width: 50,
-    height: 50,
+    width: Math.min(50, screenWidth * 0.125),
+    height: Math.min(50, screenWidth * 0.125),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 0,
     backgroundColor: "transparent",
   },
   iconImage: {
-    width: 44,
-    height: 44,
+    width: Math.min(44, screenWidth * 0.11),
+    height: Math.min(44, screenWidth * 0.11),
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontWeight: "500",
     textAlign: "left",
     fontFamily: "Inter",
-    lineHeight: 26,
+    lineHeight: Math.min(26, screenWidth * 0.065),
   },
   bottomSpacing: {
-    height: 30,
+    height: Math.min(30, screenWidth * 0.075),
   },
 });

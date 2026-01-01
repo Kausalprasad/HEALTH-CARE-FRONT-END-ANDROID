@@ -18,11 +18,13 @@ import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../config/config';
+import { useTranslation } from 'react-i18next';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const Sidebar = ({ visible, onClose, navigation }) => {
   const { logout, user } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [settingsExpanded, setSettingsExpanded] = useState(true);
   const [appNotifications, setAppNotifications] = useState(false);
@@ -128,13 +130,19 @@ const Sidebar = ({ visible, onClose, navigation }) => {
   const menuItems = [
     { 
       icon: 'medical-outline', 
-      title: 'Book Appointment', 
+      title: t('sidebar.bookAppointment'), 
       route: 'Doctors',
       iconColor: '#8B5CF6', // Purple for stethoscope
     },
     { 
+      icon: 'pills-outline', 
+      title: t('sidebar.medicationReminder'), 
+      route: 'PrescriptionRemindersScreen',
+      iconColor: '#8B5CF6', // Purple for medication reminder
+    },
+    { 
       icon: 'document-text-outline', 
-      title: 'Health Blogs', 
+      title: t('sidebar.healthBlogs'), 
       route: 'Blogs',
       iconColor: '#F97316', // Orange for documents
     },
@@ -302,7 +310,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                 onPress={() => setSettingsExpanded(!settingsExpanded)}
               >
                 <Ionicons name="settings-outline" size={24} color="#22C55E" style={styles.menuIcon} />
-                <Text style={styles.menuText}>Settings</Text>
+                <Text style={styles.menuText}>{t('sidebar.settings')}</Text>
                 <Ionicons 
                   name={settingsExpanded ? "chevron-up" : "chevron-down"} 
                   size={20} 
@@ -317,14 +325,13 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                     style={styles.subMenuItem}
                     onPress={() => {
                       onClose();
-                      // Navigate to languages screen if exists
-                      // navigation.navigate('Languages');
+                      navigation.navigate('LanguageScreen');
                     }}
                   >
-                    <Text style={styles.subMenuText}>Languages</Text>
+                    <Text style={styles.subMenuText}>{t('sidebar.languages')}</Text>
                   </TouchableOpacity>
                   <View style={styles.subMenuItem}>
-                    <Text style={styles.subMenuText}>App Notifications</Text>
+                    <Text style={styles.subMenuText}>{t('sidebar.appNotifications')}</Text>
                     <Switch
                       value={appNotifications}
                       onValueChange={setAppNotifications}
@@ -348,7 +355,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                 }}
               >
                 <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={styles.menuIcon} />
-                <Text style={styles.menuText}>About</Text>
+                <Text style={styles.menuText}>{t('sidebar.about')}</Text>
               </TouchableOpacity>
               <View style={styles.divider} />
             </View>
@@ -363,7 +370,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                 }}
               >
                 <Ionicons name="warning-outline" size={24} color="#FBBF24" style={styles.menuIcon} />
-                <Text style={styles.menuText}>Disclaimer</Text>
+                <Text style={styles.menuText}>{t('sidebar.disclaimer')}</Text>
               </TouchableOpacity>
               <View style={styles.divider} />
             </View>
@@ -378,7 +385,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                 }}
               >
                 <Ionicons name="people-outline" size={24} color="#EC4899" style={styles.menuIcon} />
-                <Text style={styles.menuText}>Privacy Policies</Text>
+                <Text style={styles.menuText}>{t('sidebar.privacyPolicies')}</Text>
               </TouchableOpacity>
               <View style={styles.divider} />
             </View>
@@ -389,7 +396,7 @@ const Sidebar = ({ visible, onClose, navigation }) => {
         <View style={styles.logoutContainer}>
           <TouchableOpacity style={styles.logoutItem} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#EF4444" style={styles.menuIcon} />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>{t('sidebar.logout')}</Text>
             </TouchableOpacity>
         </View>
       </Animated.View>
@@ -409,10 +416,10 @@ const Sidebar = ({ visible, onClose, navigation }) => {
             </View>
 
             {/* Title */}
-            <Text style={styles.dialogTitle}>Logout?</Text>
+            <Text style={styles.dialogTitle}>{t('logout.title')}</Text>
 
             {/* Message */}
-            <Text style={styles.dialogMessage}>You're about to end your session.</Text>
+            <Text style={styles.dialogMessage}>{t('logout.message')}</Text>
 
             {/* Buttons */}
             <View style={styles.dialogButtons}>
@@ -420,13 +427,13 @@ const Sidebar = ({ visible, onClose, navigation }) => {
                 style={styles.cancelButton}
                 onPress={handleLogoutCancel}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('logout.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.logoutButton}
                 onPress={handleLogoutConfirm}
               >
-                <Text style={styles.logoutButtonText}>Logout</Text>
+                <Text style={styles.logoutButtonText}>{t('logout.confirm')}</Text>
         </TouchableOpacity>
             </View>
           </View>

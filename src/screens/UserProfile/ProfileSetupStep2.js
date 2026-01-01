@@ -16,8 +16,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../../config/config';
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 const ProfileSetupStep2 = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { params } = route;
   const isEdit = params?.isEdit || false;
   const profileData = params?.profileData || null;
@@ -154,14 +156,14 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
     const validContacts = contacts.filter(c => (c.name && c.name.trim()) || (c.phoneNumber && c.phoneNumber.trim()));
     
     if (validContacts.length === 0) {
-      Alert.alert('Info', 'Please fill at least one contact with name or phone number');
+      Alert.alert(t('profile.info'), t('profile.fillContactInfo'));
       return;
     }
     
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
         return;
       }
       const token = await user.getIdToken();
@@ -194,8 +196,8 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
         });
 
         if (!createResponse.ok) {
-          const errorData = await createResponse.json().catch(() => ({ message: 'Network error' }));
-          Alert.alert('Error', errorData.message || errorData.error || 'Failed to create profile. Please complete Personal Information first.');
+          const errorData = await createResponse.json().catch(() => ({ message: t('profile.networkError') }));
+          Alert.alert(t('profile.error'), errorData.message || errorData.error || t('profile.somethingWentWrong'));
           return;
         }
       }
@@ -276,18 +278,18 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
       }
 
       if (successCount > 0) {
-        Alert.alert('Success', `Emergency contact${successCount > 1 ? 's' : ''} saved successfully!`, [
+        Alert.alert(t('profile.success'), successCount > 1 ? t('profile.contactsSaved') : t('profile.contactSaved'), [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => navigation.goBack()
           }
         ]);
       } else {
-        Alert.alert('Error', 'Failed to save emergency contacts. Please try again.');
+        Alert.alert(t('profile.error'), t('profile.somethingWentWrong'));
       }
     } catch (err) {
       console.error('Step 2 error:', err);
-      Alert.alert('Error', err.message || 'Network error. Please check your connection.');
+      Alert.alert(t('profile.error'), err.message || t('profile.networkError'));
     }
   };
 
@@ -314,7 +316,7 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Emergency Contacts</Text>
+        <Text style={styles.headerTitle}>{t('profile.emergencyContacts')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -328,26 +330,26 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
           <View key={`contact-${contact.id}-${index}`} style={styles.whiteCard}>
             {/* Contact Name */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Contact Name</Text>
+              <Text style={styles.inputLabel}>{t('profile.contactName')}</Text>
               <TextInput
                 style={styles.textInput}
                 value={contact.name}
                 onChangeText={(value) => updateContact(contact.id, 'name', value)}
-                placeholder="Contact Name"
+                placeholder={t('profile.contactNamePlaceholder')}
                 placeholderTextColor="#999"
               />
             </View>
 
             {/* Relation */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Relation</Text>
+              <Text style={styles.inputLabel}>{t('profile.relation')}</Text>
               <TouchableOpacity 
                 style={styles.dropdownContainer}
                 onPress={() => toggleDropdown(contact.id)}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.dropdownText, !contact.relationship && styles.placeholderText]}>
-                  {contact.relationship || 'Relation'}
+                  {contact.relationship || t('profile.relationPlaceholder')}
                 </Text>
                 <Ionicons 
                   name={contact.showRelationshipDropdown ? "chevron-up" : "chevron-down"} 
@@ -357,14 +359,22 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
               </TouchableOpacity>
               {contact.showRelationshipDropdown && (
                 <View style={styles.dropdownMenu}>
-                  {['Spouse', 'Child', 'Parent', 'Sibling', 'Friend', 'Caregiver', 'Other'].map((option) => (
+                  {[
+                    { label: t('profile.relations.spouse'), value: 'Spouse' },
+                    { label: t('profile.relations.child'), value: 'Child' },
+                    { label: t('profile.relations.parent'), value: 'Parent' },
+                    { label: t('profile.relations.sibling'), value: 'Sibling' },
+                    { label: t('profile.relations.friend'), value: 'Friend' },
+                    { label: t('profile.relations.caregiver'), value: 'Caregiver' },
+                    { label: t('profile.relations.other'), value: 'Other' }
+                  ].map((option) => (
                     <TouchableOpacity
-                      key={option}
+                      key={option.value}
                       style={styles.dropdownItem}
-                      onPress={() => selectRelationship(contact.id, option)}
+                      onPress={() => selectRelationship(contact.id, option.value)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.dropdownItemText}>{option}</Text>
+                      <Text style={styles.dropdownItemText}>{option.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -373,12 +383,12 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
 
             {/* Phone Number */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
+              <Text style={styles.inputLabel}>{t('profile.phoneNumber')}</Text>
               <TextInput
                 style={styles.textInput}
                 value={contact.phoneNumber}
                 onChangeText={(value) => updateContact(contact.id, 'phoneNumber', value)}
-                placeholder="Phone Number"
+                placeholder={t('profile.phoneNumberPlaceholder')}
                 placeholderTextColor="#999"
                 keyboardType="phone-pad"
               />
@@ -404,7 +414,7 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
             }} 
             activeOpacity={0.7}
           >
-            <Text style={styles.addNewText}>Add New</Text>
+            <Text style={styles.addNewText}>{t('profile.addNew')}</Text>
           </TouchableOpacity>
           <View style={{ width: 20 }} />
         </View>
@@ -417,7 +427,7 @@ const ProfileSetupStep2 = ({ navigation, route }) => {
           onPress={handleSave}
           activeOpacity={0.8}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Text style={styles.saveButtonText}>{t('profile.save')}</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>

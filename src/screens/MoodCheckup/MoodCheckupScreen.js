@@ -17,110 +17,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { BASE_URL } from "../../config/config"
 import { useFonts, Inter_300Light, Inter_400Regular } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 3; // 3 columns with padding
 
-// Only 6 emotions as per design
-const emotions = [
-  { 
-    id: 'lazy', 
-    label: 'Lazy', 
-    emoji: '😴',
-    icon: require('../../../assets/emotions/Lazy.png'),
-    color: '#FF9800' // Orange
-  },
-  { 
-    id: 'shocked', 
-    label: 'Shocked', 
-    emoji: '😲',
-    icon: require('../../../assets/emotions/Shocked.png'),
-    color: '#FFD93D' // Yellow
-  },
-  { 
-    id: 'worried', 
-    label: 'Worried', 
-    emoji: '😟',
-    icon: require('../../../assets/emotions/Worried.png'),
-    color: '#4A90E2' // Light Blue
-  },
-  { 
-    id: 'stressed', 
-    label: 'Stressed', 
-    emoji: '😰',
-    icon: require('../../../assets/emotions/Stressed.png'),
-    color: '#F5A5A5' // Light Pink/Beige
-  },
-  { 
-    id: 'confused', 
-    label: 'Confused', 
-    emoji: '😕',
-    icon: require('../../../assets/emotions/Consfused.png'),
-    color: '#5F9EA0' // Teal/Blue-grey
-  },
-  { 
-    id: 'happy', 
-    label: 'Happy', 
-    emoji: '😄',
-    icon: require('../../../assets/emotions/happy.png'),
-    color: '#FFD93D' // Yellow
-  },
-];
+// Only 6 emotions as per design - will be translated in component
+const emotionIds = ['lazy', 'shocked', 'worried', 'stressed', 'confused', 'happy'];
 
-// Recommendations for each mood
-const recommendations = {
-  lazy: [
-    'Share your happiness with others.',
-    'Capture this moment with photos.',
-    'Do something creative.',
-    'Plan something exciting for tomorrow.',
-    'Do something kind for someone.',
-  ],
-  shocked: [
-    'Take a moment to process what happened.',
-    'Talk to someone you trust about it.',
-    'Write down your thoughts and feelings.',
-    'Take deep breaths to calm yourself.',
-    'Focus on what you can control.',
-  ],
-  worried: [
-    'Practice deep breathing for 10 minutes.',
-    'Make a list of your concerns.',
-    'Talk to someone you trust.',
-    'Go for a walk in nature.',
-    'Focus on what you can control.',
-  ],
-  stressed: [
-    'Take a 15-minute break.',
-    'Do some light exercise.',
-    'Turn off notifications for an hour.',
-    'Practice mindfulness meditation.',
-    'Prioritize your tasks for today.',
-  ],
-  confused: [
-    'Write down what\'s confusing you.',
-    'Break the problem into parts.',
-    'Seek advice from someone experienced.',
-    'Research or learn more about it.',
-    'Give yourself time to think it through.',
-  ],
-  happy: [
-    'Share your happiness with others.',
-    'Capture this moment with photos.',
-    'Do something creative.',
-    'Plan something exciting for tomorrow.',
-    'Do something kind for someone.',
-  ],
-};
-
-// Blog posts
-const blogPosts = [
-  { id: 1, title: 'Happiness', description: 'The science of sustainable...', tag: 'Happiness' },
-  { id: 2, title: 'Confidence', description: 'Building unshakable confidence.', tag: 'Confidence' },
-  { id: 3, title: 'Emotional Health', description: 'Managing difficult emotions.', tag: 'Emotional Health' },
-];
+// Blog posts - will be translated in component
+const blogPostIds = [1, 2, 3];
 
 export default function MoodCheckupScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -129,6 +38,33 @@ export default function MoodCheckupScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [pressedEmotion, setPressedEmotion] = useState(null);
   const [buttonClicked, setButtonClicked] = useState(false);
+
+  // Emotions with translations
+  const emotions = emotionIds.map(id => ({
+    id,
+    label: t(`mood.emotions.${id}`),
+    emoji: id === 'lazy' ? '😴' : id === 'shocked' ? '😲' : id === 'worried' ? '😟' : id === 'stressed' ? '😰' : id === 'confused' ? '😕' : '😄',
+    icon: id === 'lazy' ? require('../../../assets/emotions/Lazy.png') :
+          id === 'shocked' ? require('../../../assets/emotions/Shocked.png') :
+          id === 'worried' ? require('../../../assets/emotions/Worried.png') :
+          id === 'stressed' ? require('../../../assets/emotions/Stressed.png') :
+          id === 'confused' ? require('../../../assets/emotions/Consfused.png') :
+          require('../../../assets/emotions/happy.png'),
+    color: id === 'lazy' ? '#FF9800' : id === 'shocked' ? '#FFD93D' : id === 'worried' ? '#4A90E2' : id === 'stressed' ? '#F5A5A5' : id === 'confused' ? '#5F9EA0' : '#FFD93D'
+  }));
+
+  // Recommendations with translations
+  const recommendations = emotionIds.reduce((acc, id) => {
+    acc[id] = t(`mood.recommendations.${id}`, { returnObjects: true });
+    return acc;
+  }, {});
+
+  // Blog posts with translations
+  const blogPosts = [
+    { id: 1, title: t('mood.blogs.happiness'), description: t('mood.blogs.happinessDesc'), tag: t('mood.blogs.happiness') },
+    { id: 2, title: t('mood.blogs.confidence'), description: t('mood.blogs.confidenceDesc'), tag: t('mood.blogs.confidence') },
+    { id: 3, title: t('mood.blogs.emotionalHealth'), description: t('mood.blogs.emotionalHealthDesc'), tag: t('mood.blogs.emotionalHealth') },
+  ];
 
   const [fontsLoaded] = useFonts({
     Inter_300Light,
@@ -185,7 +121,7 @@ export default function MoodCheckupScreen() {
 
   const handleGetRecommendations = async () => {
     if (!selectedEmotion) {
-      Alert.alert('Please Select', 'Please select your mood first.');
+      Alert.alert(t('mood.pleaseSelect'), t('mood.pleaseSelectMood'));
       return;
     }
 
@@ -244,8 +180,9 @@ export default function MoodCheckupScreen() {
   };
 
   const monthNames = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December'
+    t('mood.months.january'), t('mood.months.february'), t('mood.months.march'), t('mood.months.april'),
+    t('mood.months.may'), t('mood.months.june'), t('mood.months.july'), t('mood.months.august'),
+    t('mood.months.september'), t('mood.months.october'), t('mood.months.november'), t('mood.months.december')
   ];
 
   const currentEmotion = selectedEmotion ? emotions.find(e => e.id === selectedEmotion) : null;
@@ -277,7 +214,7 @@ export default function MoodCheckupScreen() {
           <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Check Your Mood</Text>
+          <Text style={styles.headerTitle}>{t('mood.checkYourMood')}</Text>
           <TouchableOpacity onPress={() => setShowCalendar(true)}>
             <Ionicons name="calendar-outline" size={24} color="#000" />
           </TouchableOpacity>
@@ -298,8 +235,12 @@ export default function MoodCheckupScreen() {
             </View>
 
             <View style={styles.weekdayHeader}>
-              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => (
-                <Text key={day} style={styles.weekdayText}>{day}</Text>
+              {[
+                t('mood.weekdays.sun'), t('mood.weekdays.mon'), t('mood.weekdays.tue'),
+                t('mood.weekdays.wed'), t('mood.weekdays.thu'), t('mood.weekdays.fri'),
+                t('mood.weekdays.sat')
+              ].map((day, index) => (
+                <Text key={index} style={styles.weekdayText}>{day}</Text>
               ))}
             </View>
 
@@ -330,10 +271,10 @@ export default function MoodCheckupScreen() {
             <>
               {/* Question and Description */}
               <Text style={styles.title} numberOfLines={2}>
-                How do you feel today?
+                {t('mood.howDoYouFeelToday')}
               </Text>
               <Text style={styles.subtitle} numberOfLines={4}>
-                Our Mood Checker AI helps identify your current emotional state and offers gentle, personalised suggestions to support your mental wellbeing.
+                {t('mood.description')}
               </Text>
 
               {/* Mood Selection Grid - 2x3 */}
@@ -385,9 +326,9 @@ export default function MoodCheckupScreen() {
                       <Text style={styles.moodDisplayEmoji}>{currentEmotion.emoji}</Text>
                     )}
                   </View>
-                  <Text style={styles.moodDisplayTitle}>Feeling {currentEmotion.label}!</Text>
+                  <Text style={styles.moodDisplayTitle}>{t('mood.feeling')} {currentEmotion.label}!</Text>
                   <Text style={styles.moodDisplayDescription}>
-                    Personalized recommendations designed for how you're feeling right now.
+                    {t('mood.personalizedRecommendations')}
                   </Text>
                 </View>
 
@@ -405,7 +346,7 @@ export default function MoodCheckupScreen() {
 
                 {/* Recommended Blogs */}
                 <View style={styles.blogsSection}>
-                  <Text style={styles.blogsTitle}>Recommended Blogs</Text>
+                  <Text style={styles.blogsTitle}>{t('mood.recommendedBlogs')}</Text>
                   <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false}
@@ -441,7 +382,7 @@ export default function MoodCheckupScreen() {
                 <Text style={[
                   styles.recommendButtonText,
                   (!selectedEmotion || buttonClicked) && styles.recommendButtonTextDisabled
-                ]}>Get Recommendation</Text>
+                ]}>{t('mood.getRecommendation')}</Text>
               </TouchableOpacity>
             </View>
           )}

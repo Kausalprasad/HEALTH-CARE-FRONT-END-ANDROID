@@ -1,6 +1,7 @@
 import React from 'react';
 import { SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import ErrorBoundary from '../../components/vitals/ErrorBoundary';
+import { useTranslation } from 'react-i18next';
 
 // Lazy load VitalsDashboard to prevent crashes if module import fails
 let VitalsDashboard = null;
@@ -11,19 +12,16 @@ try {
 }
 
 export default function VitalsScreen() {
+  const { t } = useTranslation();
   // If dashboard failed to load, show error screen
   if (!VitalsDashboard) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>⚠️</Text>
-          <Text style={styles.errorTitle}>Unable to Load Vitals</Text>
+          <Text style={styles.errorTitle}>{t('vitals.unableToLoad')}</Text>
           <Text style={styles.errorMessage}>
-            The Vitals feature could not be loaded.{'\n\n'}
-            This may happen if:{'\n'}
-            • Health Connect module is not properly linked{'\n'}
-            • You are using Expo Go (use development build instead){'\n\n'}
-            The app will continue to work. You can use other features normally.
+            {t('vitals.unableToLoadMessage')}
           </Text>
         </View>
       </SafeAreaView>
@@ -36,11 +34,9 @@ export default function VitalsScreen() {
         <SafeAreaView style={styles.container}>
           <View style={styles.errorContainer}>
             <Text style={styles.errorEmoji}>😔</Text>
-            <Text style={styles.errorTitle}>Something Went Wrong</Text>
+            <Text style={styles.errorTitle}>{t('vitals.somethingWentWrong')}</Text>
             <Text style={styles.errorMessage}>
-              The Vitals screen encountered an error.{'\n\n'}
-              Please go back and try again.{'\n\n'}
-              The app will continue to work. This is a non-critical error.
+              {t('vitals.errorMessage')}
             </Text>
           </View>
         </SafeAreaView>

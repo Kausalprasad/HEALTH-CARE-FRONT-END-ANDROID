@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from 'firebase/auth';
 import { BASE_URL } from '../../config/config';
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useTranslation } from 'react-i18next';
 
 const ProfileSetupStep3 = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { params } = route;
   const isEdit = params?.isEdit || false;
   const profileData = params?.profileData || null;
@@ -33,7 +35,13 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
     Inter_700Bold,
   });
 
-  const frequencyOptions = ['Once Daily', 'Twice Daily', 'Three Times Daily', 'Four Times Daily', 'As Needed'];
+  const frequencyOptions = useMemo(() => [
+    { label: t('profile.frequencyOptions.onceDaily'), value: 'Once Daily' },
+    { label: t('profile.frequencyOptions.twiceDaily'), value: 'Twice Daily' },
+    { label: t('profile.frequencyOptions.threeTimesDaily'), value: 'Three Times Daily' },
+    { label: t('profile.frequencyOptions.fourTimesDaily'), value: 'Four Times Daily' },
+    { label: t('profile.frequencyOptions.asNeeded'), value: 'As Needed' }
+  ], [t]);
 
   // Pre-fill form if editing
   useEffect(() => {
@@ -121,7 +129,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('profile.error'), t('profile.userNotAuthenticated'));
         return;
       }
       const token = await user.getIdToken();
@@ -157,7 +165,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
       }
 
       if (Object.keys(payload).length === 0) {
-        Alert.alert('Info', 'Please fill at least one field to update');
+        Alert.alert(t('profile.info'), t('profile.fillAtLeastOne'));
         return;
       }
 
@@ -205,15 +213,15 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
             body: JSON.stringify(payload),
           });
         } else {
-          const errorData = await createResponse.json().catch(() => ({ message: 'Network error' }));
-          Alert.alert('Error', errorData.message || errorData.error || 'Failed to create profile. Please complete Personal Information first.');
+          const errorData = await createResponse.json().catch(() => ({ message: t('profile.networkError') }));
+          Alert.alert(t('profile.error'), errorData.message || errorData.error || t('profile.somethingWentWrong'));
           return;
         }
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-        Alert.alert('Error', errorData.message || errorData.error || `Server error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ message: t('profile.networkError') }));
+        Alert.alert(t('profile.error'), errorData.message || errorData.error || `Server error: ${response.status}`);
         return;
       }
 
@@ -222,18 +230,18 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
       if (data.success || response.status === 200 || response.status === 201) {
         await AsyncStorage.removeItem('profileSkipped');
         
-        Alert.alert('Success', 'Medical information updated successfully!', [
+        Alert.alert(t('profile.success'), t('profile.medicalInfoUpdated'), [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => navigation.goBack()
           }
         ]);
       } else {
-        Alert.alert('Error', data.message || data.error || 'Something went wrong');
+        Alert.alert(t('profile.error'), data.message || data.error || t('profile.somethingWentWrong'));
       }
     } catch (err) {
       console.error('Step 3 error:', err);
-      Alert.alert('Error', err.message || 'Network error. Please check your connection.');
+      Alert.alert(t('profile.error'), err.message || t('profile.networkError'));
     }
   };
 
@@ -260,7 +268,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Medical Condition</Text>
+        <Text style={styles.headerTitle}>{t('profile.medicalCondition')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -274,7 +282,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
         <View style={styles.whiteCard}>
             {/* Medical Condition */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Medical Condition</Text>
+              <Text style={styles.inputLabel}>{t('profile.medicalCondition')}</Text>
               {medicalConditions.map((condition, index) => (
                 <View key={`condition-${index}`}>
                   <TextInput
@@ -285,19 +293,19 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                       updated[index].conditionName = text;
                       setMedicalConditions(updated);
                     }}
-                    placeholder="Diabetes, Hypertension ..."
+                    placeholder={t('profile.medicalConditionPlaceholder')}
                     placeholderTextColor="#999"
                   />
                 </View>
               ))}
               <TouchableOpacity style={styles.addNewButton} onPress={addCondition}>
-                <Text style={styles.addNewText}>Add New</Text>
+                <Text style={styles.addNewText}>{t('profile.addNew')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Allergies */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Allergies</Text>
+              <Text style={styles.inputLabel}>{t('profile.allergies')}</Text>
               {allergies.map((allergy, index) => (
                 <View key={`allergy-${index}`} style={styles.allergyWrapper}>
                   <View style={styles.allergyRow}>
@@ -309,7 +317,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                         updated[index].allergenName = text;
                         setAllergies(updated);
                       }}
-                      placeholder="Penicillin, Nuts ..."
+                      placeholder={t('profile.allergiesPlaceholder')}
                       placeholderTextColor="#999"
                     />
                     <TouchableOpacity 
@@ -326,19 +334,23 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                   </View>
                   {allergy.showSeverityDropdown && (
                     <View style={styles.dropdownMenu}>
-                      {['Mild', 'Moderate', 'Severe'].map((severity) => (
+                      {[
+                        { label: t('profile.severity.mild'), value: 'Mild' },
+                        { label: t('profile.severity.moderate'), value: 'Moderate' },
+                        { label: t('profile.severity.severe'), value: 'Severe' }
+                      ].map((severity) => (
                         <TouchableOpacity
-                          key={severity}
+                          key={severity.value}
                           style={styles.dropdownItem}
-                          onPress={() => selectSeverity(index, severity)}
+                          onPress={() => selectSeverity(index, severity.value)}
                         >
-                          <Text style={styles.dropdownItemText}>{severity}</Text>
+                          <Text style={styles.dropdownItemText}>{severity.label}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   )}
                   <TouchableOpacity style={styles.addNewButton} onPress={addAllergy}>
-                    <Text style={styles.addNewText}>Add New</Text>
+                    <Text style={styles.addNewText}>{t('profile.addNew')}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -346,7 +358,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
 
             {/* Current Medications */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Current Medications</Text>
+              <Text style={styles.inputLabel}>{t('profile.currentMedications')}</Text>
               {medications.map((medication, index) => (
                 <View key={`medication-${index}`} style={styles.medicationWrapper}>
                   <TextInput
@@ -357,7 +369,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                       updated[index].name = text;
                       setMedications(updated);
                     }}
-                    placeholder="Medicine Name"
+                    placeholder={t('profile.medicineNamePlaceholder')}
                     placeholderTextColor="#999"
                   />
                   <View style={styles.medicationRow}>
@@ -369,14 +381,16 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                         updated[index].dosage = text;
                         setMedications(updated);
                       }}
-                      placeholder="Dosage"
+                      placeholder={t('profile.dosagePlaceholder')}
                       placeholderTextColor="#999"
                     />
                     <TouchableOpacity 
                       style={styles.frequencyDropdown}
                       onPress={() => toggleFrequencyDropdown(index)}
                     >
-                      <Text style={styles.frequencyText}>{medication.frequency}</Text>
+                      <Text style={styles.frequencyText}>
+                        {frequencyOptions.find(f => f.value === medication.frequency)?.label || medication.frequency}
+                      </Text>
                       <Ionicons 
                         name={medication.showFrequencyDropdown ? "chevron-up" : "chevron-down"} 
                         size={16} 
@@ -388,17 +402,17 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
                     <View style={styles.dropdownMenu}>
                       {frequencyOptions.map((frequency) => (
                         <TouchableOpacity
-                          key={frequency}
+                          key={frequency.value}
                           style={styles.dropdownItem}
-                          onPress={() => selectFrequency(index, frequency)}
+                          onPress={() => selectFrequency(index, frequency.value)}
                         >
-                          <Text style={styles.dropdownItemText}>{frequency}</Text>
+                          <Text style={styles.dropdownItemText}>{frequency.label}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   )}
                   <TouchableOpacity style={styles.addNewButton} onPress={addMedication}>
-                    <Text style={styles.addNewText}>Add New</Text>
+                    <Text style={styles.addNewText}>{t('profile.addNew')}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -413,7 +427,7 @@ const ProfileSetupStep3 = ({ navigation, route }) => {
           onPress={handleSave}
           activeOpacity={0.8}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Text style={styles.saveButtonText}>{t('profile.save')}</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>

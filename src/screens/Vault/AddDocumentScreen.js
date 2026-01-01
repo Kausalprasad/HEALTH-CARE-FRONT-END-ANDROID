@@ -16,8 +16,10 @@ import * as DocumentPicker from "expo-document-picker"
 import * as Print from "expo-print"
 import { getAuth } from "firebase/auth"
 import { BASE_URL } from "../../config/config"
+import { useTranslation } from 'react-i18next'
 
 export default function AddDocumentScreen({ navigation }) {
+  const { t } = useTranslation();
   const [documentName, setDocumentName] = useState("")
   const [documentType, setDocumentType] = useState("")
   const [selectedFile, setSelectedFile] = useState(null)
@@ -42,7 +44,7 @@ export default function AddDocumentScreen({ navigation }) {
         setDocumentName(fileName)
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to pick document")
+      Alert.alert(t('alerts.error'), t('vault.failedToPick'))
       console.error(err)
     }
   }
@@ -202,9 +204,9 @@ export default function AddDocumentScreen({ navigation }) {
           <View style={styles.uploadIconContainer}>
             <Ionicons name="document-text-outline" size={48} color="#6B5FD9" />
           </View>
-          <Text style={styles.uploadTitle}>Upload a Photo or Document</Text>
+          <Text style={styles.uploadTitle}>{t('vault.uploadDocument')}</Text>
           <Text style={styles.uploadSubtitle}>
-            Your documents are private and{"\n"}encrypted for access anytime
+            {t('vault.uploadSubtitle')}
           </Text>
           <TouchableOpacity
             style={styles.addButton}
@@ -212,7 +214,7 @@ export default function AddDocumentScreen({ navigation }) {
             activeOpacity={0.8}
           >
             <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.addButtonText}>Add</Text>
+            <Text style={styles.addButtonText}>{t('vault.add')}</Text>
           
           </TouchableOpacity>
           {selectedFile && (
@@ -221,10 +223,10 @@ export default function AddDocumentScreen({ navigation }) {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Document Name</Text>
+          <Text style={styles.label}>{t('vault.documentName')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Eg. CBC Report"
+            placeholder={t('vault.documentNamePlaceholder')}
             placeholderTextColor="#999"
             value={documentName}
             onChangeText={setDocumentName}
@@ -232,13 +234,13 @@ export default function AddDocumentScreen({ navigation }) {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Document Type</Text>
+          <Text style={styles.label}>{t('vault.documentType')}</Text>
           <TouchableOpacity
             style={styles.pickerButton}
             onPress={() => setShowTypePicker(!showTypePicker)}
           >
             <Text style={[styles.pickerText, !documentType && styles.pickerPlaceholder]}>
-              {documentType || "Select Document Type"}
+              {documentType || t('vault.selectDocumentType')}
             </Text>
             <Ionicons name="chevron-down" size={20} color="#000" />
           </TouchableOpacity>
@@ -273,10 +275,10 @@ export default function AddDocumentScreen({ navigation }) {
           {isUploading ? (
             <View style={styles.uploadingContainer}>
               <ActivityIndicator color="#fff" />
-              <Text style={styles.uploadButtonText}> Uploading...</Text>
+              <Text style={styles.uploadButtonText}> {t('vault.uploading')}</Text>
             </View>
           ) : (
-            <Text style={styles.uploadButtonText}>Upload</Text>
+            <Text style={styles.uploadButtonText}>{t('common.upload')}</Text>
           )}
         </TouchableOpacity>
       </View>

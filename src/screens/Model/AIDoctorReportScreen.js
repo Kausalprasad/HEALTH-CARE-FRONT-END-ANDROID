@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import * as Print from "expo-print"
+import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
 
 export default function AIDoctorReportScreen({ navigation, route }) {
@@ -180,11 +181,20 @@ export default function AIDoctorReportScreen({ navigation, route }) {
       const html = formatReportForPDF()
       const { uri } = await Print.printToFileAsync({ html })
       
+      const fileName = `AI-Doctor-Report-${Date.now()}.pdf`
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`
+      
+      // Copy file to document directory
+      await FileSystem.copyAsync({
+        from: uri,
+        to: fileUri,
+      })
+
       // Check if sharing is available
       const isAvailable = await Sharing.isAvailableAsync()
       
       if (isAvailable) {
-        await Sharing.shareAsync(uri, {
+        await Sharing.shareAsync(fileUri, {
           mimeType: 'application/pdf',
           dialogTitle: 'Download AI Doctor Report',
         })
